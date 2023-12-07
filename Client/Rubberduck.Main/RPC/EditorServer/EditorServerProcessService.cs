@@ -1,78 +1,62 @@
 ﻿using Microsoft.Extensions.Logging;
-using Rubberduck.InternalApi.Settings;
-using Rubberduck.InternalApi.Extensions;
 using Rubberduck.Main.Commands.ShowRubberduckEditor;
+using Rubberduck.ServerPlatform;
+using Rubberduck.SettingsProvider;
 using Rubberduck.SettingsProvider.Model;
 using Rubberduck.Unmanaged.WindowsApi;
 using System;
 using System.Diagnostics;
-using Rubberduck.InternalApi.Common;
+using Env = System.Environment;
 
 namespace Rubberduck.Main.RPC.EditorServer
 {
-    class EditorServerProcessService : IEditorServerProcessService, IDisposable
+    class EditorServerProcessService : ServerPlatform.ServiceBase, IEditorServerProcessService, IDisposable
     {
-        private Process? _process;
         private readonly ILogger _logger;
-        private readonly ISettingsProvider<RubberduckSettings> _settingsProvider;
+        private Process? _process;
 
-        public EditorServerProcessService(ILogger<EditorServerProcessService> logger, ISettingsProvider<RubberduckSettings> settingsProvider)
+        public EditorServerProcessService(ILogger<EditorServerProcessService> logger, RubberduckSettingsProvider settingsProvider, IWorkDoneProgressStateService workdone, PerformanceRecordAggregator performance)
+            : base(logger, settingsProvider, workdone, performance)
         {
             _logger = logger;
-            _settingsProvider = settingsProvider;
         }
 
-        private TraceLevel TraceLevel => _settingsProvider.Settings.GeneralSettings.TraceLevel.ToTraceLevel();
-
-        public Exception? ShowEditor()
+        public bool StartEditorProcess()
         {
             if (_process is null)
             {
-                _settingsProvider.ClearCache();
-                return StartEditor();
+                (Settings as ISettingsService<RubberduckSettings>)?.ClearCache();
+                StartEditor();
+                return true;
             }
 
-            return BringToFront();
+            BringToFront();
+            return false;
         }
 
-        private Exception? StartEditor()
-        {
-            if (TimedAction.TryRun(() =>
-            {
-                var helper = new EditorServerProcess(_logger);
-                var startupOptions = _settingsProvider.Settings.LanguageClientSettings.StartupSettings;
-                var currentProcessId = Environment.ProcessId;
-                _process = helper.Start(currentProcessId, startupOptions);
-            }, out var elapsed, out var exception))
-            {
-                _logger.LogPerformance(TraceLevel, "Started Rubberduck Editor process.", elapsed);
-            }
-            else if (exception is not null)
-            {
-                _logger.LogError(TraceLevel, exception);
-                return exception;
-            }
+        public Process Process => _process ?? throw new NullReferenceException("Process is not initialized.");
 
-            return null;
+        private void StartEditor()
+        {
+            var helper = new EditorServerProcess(_logger);
+            var startupOptions = Settings.LanguageClientSettings.StartupSettings;
+            var currentProcessId = Env.ProcessId;
+            _process = helper.Start(currentProcessId, startupOptions, HandleServerExit);
         }
 
-        private Exception? BringToFront()
+        private void HandleServerExit(object? sender, EventArgs e)
         {
-            if (TimedAction.TryRun(() =>
+            LogWarning($"EditorServer process has exited.", $"ExitCode: {(sender as Process)?.ExitCode}");
+        }
+
+        private void BringToFront()
+        {
+            // TODO move this to a server-side command
+            TryRunAction(() =>
             {
                 var process = _process ?? throw new InvalidOperationException();
                 User32.SetForegroundWindow(process.MainWindowHandle);
-            }, out var elapsed, out var exception))
-            {
-                _logger.LogPerformance(TraceLevel, "Brought Rubberduck Editor process main window to foreground.", elapsed);
-            }
-            else if (exception is not null)
-            {
-                _logger.LogError(TraceLevel, exception);
-                return exception;
-            }
-
-            return null;
+            });
         }
 
         public void Dispose()

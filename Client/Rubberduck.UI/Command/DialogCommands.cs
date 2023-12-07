@@ -1,95 +1,86 @@
 ﻿using Ookii.Dialogs.Wpf;
 using System.Windows.Input;
-using System.Windows;
 using System;
-using Microsoft.Extensions.Logging;
-using Rubberduck.InternalApi.Settings;
-using Rubberduck.SettingsProvider.Model;
-using System.Threading.Tasks;
+using System.Windows.Controls;
 
 namespace Rubberduck.UI.Command
 {
-    public interface IBrowseLocationModel
-    {
-        string Root { get; }
-        string Title { get; }
-        string Location { get; set; }
-    }
-
     public static class DialogCommands
     {
         public static RoutedCommand BrowseLocationCommand { get; }
-            = new RoutedCommand(nameof(BrowseLocationCommand), null);
+            = new RoutedCommand(nameof(BrowseLocationCommand), typeof(TextBox));
 
-        public static void BrowseLocation(Window owner)
+        public static bool BrowseLocation(IBrowseFolderModel model)
         {
-            var model = ((IBrowseLocationModel)owner.DataContext)
-                ?? throw new ArgumentException("Owner Window.DataContext cannot be null.");
-            
             var dialog = new VistaFolderBrowserDialog
             {
-                Multiselect = false,
-                RootFolder = Environment.SpecialFolder.MyDocuments,
-                UseDescriptionForTitle = true,
+                SelectedPath = model.Selection,
                 Description = model.Title,
+                RootFolder = Environment.SpecialFolder.LocalApplicationData,
+                Multiselect = false,
+                UseDescriptionForTitle = true,
                 ShowNewFolderButton = true,
             };
-            if (dialog.ShowDialog(owner) ?? false)
+
+            var didAccept = dialog.ShowDialog() == true;
+            if (didAccept)
             {
-                model.Location = dialog.SelectedPath;
+                model.Selection = dialog.SelectedPath;
             }
-        }
-    }
 
-    public class ShowRubberduckSettingsCommand : CommandBase
-    {
-        public ShowRubberduckSettingsCommand(ILogger logger, ISettingsProvider<RubberduckSettings> settings) 
-            : base(logger, settings)
-        {
+            return didAccept;
         }
 
-        protected async override Task OnExecuteAsync(object? parameter)
+        public static bool BrowseFileOpen(IBrowseFileModel model)
         {
-            throw new NotImplementedException();
-        }
-    }
+            var dialog = new VistaOpenFileDialog
+            {
+                FileName = model.Selection,
+                InitialDirectory = model.RootUri.LocalPath,
+                Title = model.Title,
+                Filter = model.Filter,
+                DefaultExt = model.DefaultFileExtension,
+                Multiselect = false,
+                AddExtension = true,
+                CheckPathExists = true,
+                CheckFileExists = true,
+                DereferenceLinks = true,
+                RestoreDirectory = true,
+            };
 
-    public class ShowLanguageClientSettingsCommand : CommandBase
-    {
-        public ShowLanguageClientSettingsCommand(ILogger logger, ISettingsProvider<RubberduckSettings> settings) 
-            : base(logger, settings)
-        {
-        }
+            var didAccept = dialog.ShowDialog() == true;
+            if (didAccept)
+            {
+                model.Selection = dialog.FileName;
+            }
 
-        protected async override Task OnExecuteAsync(object? parameter)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class ShowLanguageServerSettingsCommand : CommandBase
-    {
-        public ShowLanguageServerSettingsCommand(ILogger logger, ISettingsProvider<RubberduckSettings> settings) 
-            : base(logger, settings)
-        {
-        }
-
-        protected async override Task OnExecuteAsync(object? parameter)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class ShowEditorSettingsCommand : CommandBase
-    {
-        public ShowEditorSettingsCommand(ILogger logger, ISettingsProvider<RubberduckSettings> settings) 
-            : base(logger, settings)
-        {
+            return didAccept;
         }
 
-        protected async override Task OnExecuteAsync(object? parameter)
+        public static bool BrowseFileSaveAs(IBrowseFileModel model)
         {
-            throw new NotImplementedException();
+            var dialog = new VistaSaveFileDialog
+            {
+                FileName = model.Selection,
+                InitialDirectory = model.RootUri.LocalPath,
+                Title = model.Title,
+                Filter = model.Filter,
+                DefaultExt = model.DefaultFileExtension,
+                AddExtension = true,
+                ValidateNames = true,
+                CheckPathExists = true,
+                OverwritePrompt = true,
+                DereferenceLinks = true,
+                RestoreDirectory = true,
+            };
+
+            var didAccept = dialog.ShowDialog() == true;
+            if (didAccept)
+            {
+                model.Selection = dialog.FileName;
+            }
+
+            return didAccept;
         }
     }
 }

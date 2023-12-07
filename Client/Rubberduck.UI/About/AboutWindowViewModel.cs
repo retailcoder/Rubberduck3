@@ -1,8 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using Rubberduck.InternalApi.Settings;
-using Rubberduck.Resources.About;
-using Rubberduck.SettingsProvider.Model;
-using Rubberduck.UI.Command;
+﻿using Rubberduck.Resources.About;
+using Rubberduck.UI.Command.Abstract;
+using Rubberduck.UI.Services;
 using Rubberduck.UI.Services.Abstract;
 using System;
 using System.Windows;
@@ -20,7 +18,7 @@ namespace Rubberduck.UI.About
 
         public AboutWindowViewModel() { /* designer ctor */ }
 
-        public AboutWindowViewModel(ILogger<AboutWindowViewModel> logger, ISettingsProvider<RubberduckSettings> settings, IWebNavigator web/*, IMessageBox messageBox*/, Version version)
+        public AboutWindowViewModel(UIServiceHelper service, IWebNavigator web/*, IMessageBox messageBox*/, Version version)
         {
             //_messageBox = messageBox;
 
@@ -29,8 +27,8 @@ namespace Rubberduck.UI.About
 
             Document = "TODO: load about.md";
 
-            UriCommand = new DelegateCommand(logger, settings, ExecuteUri);
-            ViewLogCommand = new DelegateCommand(logger, settings, ExecuteViewLog);
+            UriCommand = new DelegateCommand(service, ExecuteUri);
+            ViewLogCommand = new DelegateCommand(service, ExecuteViewLog);
         }
 
         public string Version => string.Format(Resources.RubberduckUI.Rubberduck_AboutBuild, $"v{_version.ToString(3)}");

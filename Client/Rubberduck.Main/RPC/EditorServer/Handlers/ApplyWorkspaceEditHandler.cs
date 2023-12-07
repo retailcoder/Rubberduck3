@@ -4,71 +4,47 @@ using System.Threading;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using System.Collections.Generic;
+using System;
+using Rubberduck.ServerPlatform;
 using System.Linq;
 
 namespace Rubberduck.Main.RPC.EditorServer.Handlers
 {
-    public static class DocumentChangesExtensions
+    public class InvalidRequestParamsException : ArgumentException
     {
-        public static IDictionary<DocumentUri, List<WorkspaceEditDocumentChange>> GroupByDocumentUri(this Container<WorkspaceEditDocumentChange> changes)
+        public InvalidRequestParamsException(string name, object request) 
+            : base($"{request.GetType().Name} is missing a required member.", name)
         {
-            var edits = new Dictionary<DocumentUri, List<WorkspaceEditDocumentChange>>();
+            Data.Add("request", request);
+        }
+    }
 
-            foreach (var change in changes)
+    public class WorkspaceFoldersHandler : WorkspaceFoldersHandlerBase
+    {
+        /**
+         * EditorServer sends this request once started to load additional workspaces,
+         * for example if multiple unlocked projects are loaded in the VBE.
+        **/
+
+        private readonly ServerPlatformServiceHelper _service;
+
+        public WorkspaceFoldersHandler(ServerPlatformServiceHelper service)
+        {
+            _service = service;
+        }
+
+        public async override Task<Container<WorkspaceFolder>?> Handle(WorkspaceFolderParams request, CancellationToken cancellationToken)
+        {
+            var folders = Enumerable.Empty<WorkspaceFolder>();
+
+            _service.TryRunAction(() =>
             {
-                if (change.IsTextDocumentEdit && change.TextDocumentEdit is not null)
-                {
-                    var uri = change.TextDocumentEdit.TextDocument.Uri;
-                    if (!edits.TryGetValue(uri, out var knownEdits))
-                    {
-                        edits.Add(uri, new List<WorkspaceEditDocumentChange> { change });
-                    }
-                    else
-                    {
-                        if (!knownEdits.Any(e => e.IsDeleteFile || e.IsRenameFile))
-                        {
-                            edits[uri].Add(change);
-                        }
-                    }
-                }
-                else if (change.IsRenameFile && change.RenameFile is not null)
-                {
-                    var uri = change.RenameFile.OldUri;
-                    if (!edits.ContainsKey(uri))
-                    {
-                        edits.Add(uri, new List<WorkspaceEditDocumentChange> { change });
-                    }
-                    else
-                    {
-                        edits[uri] = new List<WorkspaceEditDocumentChange> { change };  // overwrites previous edits to this uri
-                    }
-                }
-                else if (change.IsCreateFile && change.CreateFile is not null)
-                {
-                    var uri = change.CreateFile.Uri;
-                    if (!edits.ContainsKey(uri))
-                    {
-                        edits.Add(uri, new List<WorkspaceEditDocumentChange> { change });
-                    }
-                    else
-                    {
-                        edits[uri].Add(change);
-                    }
-                }
-                else if (change.IsDeleteFile && change.DeleteFile is not null)
-                {
-                    var uri = change.DeleteFile.Uri;
-                    if (!edits.ContainsKey(uri))
-                    {
-                        edits.Add(uri, new List<WorkspaceEditDocumentChange> { change });
-                    }
-                    else
-                    {
-                        edits[uri] = new List<WorkspaceEditDocumentChange> { change }; // overwrites previous edits to this uri
-                    }
-                }
-            }
-            return edits;
+                throw new NotImplementedException();
+                // TODO
+            });
+
+
+            return await Task.FromResult(new Container<WorkspaceFolder>(folders));
         }
     }
 
@@ -77,7 +53,14 @@ namespace Rubberduck.Main.RPC.EditorServer.Handlers
     /// </summary>
     public class ApplyWorkspaceEditHandler : ApplyWorkspaceEditHandlerBase
     {
-        public override async Task<ApplyWorkspaceEditResponse> Handle(ApplyWorkspaceEditParams request, CancellationToken cancellationToken)
+        private readonly ServerPlatformServiceHelper _service;
+
+        public ApplyWorkspaceEditHandler(ServerPlatformServiceHelper service)
+        {
+            _service = service;
+        }
+
+        public async override Task<ApplyWorkspaceEditResponse> Handle(ApplyWorkspaceEditParams request, CancellationToken cancellationToken)
         {
             /**
              * Depending on the client capability
@@ -94,18 +77,23 @@ namespace Rubberduck.Main.RPC.EditorServer.Handlers
              * `workspace.workspaceEdit.resourceOperations` then only plain `TextEdit`s
              * using the `changes` property are supported.
              * https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspaceEdit
-             */
+            **/
 
             cancellationToken.ThrowIfCancellationRequested();
-
             var synchronized = new HashSet<DocumentUri>();
 
-            if (request.Edit.DocumentChanges is not null)
+            ApplyWorkspaceEditResponse? response = default;
+            int? errorIndex = default;
+            string? errorMessage = default;
+
+            _service.TryRunAction(() =>
             {
-                var changes = request.Edit.DocumentChanges.GroupByDocumentUri();
+                var changes = request.Edit.DocumentChanges?.GroupByDocumentUri()
+                    ?? throw new InvalidRequestParamsException(nameof(request.Edit.DocumentChanges), request);
+
                 foreach (var uri in changes.Keys)
                 {
-                    foreach (var change in changes[uri])
+                    foreach (var (change, index) in changes[uri])
                     {
                         if (change.IsTextDocumentEdit && !synchronized.Contains(uri))
                         {
@@ -122,35 +110,23 @@ namespace Rubberduck.Main.RPC.EditorServer.Handlers
                         }
                         else if (change.IsCreateFile && !synchronized.Contains(uri))
                         {
-
+                            // TODO sync (straight up import) VBE from file
                             break;
                         }
                     }
                 }
-            }
-            else if (request.Edit.Changes is not null)
+
+                response = new ApplyWorkspaceEditResponse { Applied = true };
+            });
+
+            var result = response ?? new ApplyWorkspaceEditResponse
             {
-                foreach (var uri in request.Edit.Changes.Keys)
-                {
-                    var path = uri.Path;
-                    // TODO sync VBE from file
-
-                    synchronized.Add(uri);
-                }
-            }
-
-
-            var response = new ApplyWorkspaceEditResponse
-            { 
-                Applied = true,
-                
+                Applied = false,
+                FailedChange = errorIndex,
+                FailureReason = errorMessage,
             };
-            // TODO
-            /*
-             * The workspace/applyEdit request is sent from the server to the client to modify resource on the client side.
-            */
 
-            return await Task.FromResult(response);
+            return await Task.FromResult(result);
         }
     }
 }

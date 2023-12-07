@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Rubberduck.Resources;
+using Rubberduck.UI.Command;
 using System;
 using System.Security.Cryptography;
 using System.Text;
@@ -7,6 +8,15 @@ using System.Text.Json;
 
 namespace Rubberduck.UI.Message
 {
+    public static class MessageKeys
+    {
+        public const string ConfirmOverwriteExistingWorkspace = "ConfirmOverwriteExistingWorkspace";
+
+        public static string GetMessageResourceKey(string key) => $"Message_{key}";
+
+        public static string GetTitleResourceKey(string key) => $"MessageTitle_{key}";
+    }
+
     public class MessageRequestModel : MessageModel
     {
         public static MessageRequestModel For(LogLevel level, string message, MessageAction[] actions)

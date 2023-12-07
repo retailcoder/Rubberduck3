@@ -2,47 +2,54 @@
 using Rubberduck.InternalApi.Common;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Settings;
+using Rubberduck.SettingsProvider;
 using Rubberduck.SettingsProvider.Model;
+using Rubberduck.SettingsProvider.Model.LanguageClient;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 namespace Rubberduck.ServerPlatform
 {
     public interface IHealthCheckService<TSettings> : IDisposable
-        where TSettings : IHealthCheckSettingsProvider
+        where TSettings : RubberduckSetting, IHealthCheckSettingsProvider
     {
         event EventHandler<EventArgs>? ChildProcessExited;
         void Start();
     }
 
-    public sealed class ClientProcessHealthCheckService<TSettings> : IHealthCheckService<TSettings>, IDisposable
-        where TSettings : IHealthCheckSettingsProvider
+    public sealed class ClientProcessHealthCheckService<TSettings> : ServiceBase, IHealthCheckService<TSettings>, IDisposable
+        where TSettings : RubberduckSetting, IHealthCheckSettingsProvider
     {
         private readonly ILogger _logger;
-        private readonly ISettingsProvider<TSettings> _settingsProvider;
         private readonly Process _process;
 
         private readonly Timer _timer;
+        private readonly Func<TSettings> _settingsProvider;
 
         public event EventHandler<EventArgs>? ChildProcessExited = delegate { };
-
-        private TraceLevel TraceLevel => _settingsProvider.Settings.ServerTraceLevel.ToTraceLevel();
-        private TimeSpan Interval => _settingsProvider.Settings.ClientHealthCheckInterval;
+        private TimeSpan Interval => HealthCheckSettings.ClientHealthCheckInterval;
 
         public ClientProcessHealthCheckService(
             ILogger<ClientProcessHealthCheckService<TSettings>> logger, 
-            ISettingsProvider<TSettings> settingsProvider, 
-            Process process)
+            RubberduckSettingsProvider settings,
+            Func<TSettings> settingsProvider,
+            IWorkDoneProgressStateService workdone,
+            Process process,
+            PerformanceRecordAggregator performance)
+            : base(logger, settings, workdone, performance)
         {
             _logger = logger;
-            _settingsProvider = settingsProvider;
             _process = process;
+            _settingsProvider = settingsProvider;
 
             _timer = new Timer(RunHealthCheck);
         }
 
         public bool IsAlive => !_process.HasExited;
+
+        public TSettings HealthCheckSettings => _settingsProvider.Invoke();
 
         public void Dispose()
         {
@@ -51,25 +58,14 @@ namespace Rubberduck.ServerPlatform
 
         public void Start()
         {
-            var traceLevel = TraceLevel;
             var interval = Interval;
-
-            var logger = _logger;
             var timer = _timer;
 
-            if (TimedAction.TryRun(() =>
+            TryRunAction(() =>
             {
-                logger.LogInformation(traceLevel, "Applying client process health check configuration.", $"Interval (ms): {interval.TotalMilliseconds}");
+                LogInformation("Applying client process health check configuration.", $"Interval (ms): {interval.TotalMilliseconds}");
                 timer.Change(TimeSpan.Zero, interval);
-            }, out var elapsed, out var exception))
-            {
-                logger.LogPerformance(traceLevel, "Applied client process health check configuration.", elapsed);
-            }
-            else if (exception != null)
-            {
-                logger.LogError(traceLevel, exception, "Could not apply client process health check configuration.");
-                throw exception;
-            }
+            }, "ClientProcessHealthCheckService.Start");
         }
 
         private bool _didNotifyExit = false;

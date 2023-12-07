@@ -26,6 +26,8 @@ namespace Rubberduck.ServerPlatform
         [Option('s', "silent", SetName = "TraceLevel", HelpText = "Whether or not to enable trace logging.")]
         public bool Silent { get; set; }
 
+        [Option('w', "workspace", HelpText = "A workspace root folder path containing a .rdproj project file.")]
+        public string? WorkspaceRoot { get; set; }
 
         /// <summary>
         /// Gets a string that corresponds to the <c>InitializeTrace</c> value for the specified <c>Verbose</c> and <c>Silent</c> switch arguments.
@@ -41,8 +43,8 @@ namespace Rubberduck.ServerPlatform
         public PipeServerStartupOptions() : base(TransportType.Pipe) { }
 
 
-        [Option('n', "Name", Default = ServerPlatformSettings.LanguageServerDefaultPipeName, HelpText = "The name of the transport pipe.")]
-        public string Name { get; set; } = ServerPlatformSettings.LanguageServerDefaultPipeName;
+        [Option('n', "Name", Default = null, HelpText = "The name of the transport pipe.")]
+        public string? Name { get; set; }
 
         [Option('m', "Mode", Default = PipeTransmissionMode.Byte, HelpText = "The pipe's transmission mode. Use 'Message' for RPC-level trace debugging.")]
         public PipeTransmissionMode Mode { get; set; } = PipeTransmissionMode.Byte;
@@ -50,7 +52,9 @@ namespace Rubberduck.ServerPlatform
         /// <summary>
         /// The actual name of the pipe stream concatenates the <c>Name</c> with the <c>ClientProcessId</c> to ensure different hosts/instances use dedicated channels.
         /// </summary>
-        public string PipeName => $"{Name}__{ClientProcessId}";
+        public string PipeName => GetPipeName(Name, ClientProcessId);
+
+        public static string GetPipeName(string name, int processId) => name.EndsWith(processId.ToString()) ? name : $"{name}__{processId}";
     }
 
     [Verb("StdIO", isDefault: true)]

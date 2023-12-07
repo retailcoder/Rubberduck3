@@ -4,12 +4,13 @@ using Rubberduck.InternalApi.Settings;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace Rubberduck.InternalApi.ServerPlatform
 {
     public interface IServerProcess
     {
-        Process Start(long clientProcessId, IProcessStartInfoArgumentProvider settings);
+        Process Start(long clientProcessId, IProcessStartInfoArgumentProvider settings, EventHandler onExit);
     }
 
     public abstract class ServerProcess : IServerProcess
@@ -23,23 +24,24 @@ namespace Rubberduck.InternalApi.ServerPlatform
 
         protected abstract string ExecutableFileName { get; }
 
-        public virtual Process Start(long clientProcessId, IProcessStartInfoArgumentProvider settings)
+        public virtual Process Start(long clientProcessId, IProcessStartInfoArgumentProvider settings, EventHandler onExit)
         {
             var path = settings.ServerExecutablePath;
-            var filename = Path.GetFileName(path);
-            if (!string.Equals(filename, ExecutableFileName, StringComparison.InvariantCultureIgnoreCase))
+            var fullPath = Path.Combine(path, ExecutableFileName);
+
+            if (!File.Exists(fullPath))
             {
-                Logger.LogWarning(TraceLevel.Verbose, $"ServerExecutablePath configured filename is unexpected.", $"expected: '{ExecutableFileName}' actual: '{filename}'");
-            }
-            if (!File.Exists(path))
-            {
+                Logger.LogWarning(TraceLevel.Verbose, 
+                    $"{settings.GetType().Name}.ServerExecutablePath configuration is invalid.", 
+                    $"Configured value '{path}' should be a folder that contains the '{ExecutableFileName}' executable.");
+                
                 throw new FileNotFoundException($"ServerExecutablePath configuration is invalid.");
             }
 
             var info = new ProcessStartInfo
             {
-                FileName = path,
-                WorkingDirectory = Path.GetDirectoryName(path),
+                FileName = fullPath,
+                WorkingDirectory = path,
                 Arguments = settings.ToProcessStartInfoArguments(clientProcessId),
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -49,6 +51,8 @@ namespace Rubberduck.InternalApi.ServerPlatform
             };
 
             var process = new Process { StartInfo = info };
+            process.Exited += onExit;
+
             try
             {
                 process.Start();

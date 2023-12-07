@@ -23,4 +23,15 @@ namespace Rubberduck.InternalApi.Settings
         /// </summary>
         event EventHandler<SettingsChangedEventArgs<TSettings>> SettingsChanged;
     }
+
+    /// <summary>
+    /// A service that handles SettingsChanged notifications.
+    /// </summary>
+    public interface ISettingsChangedHandler<TSettings>
+    {
+        /// <summary>
+        /// Replaces the cached settings with the specified value.
+        /// </summary>
+        void OnSettingsChanged(TSettings settings);
+    }
 }

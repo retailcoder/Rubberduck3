@@ -1,0 +1,130 @@
+﻿<ToggleButton x:Class="Rubberduck.UI.Shell.FlatToggleButton"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+        xmlns:local="clr-namespace:Rubberduck.UI.Shell"
+        x:Name="FlatToggleButtonRoot"
+        mc:Ignorable="d" Padding="4"
+        d:DesignHeight="20" d:DesignWidth="24">
+    <ToggleButton.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Rubberduck.UI;component/Styles/DefaultStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <Style x:Key="FlatButtonCanvasStyle" TargetType="{x:Type Canvas}">
+                <Setter Property="Background" Value="Transparent" />
+            </Style>
+            <Style x:Key="FlatToggleButtonImageStyle" TargetType="Image">
+                <Setter Property="Source" Value="{Binding IconSource, ElementName=FlatToggleButtonRoot}" />
+            </Style>
+            <ControlTemplate x:Key="FlatToggleButtonTemplate" TargetType="ToggleButton">
+                <Canvas Style="{DynamicResource FlatButtonCanvasStyle}">
+                    <Image x:Name="CanvasIcon"
+                           Style="{DynamicResource FlatToggleButtonImageStyle}"
+                           Height="16" Width="16" Stretch="UniformToFill"
+                           Canvas.Left="8" Canvas.Top="4" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    </Image>
+                    <Rectangle Fill="{TemplateBinding Foreground}"
+                               Height="16" Width="16" Stretch="UniformToFill"
+                               Canvas.Left="8" Canvas.Top="4" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Rectangle.Resources>
+                            <Style TargetType="Rectangle">
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsMouseOver, ElementName=FlatToggleButtonRoot}" Value="True" />
+                                            <!--<Condition Binding="{Binding IsEnabled, ElementName=FlatToggleButtonRoot}" Value="True" />-->
+                                        </MultiDataTrigger.Conditions>
+                                        <MultiDataTrigger.Setters>
+                                            <Setter Property="Fill" Value="{DynamicResource ThemeAccent1LightColorBrush}" />
+                                            <Setter Property="Cursor" Value="Hand" />
+                                        </MultiDataTrigger.Setters>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                                <Style.Setters>
+                                    <Setter Property="OpacityMask">
+                                        <Setter.Value>
+                                            <ImageBrush Stretch="UniformToFill" ImageSource="{Binding Source, ElementName=CanvasIcon}" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style.Setters>
+                            </Style>
+                        </Rectangle.Resources>
+                        <Rectangle.Style>
+                            <Style TargetType="Rectangle">
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsMouseOver, ElementName=FlatToggleButtonRoot}" Value="True" />
+                                            <!--<Condition Binding="{Binding IsEnabled, ElementName=FlatToggleButtonRoot}" Value="True" />-->
+                                        </MultiDataTrigger.Conditions>
+                                        <MultiDataTrigger.Setters>
+                                            <Setter Property="Fill" Value="{DynamicResource ThemeAccent1LightColorBrush}" />
+                                        </MultiDataTrigger.Setters>
+                                    </MultiDataTrigger>
+                                    <DataTrigger Binding="{Binding IsPressed, ElementName=FlatToggleButtonRoot}" Value="True">
+                                        <DataTrigger.Setters>
+                                            <Setter Property="Fill" Value="{DynamicResource ThemeAccent1DarkColorBrush}" />
+                                        </DataTrigger.Setters>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=FlatToggleButtonRoot}" Value="True">
+                                        <DataTrigger.Setters>
+                                            <Setter Property="Fill" Value="{DynamicResource ThemeAccent1MediumColorBrush}" />
+                                        </DataTrigger.Setters>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Rectangle.Style>
+                        <Rectangle.OpacityMask>
+                            <ImageBrush ImageSource="{Binding Source, ElementName=CanvasIcon}" />
+                        </Rectangle.OpacityMask>
+                    </Rectangle>
+                </Canvas>
+            </ControlTemplate>
+        </ResourceDictionary>
+    </ToggleButton.Resources>
+    <ToggleButton.Style>
+        <Style TargetType="ToggleButton">
+            <Style.Setters>
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Margin" Value="1,0" />
+                <Setter Property="MinHeight" Value="20" />
+                <Setter Property="MinWidth" Value="24" />
+                <Setter Property="Template" Value="{StaticResource FlatToggleButtonTemplate}" />
+                <Setter Property="Foreground" Value="{DynamicResource ThemeWhiteDarkColorBrush}" />
+                <Setter Property="Background" Value="{DynamicResource ThemeBackgroundColorBrush}"/>
+            </Style.Setters>
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Mode=Self}}" Value="True" />
+                        <Condition Binding="{Binding IsEnabled, RelativeSource={RelativeSource Mode=Self}}" Value="True" />
+                    </MultiDataTrigger.Conditions>
+                    <MultiDataTrigger.Setters>
+                        <Setter Property="Background" Value="{DynamicResource ThemeWhiteMediumColorBrush}" />
+                        <Setter Property="Foreground" Value="{DynamicResource ThemeAccent1DarkColorBrush}" />
+                        <Setter Property="Cursor" Value="Hand" />
+                    </MultiDataTrigger.Setters>
+                </MultiDataTrigger>
+                <DataTrigger Binding="{Binding IsPressed, RelativeSource={RelativeSource Mode=Self}}" Value="True">
+                    <DataTrigger.Setters>
+                        <Setter Property="Foreground" Value="{DynamicResource ThemeAccent1MediumColorBrush}" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Mode=Self}}" Value="True">
+                    <DataTrigger.Setters>
+                        <Setter Property="Foreground" Value="{DynamicResource ThemeAccent1MediumColorBrush}" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsEnabled, RelativeSource={RelativeSource Mode=Self}}" Value="False">
+                    <DataTrigger.Setters>
+                        <Setter Property="Background" Value="{DynamicResource ThemeWhiteMediumColorBrush}" />
+                        <Setter Property="Foreground" Value="{DynamicResource ThemeTextInactiveColorBrush}" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </ToggleButton.Style>
+</ToggleButton>

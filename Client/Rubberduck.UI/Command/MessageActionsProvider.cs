@@ -1,20 +1,26 @@
 ﻿using Microsoft.Extensions.Logging;
 using Rubberduck.InternalApi.Settings;
 using Rubberduck.SettingsProvider.Model;
+using Rubberduck.UI.Command.SharedHandlers;
+using Rubberduck.UI.Services;
 using System;
+using System.Linq;
 
 namespace Rubberduck.UI.Command
 {
     public class MessageActionsProvider
     {
-        private readonly ILogger _logger;
-        private readonly ISettingsProvider<RubberduckSettings> _settings;
+        private readonly UIServiceHelper _service;
 
-        public MessageActionsProvider(ILogger<MessageActionsProvider> logger, ISettingsProvider<RubberduckSettings> settings)
+        public MessageActionsProvider(UIServiceHelper service)
         {
-            _logger = logger;
-            _settings = settings;
+            _service = service;
         }
+
+        public MessageActionCommand FromMessageAction(MessageAction action, Func<object?, bool>? validations = null) =>
+            action.IsDefaultAction 
+            ? new AcceptMessageActionCommand(_service, action, validations)
+            : new CancelMessageActionCommand(_service, action);
 
         /// <summary>
         /// Gets a <c>MessageActionCommand[]</c> containing a <c>CloseMessageActionCommand</c>.
@@ -22,7 +28,7 @@ namespace Rubberduck.UI.Command
         public MessageActionCommand[] Close() =>
             new MessageActionCommand[]
             {
-                new CloseMessageActionCommand(_logger, _settings, MessageAction.CloseAction),
+                new CloseMessageActionCommand(_service, MessageAction.CloseAction),
             };
 
         /// <summary>
@@ -31,7 +37,7 @@ namespace Rubberduck.UI.Command
         public MessageActionCommand[] OkOnly(Func<object?, bool>? validations = null) =>
             new MessageActionCommand[]
             {
-                new AcceptMessageActionCommand(_logger, _settings, MessageAction.AcceptAction, validations),
+                new AcceptMessageActionCommand(_service, MessageAction.AcceptAction, validations),
             };
 
         /// <summary>
@@ -40,8 +46,8 @@ namespace Rubberduck.UI.Command
         public MessageActionCommand[] OkCancel(Func<object?, bool>? validations = null) =>
             new MessageActionCommand[]
             {
-                new AcceptMessageActionCommand(_logger, _settings, MessageAction.AcceptAction, validations),
-                new CancelMessageActionCommand(_logger, _settings, MessageAction.CancelAction)
+                new AcceptMessageActionCommand(_service, MessageAction.AcceptAction, validations),
+                new CancelMessageActionCommand(_service, MessageAction.CancelAction)
             };
     }
 }

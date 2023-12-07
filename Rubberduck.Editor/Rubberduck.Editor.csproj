@@ -2,21 +2,26 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <StartupObject>Rubberduck.Editor.App</StartupObject>
     <ApplicationIcon>ducky.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Resources\Customoccvondvond\**" />
-    <EmbeddedResource Remove="Resources\Customoccvondvond\**" />
-    <None Remove="Resources\Customoccvondvond\**" />
-    <Page Remove="Resources\Customoccvondvond\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Resources\Custom\splash.png" />
+    <Compile Remove="Environment\**" />
+    <Compile Remove="FileMenu\**" />
+    <Compile Remove="RPC\UpdateServerClient\**" />
+    <EmbeddedResource Remove="Environment\**" />
+    <EmbeddedResource Remove="FileMenu\**" />
+    <EmbeddedResource Remove="RPC\UpdateServerClient\**" />
+    <None Remove="Environment\**" />
+    <None Remove="FileMenu\**" />
+    <None Remove="RPC\UpdateServerClient\**" />
+    <Page Remove="Environment\**" />
+    <Page Remove="FileMenu\**" />
+    <Page Remove="RPC\UpdateServerClient\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,8 +34,10 @@
     <PackageReference Include="NLog.Extensions.Logging" Version="5.3.4" />
     <PackageReference Include="OmniSharp.Extensions.LanguageClient" Version="0.19.9" />
     <PackageReference Include="OmniSharp.Extensions.LanguageProtocol" Version="0.19.9" />
+    <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.9" />
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
     <PackageReference Include="SharpVectors" Version="1.8.2" />
+    <PackageReference Include="System.Management" Version="7.0.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,50 +50,11 @@
   
   <ItemGroup>
     <Resource Include="ducky.ico" />
-    <Resource Include="Resources\Custom\splash.png" />
-    <Resource Include="Resources\Custom\vector-ducky-color.png" />
-    <Resource Include="Resources\Custom\ducky.ico" />
-    <Resource Include="Resources\Custom\background-ducky.png" />
-    <Resource Include="Resources\Custom\Icons\Severity.png" />
-    <Resource Include="Resources\Custom\vector-ducky-blur-1480.png" />
-    <Resource Include="Resources\Custom\vector-ducky-shadow-1480.png" />
-    <Resource Include="Resources\FontAwesome\gear-solid.png" />
-    <Resource Include="Resources\FontAwesome\rectangle-xmark-solid.png" />
-    <Resource Include="Resources\FontAwesome\square-xmark-solid-red.png" />
-    <Resource Include="Resources\FontAwesome\square-xmark-solid.png" />
-    <Resource Include="Resources\FontAwesome\window-maximize-regular.png" />
-    <Resource Include="Resources\FontAwesome\window-minimize-regular.png" />
-    <Resource Include="Resources\FontAwesome\window-restore-regular.png" />
-    <Resource Include="Resources\FugueIcons\cross-circle.png" />
-    <Resource Include="Resources\FugueIcons\document-code.png" />
-    <Resource Include="Resources\FugueIcons\drive--exclamation.png" />
-    <Resource Include="Resources\FugueIcons\drive-network.png" />
-    <Resource Include="Resources\FugueIcons\exclamation-diamond.png" />
-    <Resource Include="Resources\FugueIcons\information.png" />
-    <Resource Include="Resources\FugueIcons\magnifier-medium.png" />
-    <Resource Include="Resources\FugueIcons\selection-input.png" />
-    <Resource Include="Resources\FugueIcons\tick-circle.png" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="Resources\Xaml\Styles\ControlBoxCanvas.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Resources\Xaml\Styles\FlatButton.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Shell\ChildWindow.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Shell\DuckyBackgroundControl.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Splash\SplashWindow.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="FileMenu\" />
-    <Folder Include="RPC\UpdateServerClient\" />
+    <None Update="NLog-editor.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -5,14 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Rubberduck.UI.NewProject" 
         xmlns:shell="clr-namespace:Rubberduck.UI.Shell" 
-        d:DataContext="{d:DesignInstance Type=local:NewProjectWindowViewModel}"
+        xmlns:model="clr-namespace:Rubberduck.InternalApi.Model.Workspace;assembly=Rubberduck.InternalApi"
+        xmlns:command="clr-namespace:Rubberduck.UI.Command"
         mc:Ignorable="d"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
         WindowStyle="None"
-        SizeToContent="WidthAndHeight"
+        d:DataContext="{d:DesignInstance Type=local:INewProjectWindowViewModel, IsDesignTimeCreatable=False}"
         Style="{DynamicResource ThemedWindowStyle}"
-        Height="340" Width="480">
+        Height="360" Width="500" Icon="/Rubberduck.UI;component/Ducky.ico" 
+        WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <ResourceDictionary>
+            <KeyBinding x:Key="CloseOnEscape" Key="Esc" Command="{Binding Actions[1]}" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Rubberduck.UI;component/Styles/DefaultStyle.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Rubberduck.UI;component/Styles/Templates.xaml"/>
@@ -20,49 +25,86 @@
         </ResourceDictionary>
     </Window.Resources>
     <Grid>
-        <shell:ThunderFrame Title="{Binding Title}" 
+        <shell:ThunderFrame Title="{Binding Title}" ShowTitle="True"
                             ShowSettingsCommand="{Binding ShowSettingsCommand}"
-                            AcceptCommand="{Binding Actions[0]}" 
-                            CancelCommand="{Binding Actions[1]}">
-            <StackPanel>
+                            ShowSettingsCommandParameter="{Binding ShowSettingsCommandParameter}"
+                            AcceptCommand="{Binding Actions[0]}" ShowAcceptButton="True"
+                            CancelCommand="{Binding Actions[1]}" ShowCancelButton="True">
+            <StackPanel Margin="5,0">
 
+                <!-- VBA Project selection should only be available when running with a VBE add-in client -->
                 <Label Style="{DynamicResource FormFieldNameLabelStyle}" 
-                       Content="Project"
-                       IsEnabled="{Binding IsEnabled}" />
-                <ComboBox Template="{DynamicResource FormFieldComboBoxTemplate}" 
+                       Content="VBA Project"
+                       Visibility="{Binding HasVBProjects, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                <ComboBox Template="{DynamicResource ComboBoxTemplate}" 
                           Style="{DynamicResource FormFieldComboBoxStyle}"
                           ItemsSource="{Binding VBProjects}"
                           SelectedItem="{Binding SelectedVBProject}"
-                          IsEnabled="{Binding IsEnabled}" />
-                
-                <Label Style="{DynamicResource FormFieldNameLabelStyle}" 
-                       Content="Project name"
-                       IsEnabled="{Binding IsEnabled}" />
-                <TextBox Style="{DynamicResource FormFieldTextBoxStyle}" 
-                         Text="{Binding ProjectName}"
-                         IsEnabled="{Binding IsEnabled}" />
-                
-                <Label Style="{DynamicResource FormFieldNameLabelStyle}" 
-                       Content="Workspace Location"
-                       IsEnabled="{Binding IsEnabled}" />
-                <TextBox Style="{DynamicResource FormFieldBrowseBoxStyle}" 
-                         Text="{Binding WorkspaceLocation}"
-                         IsEnabled="{Binding IsEnabled}" />
+                          Visibility="{Binding HasVBProjects, Converter={StaticResource BoolToVisibilityConverter}}"
+                          Margin="5,0"
+                          IsTabStop="True" TabIndex="0">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type model:VBProjectInfo}">
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
 
-                <Label Style="{DynamicResource FormLabelStyle}" 
-                       IsEnabled="{Binding IsEnabled}"
-                       Content="Source files will be exported to and will synchronize from:" />
+                <Label Style="{DynamicResource FormFieldNameLabelStyle}" 
+                       Content="Project Template"
+                       Visibility="{Binding HasProjectTemplates, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                <ComboBox Template="{DynamicResource ComboBoxTemplate}" 
+                          Style="{DynamicResource FormFieldComboBoxStyle}"
+                          ItemsSource="{Binding ProjectTemplates}"
+                          SelectedItem="{Binding SelectedProjectTemplate}"
+                          Visibility="{Binding HasProjectTemplates, Converter={StaticResource BoolToVisibilityConverter}}"
+                          Margin="5,0"
+                          IsTabStop="True" TabIndex="0">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type model:ProjectTemplate}">
+                            <TextBlock Text="{Binding Name}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <Label Style="{DynamicResource FormFieldNameLabelStyle}" 
+                       Content="Project name" />
+                <TextBox Style="{DynamicResource FormFieldTextBoxStyle}" 
+                         Text="{Binding ProjectName, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsEnabled}"
+                         IsTabStop="True" TabIndex="1"
+                         Margin="5,0"/>
+
+                
+                <Label Style="{DynamicResource FormFieldNameLabelStyle}" 
+                       Content="Workspace Location" />
+                <DockPanel>
+                    <Button  DockPanel.Dock="Right"
+                        Command="{x:Static NavigationCommands.Search}"
+                        CommandParameter="{Binding}"
+                        Background="{DynamicResource ThemeBackgroundMediumColorBrush}"
+                        Foreground="{DynamicResource ThemeAccent1DarkColorBrush}"
+                        Style="{DynamicResource FlatButtonStyle}" 
+                        IsEnabled="{Binding IsWorkspaceLocationEditable}"
+                        Width="28" Height="24" Margin="0,0,5,0"
+                        Content="…" IsTabStop="True" TabIndex="3" />
+                    <TextBox DockPanel.Dock="Top"
+                        Style="{DynamicResource FormFieldTextBoxStyle}" 
+                        Text="{Binding WorkspaceLocation, UpdateSourceTrigger=PropertyChanged}"
+                        IsEnabled="{Binding IsWorkspaceLocationEditable}"
+                        IsTabStop="True" TabIndex="2"
+                        Margin="5,0,2,0"/>
+                </DockPanel>
+
+                <Label Style="{DynamicResource FormFieldNameLabelStyle}" 
+                       IsEnabled="{Binding IsEnabled}" FontWeight="Normal"
+                       Content="Source files location" />
                 <Label Style="{DynamicResource FormFieldValueLabelStyle}" 
                        Content="{Binding SourcePath}"
-                       IsEnabled="{Binding IsEnabled}" />
+                       ToolTip="{Binding SourcePath}"
+                       IsEnabled="{Binding IsEnabled}" Margin="0,-5" />
 
             </StackPanel>
         </shell:ThunderFrame>
-        
-        <CheckBox Template="{DynamicResource FormFieldCheckBoxTemplate}" 
-                  Style="{DynamicResource FormFieldCheckBoxStyle}" 
-                  Content="Use defaults and do not prompt again" 
-                  VerticalAlignment="Bottom"
-                  Margin="10,16" IsChecked="{Binding IsEnabled, Converter={StaticResource InverseBoolConverter}}" />
     </Grid>
 </Window>

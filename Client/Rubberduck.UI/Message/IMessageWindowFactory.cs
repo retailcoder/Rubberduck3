@@ -1,4 +1,5 @@
 ﻿using Rubberduck.UI.Command;
+using Rubberduck.UI.Command.SharedHandlers;
 using System;
 
 namespace Rubberduck.UI.Message
@@ -22,7 +23,12 @@ namespace Rubberduck.UI.Message
             var buttons = actions?.Invoke(_provider) ?? _provider.OkOnly();
 
             var viewModel = new MessageWindowViewModel(model, buttons);
-            var view = new MessageWindow(viewModel);
+            var view = new MessageWindow(viewModel)
+            {
+                WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen,
+                Height = 320,
+                Width = 600,
+            };
             return (view, viewModel);
         }
     }

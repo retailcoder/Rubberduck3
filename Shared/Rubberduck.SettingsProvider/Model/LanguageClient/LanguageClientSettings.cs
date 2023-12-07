@@ -12,12 +12,11 @@ namespace Rubberduck.SettingsProvider.Model.LanguageClient
         private static readonly RubberduckSetting[] DefaultSettings =
             new RubberduckSetting[]
             {
-                new DefaultWorkspaceRootSetting { Value = DefaultWorkspaceRootSetting.DefaultSettingValue },
                 new RequireAddInHostSetting { Value = RequireAddInHostSetting.DefaultSettingValue },
                 new RequireSavedHostSetting { Value = RequireSavedHostSetting.DefaultSettingValue },
-                new RequireDefaultWorkspaceRootHostSetting { Value = RequireDefaultWorkspaceRootHostSetting.DefaultSettingValue },
-                new EnableUncWorkspacesSetting { Value = EnableUncWorkspacesSetting.DefaultSettingValue },
                 new LanguageClientStartupSettings { Value = LanguageClientStartupSettings.DefaultSettings },
+                new ExitNotificationDelaySetting { Value = ExitNotificationDelaySetting.DefaultSettingValue },
+                WorkspaceSettings.Default,
             };
 
         public LanguageClientSettings()
@@ -26,17 +25,15 @@ namespace Rubberduck.SettingsProvider.Model.LanguageClient
         }
 
         [JsonIgnore]
-        public Uri DefaultWorkspaceRoot => GetSetting<DefaultWorkspaceRootSetting>().TypedValue;
+        public WorkspaceSettings WorkspaceSettings => GetSetting<WorkspaceSettings>() ?? WorkspaceSettings.Default;
         [JsonIgnore]
-        public bool RequireAddInHost => GetSetting<RequireAddInHostSetting>().TypedValue;
+        public bool RequireAddInHost => GetSetting<RequireAddInHostSetting>()?.TypedValue ?? RequireAddInHostSetting.DefaultSettingValue;
         [JsonIgnore]
-        public bool RequireSavedHost => GetSetting<RequireSavedHostSetting>().TypedValue;
+        public bool RequireSavedHost => GetSetting<RequireSavedHostSetting>()?.TypedValue ?? RequireSavedHostSetting.DefaultSettingValue;
         [JsonIgnore]
-        public bool RequireDefaultWorkspaceRootHost => GetSetting<RequireDefaultWorkspaceRootHostSetting>().TypedValue;
+        public LanguageClientStartupSettings StartupSettings => GetSetting<LanguageClientStartupSettings>() ?? LanguageClientStartupSettings.Default;
         [JsonIgnore]
-        public bool EnableUncWorkspaces => GetSetting<EnableUncWorkspacesSetting>().TypedValue;
-        [JsonIgnore]
-        public LanguageClientStartupSettings StartupSettings => GetSetting<LanguageClientStartupSettings>();
+        public TimeSpan ExitNotificationDelay => GetSetting<ExitNotificationDelaySetting>()?.TypedValue ?? ExitNotificationDelaySetting.DefaultSettingValue;
 
         public static LanguageClientSettings Default { get; } = new() { Value = DefaultSettings, DefaultValue = DefaultSettings };
         LanguageClientSettings IDefaultSettingsProvider<LanguageClientSettings>.Default => Default;

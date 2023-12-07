@@ -2,8 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.General;
-using Rubberduck.Core;
-using Rubberduck.Editor.RPC.LanguageServerClient;
 using Rubberduck.InternalApi.Common;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.ServerPlatform;
@@ -30,6 +28,7 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using EditorClient = OmniSharp.Extensions.LanguageServer.Client.LanguageClient;
 using EditorClientOptions = OmniSharp.Extensions.LanguageServer.Client.LanguageClientOptions;
+using Env = System.Environment;
 
 namespace Rubberduck.Main
 {
@@ -52,10 +51,7 @@ namespace Rubberduck.Main
 
         private readonly CancellationTokenSource _tokenSource = new();
 
-        private IShowRubberduckEditorCommand? _showEditorCommand;
-        private Process? _editorServerProcess;
-        private NamedPipeClientStream? _editorServerPipeStream;
-        private EditorClient? _editorClient;
+        private EditorClientApp? _editorClient;
         private IDisposable? _editorClientInitializeTask;
 
         //private Process? _telemetryServerProcess;
@@ -113,7 +109,7 @@ namespace Rubberduck.Main
                 {
                     var tokenSource = new CancellationTokenSource();
 
-                    var provider = new RubberduckServicesBuilder(_vbe, _addin).Build();
+                    var provider = new RubberduckServicesBuilder(_vbe, _addin, _tokenSource).Build();
                     var scope = provider.CreateScope();
 
                     _serviceScope = scope;
@@ -121,13 +117,11 @@ namespace Rubberduck.Main
                     _messageService = scope.ServiceProvider.GetRequiredService<IMessageService>();
 
                     _initialSettings = GetInitialSettings(scope);
-                    _showEditorCommand = scope.ServiceProvider.GetRequiredService<IShowRubberduckEditorCommand>();
-                    _showEditorCommand.Executed += ShowRubberduckEditorCommand_Executed;
-
                     var version = GetVersionString();
 
                     sw.Start();
                     Startup();
+                    sw.Stop();
                 });
             }
             catch (StartupFailedException exception) when (exception.InnerException is ServerStartupFailedException serverException)
@@ -150,11 +144,18 @@ namespace Rubberduck.Main
             }
             finally
             {
-                sw.Stop();
                 if (_initialSettings != null)
                 {
-                    _logger.LogPerformance(TraceLevel, "Initialization completed.", sw.Elapsed);
+                    if (!sw.IsRunning)
+                    {
+                        _logger.LogPerformance(TraceLevel, "Initialization completed.", sw.Elapsed);
+                    }
+                    else
+                    {
+                        _logger.LogWarning(TraceLevel, $"Initialization failed.");
+                    }
                 }
+                sw = null;
             }
         }
 
@@ -176,17 +177,17 @@ namespace Rubberduck.Main
                 _logger.LogWarning("Could not find CultureInfo for locale string '{locale}'. InvariantCulture ('en-US') will be used.", initialSettings.GeneralSettings.Locale);
             }
 
-            try
-            {
-                //if (InitialSettings.GeneralSettings.SetDpiUnaware)
-                //{
-                //    SHCore.SetProcessDpiAwareness(PROCESS_DPI_AWARENESS.Process_DPI_Unaware);
-                //}
-            }
-            catch (Exception)
-            {
-                Debug.Assert(false, "Could not set DPI awareness.");
-            }
+            //try
+            //{
+            //    //if (InitialSettings.GeneralSettings.SetDpiUnaware)
+            //    //{
+            //    //    SHCore.SetProcessDpiAwareness(PROCESS_DPI_AWARENESS.Process_DPI_Unaware);
+            //    //}
+            //}
+            //catch (Exception)
+            //{
+            //    Debug.Assert(false, "Could not set DPI awareness.");
+            //}
 
             return initialSettings;
         }
@@ -212,46 +213,40 @@ namespace Rubberduck.Main
             }
         }
 
-        private void ShowRubberduckEditorCommand_Executed(object? sender, EventArgs args)
-        {
-            var clientProcessId = Environment.ProcessId;
-            StartEditorClient(clientProcessId, string.Empty, InitialSettings.LanguageClientSettings.StartupSettings);
-        }
+        //private void StartEditorClient(int clientProcessId, string projectPath, LanguageClientStartupSettings settings)
+        //{
+        //    _editorServerProcess = new EditorServerProcess(_logger).Start(clientProcessId, settings, HandleServerExit);
+        //    EditorClientOptions clientOptions;
+        //    switch (settings.ServerTransportType)
+        //    {
+        //        case TransportType.StdIO:
+        //            clientOptions = EditorClientService.ConfigureEditorClient(Assembly.GetExecutingAssembly(), _editorServerProcess, clientProcessId, InitialSettings, projectPath);
+        //            break;
 
-        private void StartEditorClient(int clientProcessId, string projectPath, LanguageClientStartupSettings settings)
-        {
-            if (_showEditorCommand is not null)
-            {
-                _showEditorCommand.Executed -= ShowRubberduckEditorCommand_Executed;
-            }
+        //        case TransportType.Pipe:
+        //            var name = settings.ServerPipeName ?? ServerPlatformSettings.LanguageServerDefaultPipeName;
+        //            _editorServerPipeStream = new NamedPipeClientStream(".", $"{name}__{Env.ProcessId}", PipeDirection.InOut, PipeOptions.Asynchronous);
+        //            //await _editorServerPipeStream.ConnectAsync(Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds)); // stuck here
+        //            clientOptions = EditorClientService.ConfigureEditorClient(Assembly.GetExecutingAssembly(), _editorServerPipeStream, clientProcessId, InitialSettings, projectPath);
+        //            break;
 
-            _editorServerProcess = new EditorServerProcess(_logger).Start(clientProcessId, settings);
-            EditorClientOptions clientOptions;
-            switch (settings.ServerTransportType)
-            {
-                case TransportType.StdIO:
-                    clientOptions = EditorClientService.ConfigureEditorClient(Assembly.GetExecutingAssembly(), _editorServerProcess, clientProcessId, InitialSettings, projectPath);
-                    break;
+        //        default:
+        //            throw new NotSupportedException();
+        //    }
 
-                case TransportType.Pipe:
-                    var name = settings.ServerPipeName ?? ServerPlatformSettings.LanguageServerDefaultPipeName;
-                    _editorServerPipeStream = new NamedPipeClientStream(".", $"{name}__{Environment.ProcessId}", PipeDirection.InOut, PipeOptions.Asynchronous);
-                    //await _editorServerPipeStream.ConnectAsync(Convert.ToInt32(TimeSpan.FromSeconds(10).TotalMilliseconds)); // stuck here
-                    clientOptions = EditorClientService.ConfigureEditorClient(Assembly.GetExecutingAssembly(), _editorServerPipeStream, clientProcessId, InitialSettings, projectPath);
-                    break;
+        //    if (_editorServerProcess!.HasExited)
+        //    {
+        //        throw new ServerStartupFailedException(_editorServerProcess);
+        //    }
 
-                default:
-                    throw new NotSupportedException();
-            }
+        //    _editorClient = EditorClient.Create(clientOptions, _serviceScope.ServiceProvider);
+        //    _editorClientInitializeTask = _editorClient.Initialize(_tokenSource.Token);
+        //}
 
-            if (_editorServerProcess!.HasExited)
-            {
-                throw new ServerStartupFailedException(_editorServerProcess);
-            }
-
-            _editorClient = EditorClient.Create(clientOptions, _serviceScope.ServiceProvider);
-            _editorClientInitializeTask = _editorClient.Initialize(_tokenSource.Token);
-        }
+        //private void HandleServerExit(object? sender, EventArgs e)
+        //{
+        //    _logger.LogWarning("EditorServer process has exited.");
+        //}
 
         //private async Task StartTelemetryClientAsync(int clientProcessId, string projectPath, TelemetryServerSettings settings)
         //{
@@ -322,10 +317,6 @@ namespace Rubberduck.Main
 
             _logger.LogInformation("Rubberduck is shutting down...");
 
-            RunShutdownAction("Sending shutdown notification to Rubberduck Editor...", () =>
-            {
-                _editorClient?.SendShutdown(new());
-            });
             RunShutdownAction("Terminating VbeProvider...", () =>
             {
                 VbeProvider.Terminate();
@@ -351,13 +342,10 @@ namespace Rubberduck.Main
                 AppDomain.CurrentDomain.AssemblyResolve -= LoadFromSameFolder;
                 AppDomain.CurrentDomain.UnhandledException -= HandleAppDomainException;
             });
-            RunShutdownAction("Sending exit notification to Rubberduck Editor...", () =>
-            {
-                _editorClient?.SendExit(new());
-            });
             RunShutdownAction("Disposing Rubberduck Editor task...", () =>
             {
                 _editorClientInitializeTask?.Dispose();
+                _editorClient?.Dispose();
             });
 
             _isInitialized = false;

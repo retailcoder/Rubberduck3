@@ -1,4 +1,5 @@
 ﻿using Rubberduck.InternalApi.ServerPlatform;
+using Rubberduck.SettingsProvider.Model.LanguageServer;
 using Rubberduck.SettingsProvider.Model.ServerStartup;
 using System;
 
@@ -10,12 +11,14 @@ namespace Rubberduck.SettingsProvider.Model.UpdateServer
     public record class UpdateServerStartupSettings : ServerStartupSettings
     {
         public static readonly RubberduckSetting[] DefaultSettings = GetDefaultSettings(ServerPlatformSettings.UpdateServerDefaultPipeName,
-            @$"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\Rubberduck\Update\{ServerPlatformSettings.UpdateServerExecutable}");
+            @$"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\Rubberduck\Update");
 
         public UpdateServerStartupSettings()
         {
             SettingDataType = SettingDataType.SettingGroup;
             DefaultValue = DefaultSettings;
         }
+
+        public static UpdateServerStartupSettings Default { get; } = new() { DefaultValue = DefaultSettings, Value = DefaultSettings };
     }
 }

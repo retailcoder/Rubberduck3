@@ -10,12 +10,14 @@ namespace Rubberduck.SettingsProvider.Model.TelemetryServer
     public record class TelemetryServerStartupSettings : ServerStartupSettings
     {
         public static RubberduckSetting[] DefaultSettings { get; } = GetDefaultSettings(ServerPlatformSettings.TelemetryServerDefaultPipeName,
-            @$"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\Rubberduck\Telemetry\{ServerPlatformSettings.TelemetryServerExecutable}");
+            @$"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\Rubberduck\Telemetry");
 
         public TelemetryServerStartupSettings()
         {
             SettingDataType = SettingDataType.SettingGroup;
             DefaultValue = DefaultSettings;
         }
+
+        public static TelemetryServerStartupSettings Default { get; } = new() { DefaultValue = DefaultSettings, Value = DefaultSettings };
     }
 }

@@ -1,12 +1,13 @@
 ﻿using Dragablz;
-using Rubberduck.InternalApi.Model.Abstract;
+using Rubberduck.UI.Shell.StatusBar;
+using Rubberduck.UI.Windows;
 using System;
 
 namespace Rubberduck.Editor.Shell
 {
-    public class ChildWindowViewModel : IWindowViewModel
+    public class ChildWindowViewModel : IDragablzWindowViewModel
     {
-        public ChildWindowViewModel(IInterTabClient interTabClient, IStatusBarViewModel statusBar, object partition)
+        public ChildWindowViewModel(IInterTabClient interTabClient, IShellStatusBarViewModel statusBar, string partition)
         {
             InterTabClient = interTabClient;
             Partition = partition;
@@ -16,11 +17,11 @@ namespace Rubberduck.Editor.Shell
         }
 
         public string Title { get; }
-        public IStatusBarViewModel StatusBar { get; }
+        public IShellStatusBarViewModel StatusBar { get; }
 
-        public object /*IInterTabClient*/ InterTabClient { get; }
+        public IInterTabClient InterTabClient { get; }
 
-        public object Partition { get; }
+        public string Partition { get; }
 
         public void ClosingTabItemHandler(object sender, EventArgs e)
         {

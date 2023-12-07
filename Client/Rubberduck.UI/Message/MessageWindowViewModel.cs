@@ -1,18 +1,20 @@
 ﻿using Microsoft.Extensions.Logging;
 using Rubberduck.UI.Command;
+using Rubberduck.UI.Command.SharedHandlers;
+using Rubberduck.UI.Windows;
 using System;
 using System.Linq;
 
 namespace Rubberduck.UI.Message
 {
-    public class MessageWindowViewModel : ViewModelBase, IMessageWindowViewModel
+    public class MessageWindowViewModel : WindowViewModel, IMessageWindowViewModel
     {
         /// <summary>
         /// Parameterless constructor for designer view.
         /// </summary>
         public MessageWindowViewModel()
         {
-            _actions = new[] { new AcceptMessageActionCommand(null!, null!, MessageAction.CloseAction) };
+            _actions = new[] { new AcceptMessageActionCommand(null!, MessageAction.CloseAction) };
         }
 
         public MessageWindowViewModel(MessageModel model, MessageActionCommand[] actions)
@@ -29,7 +31,6 @@ namespace Rubberduck.UI.Message
         public string Key { get; init; } = "DT-Message";
         public string Message { get; init; } = "Message goes here";
         public string? Verbose { get; init; } = null;
-        public string Title { get; init; } = "Title";
         public LogLevel Level { get; init; } = LogLevel.Information;
 
         private MessageActionCommand[] _actions;
@@ -44,7 +45,7 @@ namespace Rubberduck.UI.Message
                     OnPropertyChanged();
                     if (_actions?.Length > 0)
                     {
-                        SelectedAction = _actions.First(e => e.MessageAction.IsDefaultAction).MessageAction;
+                        SelectedAction = _actions.Single(e => e.MessageAction.IsDefaultAction).MessageAction;
                     }
                     else
                     {
@@ -53,6 +54,12 @@ namespace Rubberduck.UI.Message
                 }
             }
         }
+
+        public override bool ShowAcceptButton => Actions.Any(action => action.MessageAction.IsDefaultAction);
+        public override string AcceptButtonText => Actions.SingleOrDefault(action => action.MessageAction.IsDefaultAction)?.MessageAction.Text ?? base.AcceptButtonText;
+        
+        public override bool ShowCancelButton => Actions.Any(action => !action.MessageAction.IsDefaultAction);
+        public override string CancelButtonText => Actions.FirstOrDefault(action => !action.MessageAction.IsDefaultAction)?.MessageAction.Text ?? base.CancelButtonText;
 
         private MessageAction? _action;
 

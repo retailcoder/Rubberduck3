@@ -1,5 +1,5 @@
-﻿using Rubberduck.InternalApi.Model.Abstract;
-using Rubberduck.UI;
+﻿using Rubberduck.UI;
+using Rubberduck.UI.Splash;
 using System;
 
 namespace Rubberduck.Editor.Splash
