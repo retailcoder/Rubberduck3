@@ -46,6 +46,13 @@ namespace Rubberduck.UI.Services
             {
                 await Task.Run(() => _app
                     .StartupAsync(Settings.LanguageServerSettings.StartupSettings, uri)
+                    .ContinueWith(t =>
+                    {
+                        if (t.Exception != null)
+                        {
+                            LogException(t.Exception, "Task was faulted.");
+                        }
+                    }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default)
                     .ContinueWith(t => OnWorkspaceOpened(uri), CancellationToken.None, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default)
                 , CancellationToken.None);
             }
