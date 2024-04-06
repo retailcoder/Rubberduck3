@@ -1,4 +1,5 @@
-﻿using OmniSharp.Extensions.LanguageServer.Protocol.Client;
+﻿using AsyncAwaitBestPractices;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Rubberduck.InternalApi.Extensions;
@@ -39,7 +40,7 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
         Title = state.Name;
         SettingKey = nameof(EditorSettings);
 
-        IdleTimer = new Timer(IdleTimerCallback, null, Convert.ToInt32(IdleDelay.TotalMicroseconds), Timeout.Infinite);
+        IdleTimer = new Timer(IdleTimerCallback, null, Convert.ToInt32(IdleDelay.TotalMilliseconds), Timeout.Infinite);
     }
 
     /// <summary>
@@ -50,11 +51,14 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
     private TimeSpan IdleDelay => UIServiceHelper.Instance!.Settings.EditorSettings.IdleTimerDuration;
     private async void IdleTimerCallback(object? _)
     {
-        Status.IsWriting = false;
-        DisableIdleTimer();
+        if (Status.IsWriting)
+        {
+            Status.IsWriting = false;
+            DisableIdleTimer();
 
-        NotifyDocumentChanged();
-        await Task.Delay(IdleDelay / 2); // arbitrary - we likely need a few dozen milliseconds, tops.
+            NotifyDocumentChanged();
+            await Task.Delay(IdleDelay / 2); // arbitrary - we likely need a few dozen milliseconds, tops.
+        }
 
         await RequestDiagnosticsAsync();
         await RequestFoldingsAsync();
@@ -147,6 +151,13 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
 
         _service.LogDebug($"Notifying server of document changes.", $"DocumentId: {DocumentState.Id} Version: {DocumentState.Version}");
         LanguageClient.DidChangeTextDocument(request);
+
+        Task.Delay(1000).ContinueWith(async t =>
+        {
+            _service.LogDebug($"Requesting foldings and diagnostics...", $"DocumentId: {DocumentState.Id} Version: {DocumentState.Version}");
+            await RequestFoldingsAsync();
+            await RequestDiagnosticsAsync();
+        }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).SafeFireAndForget();
     }
 
     private async Task RequestDiagnosticsAsync()

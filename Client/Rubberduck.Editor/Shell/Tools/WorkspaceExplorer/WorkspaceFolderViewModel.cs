@@ -2,6 +2,7 @@
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
+using System.Linq;
 
 namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 {
@@ -12,7 +13,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             return new WorkspaceFolderViewModel
             {
                 Uri = new WorkspaceFolderUri(model.Uri, workspaceRoot),
-                Name = model.Name,
+                Name = model.Name.Split('.').Last(),
                 IsInProject = true,
             };
         }

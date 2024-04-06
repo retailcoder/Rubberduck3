@@ -70,7 +70,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             var project = _service.ProjectFiles.SingleOrDefault(file => file.Uri.LocalPath == e.Uri.LocalPath);
             if (project != null)
             {
-                _dispatcher.Invoke(() => Workspaces.Add(WorkspaceViewModel.FromModel(project, _service)));
+                Load(project);
             }
         }
 
@@ -90,9 +90,13 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
         public ObservableCollection<IWorkspaceViewModel> Workspaces { get; } = [];
 
-        public void Load(ProjectFile workspace)
+        public void Load(ProjectFile project)
         {
-            Workspaces.Add(WorkspaceViewModel.FromModel(workspace, _service));
+            var workspace = WorkspaceViewModel.FromModel(project, _service);
+            _dispatcher.Invoke(() =>
+            {
+                Workspaces.Add(workspace);
+            });
         }
     }
 }
