@@ -57,13 +57,18 @@ public class DocumentParserSection : WorkspaceDocumentSection
                 if (e.Diagnostics.Any())
                 {
                     LogInformation($"💡 Publishing {e.Diagnostics.Count} document diagnostics.", $"\n{string.Join("\n", e.Diagnostics.Select(diagnostic => $"\t[{diagnostic.Code!.Value.String}] {diagnostic.Message} ({diagnostic.Severity.ToString()!.ToUpperInvariant()})"))}");
-                    _server.TextDocument.PublishDiagnostics(
+                    _server?.TextDocument.PublishDiagnostics(
                         new()
                         {
                             Uri = e.Id.Uri,
                             Version = e.Version,
                             Diagnostics = new(e.Diagnostics)
                         });
+
+                    if (_server is null)
+                    {
+                        LogDebug("ILanguageServer service was not set.");
+                    }
                 }
             });
 

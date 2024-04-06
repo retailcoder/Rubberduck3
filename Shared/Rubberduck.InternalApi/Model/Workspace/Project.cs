@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json.Serialization;
 
@@ -26,7 +27,7 @@ public record class Project
     /// <summary>
     /// Project references.
     /// </summary>
-    public Reference[] References { get; set; } = Array.Empty<Reference>();
+    public Reference[] References { get; set; } = [Reference.VBStandardLibrary];
     /// <summary>
     /// Project source files that synchronize with a host VBA project.
     /// </summary>

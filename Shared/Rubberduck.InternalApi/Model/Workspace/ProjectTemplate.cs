@@ -9,5 +9,5 @@ public record class ProjectTemplate
     public string Rubberduck { get; init; } = "3.0";
     public string Name { get; init; } = "EmptyProject";
 
-    public ProjectFile ProjectFile { get; init; }
+    public ProjectFile ProjectFile { get; init; } = new();
 }

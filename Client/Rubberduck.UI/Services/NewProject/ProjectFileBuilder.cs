@@ -50,7 +50,7 @@ namespace Rubberduck.UI.Services.NewProject
             _uri = new Uri(_fileSystem.Path.Combine(viewModel.WorkspaceLocation, viewModel.ProjectName));
             _name = viewModel.ProjectName;
 
-            if (viewModel.SelectedProjectTemplate != null)
+            if (viewModel.SelectedProjectTemplate?.ProjectFile != null)
             {
                 return WithTemplate(viewModel.SelectedProjectTemplate)
                     .WithProjectName(viewModel.ProjectName);

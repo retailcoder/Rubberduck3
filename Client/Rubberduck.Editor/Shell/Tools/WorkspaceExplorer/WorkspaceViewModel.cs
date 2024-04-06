@@ -25,7 +25,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             var sourceFiles = model.VBProject.Modules.Select(e => WorkspaceSourceFileViewModel.FromModel(e, model.Uri) as WorkspaceTreeNodeViewModel);
             var otherFiles = model.VBProject.OtherFiles.Select(e => WorkspaceFileViewModel.FromModel(e, model.Uri) as WorkspaceTreeNodeViewModel);
             var projectFolders = model.VBProject.Folders.Select(e => WorkspaceFolderViewModel.FromModel(e, model.Uri)).OrderBy(e => e.Name).ToList();
-            var rootFolders = projectFolders.Where(e => ((WorkspaceFolderUri)e.Uri).RelativeUriString!.Count(c => c == System.IO.Path.DirectorySeparatorChar) == 1);
+            var rootFolders = projectFolders.Where(e => ((WorkspaceFolderUri)e.Uri).RelativeUriString!.Count(c => c == '/') == 0);
 
             var projectFilesByFolder = sourceFiles.Concat(otherFiles)
                 .GroupBy(e => ((WorkspaceFileUri)e.Uri).WorkspaceFolder.RelativeUriString ?? WorkspaceUri.SourceRootName)
@@ -135,7 +135,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
         public string Name { get; set; } = string.Empty;
         public WorkspaceUri Uri { get; set; } = default!; // FIXME this will come back to bite me...
-        public string FileName => Uri.GetComponents(UriComponents.Path, UriFormat.SafeUnescaped).Split('/').Last();
+        public string FileName => Uri.GetComponents(UriComponents.Path, UriFormat.Unescaped).Split('/').Last();
 
         public void AddChildNode(IWorkspaceTreeNode childNode)
         {

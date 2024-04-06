@@ -44,17 +44,20 @@ namespace Rubberduck.UI.Services
         {
             if (_app.LanguageClient is null)
             {
-                await Task.Run(() => _app
-                    .StartupAsync(Settings.LanguageServerSettings.StartupSettings, uri)
-                    .ContinueWith(t =>
+                var startup = Task.Run(() => _app.StartupAsync(Settings.LanguageServerSettings.StartupSettings, uri));
+                await startup.ConfigureAwait(false);
+
+                if (startup.IsCompletedSuccessfully)
+                {
+                    await OnWorkspaceOpenedAsync(uri).ConfigureAwait(false);
+                }
+                else
+                {
+                    if (startup.Exception is Exception e)
                     {
-                        if (t.Exception != null)
-                        {
-                            LogException(t.Exception, "Task was faulted.");
-                        }
-                    }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default)
-                    .ContinueWith(t => OnWorkspaceOpened(uri), CancellationToken.None, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default)
-                , CancellationToken.None);
+                        LogException(e, "Task was faulted.");
+                    }
+                }
             }
             else
             {

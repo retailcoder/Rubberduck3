@@ -708,7 +708,7 @@
         <DockPanel>
             <Canvas Background="Transparent" DockPanel.Dock="Left">
                 <Image x:Name="CanvasIcon" 
-                           Source="{Binding Icon, RelativeSource={RelativeSource AncestorType=shell:FlatButton, Mode=FindAncestor}}"
+                           Source="{TemplateBinding shell:FlatButton.Icon}"
                            Height="{TemplateBinding Height}" Width="{TemplateBinding Width}" Stretch="Uniform" 
                            HorizontalAlignment="Center" VerticalAlignment="Center" />
 

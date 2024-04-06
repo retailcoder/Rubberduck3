@@ -75,8 +75,10 @@ public partial class SourceCodeEditorControl : UserControl
 
     private void ExecuteGoToPageCommand(object? parameter)
     {
-        var uri = (Uri)parameter;
-        new WebNavigator().Navigate(uri);
+        if (parameter is Uri uri)
+        {
+            new WebNavigator().Navigate(uri);
+        }
     }
 
     private void OnMouseHover(object sender, MouseEventArgs e)

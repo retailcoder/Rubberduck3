@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO.Abstractions;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -35,7 +36,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             Workspaces = new(service.ProjectFiles.Select(workspace => WorkspaceViewModel.FromModel(workspace, _service)));
             OpenDocumentCommand = openDocumentCommand;
             
-            _dispatcher = Dispatcher.CurrentDispatcher;
+            _dispatcher = Application.Current.Dispatcher;
             
             SettingKey = nameof(WorkspaceExplorerSettings);
 
