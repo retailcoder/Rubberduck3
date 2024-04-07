@@ -1,5 +1,7 @@
 ﻿using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using System;
+using System.Linq;
 
 namespace Rubberduck.InternalApi.Model.Workspace;
 
@@ -8,7 +10,7 @@ public record class File
     public static File FromWorkspaceUri(WorkspaceFileUri workspaceUri) => new() 
     {
         Name = workspaceUri.FileNameWithoutExtension,
-        Uri = workspaceUri.ToString(),
+        Uri = workspaceUri.RelativeUriString!
     };
 
     /// <summary>
@@ -26,6 +28,11 @@ public record class File
     /// <c>true</c> if the module should open when the workspace is loaded in the Rubberduck Editor.
     /// </summary>
     public bool IsAutoOpen { get; set; }
+
+    /// <summary>
+    /// <c>true</c> if the <c>Uri</c> has a file extension that is handled by the specified language.
+    /// </summary>
+    public bool HasSourceFileExtension(SupportedLanguage language) => language.FileTypes.Any(e => Uri.EndsWith(e[1..]));
 
     /// <summary>
     /// Gets a strongly-typed relative <c>WorkspaceUri</c> for the specified absolute workspace root.

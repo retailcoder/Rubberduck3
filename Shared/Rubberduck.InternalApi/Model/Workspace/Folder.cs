@@ -8,7 +8,7 @@ public record class Folder
     public static Folder FromWorkspaceUri(WorkspaceFolderUri workspaceUri) => new()
     {
         Name = workspaceUri.FolderName,
-        Uri = workspaceUri.ToString()
+        Uri = workspaceUri.RelativeUriString!
     };
 
     /// <summary>
