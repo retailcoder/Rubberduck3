@@ -4,13 +4,14 @@ using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection.Emit;
 
 namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 {
     public class WorkspaceTreeNodeViewModel : ViewModelBase, IWorkspaceTreeNode
     {
         private string _name = null!;
-        public string Name
+        public virtual string Name
         {
             get => _name;
             set
@@ -22,6 +23,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 }
             }
         }
+
+        public virtual string DisplayName => Name;
 
         private WorkspaceUri _uri = null!;
         public WorkspaceUri Uri

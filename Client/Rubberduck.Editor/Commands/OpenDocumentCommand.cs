@@ -122,7 +122,7 @@ namespace Rubberduck.Editor.Commands
                 }
                 else
                 {
-                    throw new FileNotFoundException($"File '{uri}' is present in the workspace folder, but not included in this workspace. Include it in the project?");
+                   // throw new FileNotFoundException($"File '{uri}' is present in the workspace folder, but not included in this workspace. Include it in the project?");
                 }
             }
 

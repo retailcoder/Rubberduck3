@@ -6,6 +6,7 @@ using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 
 namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
@@ -14,7 +15,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
     {
         public static WorkspaceViewModel FromModel(ProjectFile model, IAppWorkspacesService service)
         {
-            var vm = new WorkspaceViewModel
+            var vm = new WorkspaceViewModel(service)
             {
                 Name = model.VBProject.Name,
                 Uri = new WorkspaceFolderUri(null, new Uri(service.FileSystem.Path.Combine(model.Uri.LocalPath, WorkspaceUri.SourceRootName + "\\"))),
@@ -29,7 +30,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
             var projectFilesByFolder = sourceFiles.Concat(otherFiles)
                 .GroupBy(e => ((WorkspaceFileUri)e.Uri).WorkspaceFolder.RelativeUriString ?? WorkspaceUri.SourceRootName)
-                .ToDictionary(e => System.IO.Path.TrimEndingDirectorySeparator(e.Key), e => e.AsEnumerable());
+                .ToDictionary(e => Path.TrimEndingDirectorySeparator(e.Key), e => e.AsEnumerable());
 
             foreach (var folder in rootFolders)
             {
@@ -67,16 +68,27 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 folder.AddChildNode(subFolder);
             }
 
+            var projectFolderPaths = projectFolders.Select(e => e.Uri.AbsoluteLocation.LocalPath).ToHashSet();
+            foreach (var subFolder in Directory.EnumerateDirectories(localPath))
+            {
+                if (!projectFolderPaths.Contains(subFolder))
+                {
+                    var ghostUri = new WorkspaceFolderUri(subFolder, workspaceFolderUri.WorkspaceRoot);
+                    var node = new WorkspaceFolderViewModel { IsInProject = false, Uri = ghostUri, Name = ghostUri.FolderName };
+                    AddFolderContent(service, node, projectFilesByFolder, projectFolders);
+
+                    folder.AddChildNode(node);
+                    AddFolderFileNodes(service, node, [], []);
+                }
+            }
+
+            // add the files last to keep folders together
             if (projectFilesByFolder.TryGetValue(key, out var projectFiles) && projectFiles is not null)
             {
-                var projectFilePaths = projectFiles.Select(file => ((WorkspaceFileUri)file.Uri).AbsoluteLocation.LocalPath).ToHashSet();                
+                var projectFilePaths = projectFiles.Select(file => ((WorkspaceFileUri)file.Uri).AbsoluteLocation.LocalPath).ToHashSet();
                 AddFolderFileNodes(service, folder, projectFiles, projectFilePaths);
 
                 projectFilesByFolder.Remove(key);
-            }
-            else
-            {
-                // folder is empty?
             }
         }
 
@@ -109,11 +121,17 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             var results = service.FileSystem.Directory.GetFiles(((WorkspaceFolderUri)folder.Uri).AbsoluteLocation.LocalPath).Except(projectFilePaths)
                         .Select(file => new WorkspaceFileViewModel
                         {
-                            Uri = new WorkspaceFileUri(file[workspaceRoot.LocalPath.Length..], workspaceRoot),
+                            Uri = new WorkspaceFileUri(file.Replace($"\\{WorkspaceUri.SourceRootName}", string.Empty)[workspaceRoot.LocalPath.Length..], workspaceRoot),
                             Name = service.FileSystem.Path.GetFileNameWithoutExtension(file),
                             IsInProject = false // file exists in a project folder but is not included in the project
                         });
             return results;
+        }
+
+        private readonly IAppWorkspacesService _workspaces;
+        public WorkspaceViewModel(IAppWorkspacesService workspaces)
+        {
+            _workspaces = workspaces;
         }
 
         private bool _isFileSystemWatcherEnabled;
@@ -130,10 +148,55 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             }
         }
 
+        public void IncludeInProject(WorkspaceUri uri)
+        {
+            var node = FindNode(uri, this);
+            if (node != null)
+            {
+                node.IsInProject = true;
+            }
+        }
+
+        private IWorkspaceTreeNode? FindNode(WorkspaceUri uri, IWorkspaceTreeNode root)
+        {
+            var target = uri.AbsoluteLocation.LocalPath;
+            if (root.Uri.AbsoluteLocation.LocalPath == target)
+            {
+                return root;
+            }
+
+            foreach (var node in root.Children)
+            {
+                if (node.Uri.AbsoluteLocation.LocalPath == target)
+                {
+                    return node;
+                }
+                if (node.Children.Count > 0)
+                {
+                    foreach (var child in node.Children)
+                    {
+                        return FindNode(uri, child);
+                    }
+                }
+            }
+
+            return default;
+        }
+
+        public void ExcludeFromProject(WorkspaceUri uri)
+        {
+            var node = FindNode(uri, this);
+            if (node != null)
+            {
+                node.IsInProject = false;
+            }
+        }
+
         private readonly ObservableCollection<IWorkspaceTreeNode> _children = new();
         public ObservableCollection<IWorkspaceTreeNode> Children => _children;
 
         public string Name { get; set; } = string.Empty;
+        public string DisplayName => Name;
         public WorkspaceUri Uri { get; set; } = default!; // FIXME this will come back to bite me...
         public string FileName => Uri.GetComponents(UriComponents.Path, UriFormat.Unescaped).Split('/').Last();
 
@@ -179,6 +242,20 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 if (_isExpanded != value)
                 {
                     _isExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _isInProject;
+        public bool IsInProject
+        {
+            get => _isInProject;
+            set
+            {
+                if (_isInProject != value)
+                {
+                    _isInProject = value;
                     OnPropertyChanged();
                 }
             }

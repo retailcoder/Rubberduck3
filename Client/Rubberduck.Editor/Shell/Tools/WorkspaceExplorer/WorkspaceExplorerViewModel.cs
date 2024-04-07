@@ -1,14 +1,17 @@
 ﻿using Rubberduck.Editor.Commands;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
+using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model.Editor.Tools;
+using Rubberduck.ServerPlatform.Model.Telemetry;
 using Rubberduck.UI;
 using Rubberduck.UI.Command.SharedHandlers;
 using Rubberduck.UI.Services.Abstract;
 using Rubberduck.UI.Shell;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO.Abstractions;
@@ -47,6 +50,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
             CommandBindings = [
                 new CommandBinding(WorkspaceExplorerCommands.OpenFileCommand, openDocumentCommand.ExecutedRouted(), openDocumentCommand.CanExecuteRouted()),
+                new CommandBinding(WorkspaceExplorerCommands.IncludeFileCommand, ExecuteIncludeUriCommand),
+                new CommandBinding(WorkspaceExplorerCommands.ExcludeFileCommand, ExecuteExcludeUriCommand),
             ];
         }
 
@@ -55,6 +60,106 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         public ICommand OpenDocumentCommand { get; }
 
         private Dispatcher _dispatcher;
+
+        private void ExecuteIncludeUriCommand(object sender, ExecutedRoutedEventArgs e)
+        {
+            ProjectFile? project = default;
+            WorkspaceUri? uri = default;
+
+            if (e.Parameter is WorkspaceFileUri fileUri)
+            {
+                // TODO prompt for confirmation
+                project = _service.ProjectFiles.SingleOrDefault(e => e.Uri == fileUri.WorkspaceRoot);
+                if (project != null)
+                {
+                    var file = File.FromWorkspaceUri(fileUri);
+                    if (file.HasSourceFileExtension(SupportedLanguage.VBA) || file.HasSourceFileExtension(SupportedLanguage.VB6))
+                    {
+                        var module = new Module { Name = fileUri.Name, Uri = fileUri.AbsoluteLocation.LocalPath };
+                        project.VBProject.Modules = project.VBProject.Modules.Append(module).ToArray();
+                    }
+                    else
+                    {
+                        project.VBProject.OtherFiles = project.VBProject.OtherFiles.Append(file).ToArray();
+                    }
+                    uri = file.GetWorkspaceUri(fileUri.WorkspaceRoot);
+                }
+            }
+            else if (e.Parameter is WorkspaceFolderUri folderUri)
+            {
+                // TODO prompt for confirmation for folder uri: AcceptFolderOnly | AcceptRecursiveContent
+                project = _service.ProjectFiles.SingleOrDefault(e => e.Uri == folderUri.WorkspaceRoot);
+                if (project != null)
+                {
+                    var folder = Folder.FromWorkspaceUri(folderUri);
+                    project.VBProject.Folders = project.VBProject.Folders.Append(folder).ToArray();
+                }
+            }
+
+            if (uri != null)
+            {
+                var workspace = Workspaces.SingleOrDefault(e => e.Uri.SourceRoot.LocalPath == uri.SourceRoot.LocalPath);
+                
+                if (workspace is WorkspaceViewModel vm)
+                {
+                    vm.IncludeInProject(uri);
+                }
+            }
+        }
+
+        private void ExecuteExcludeUriCommand(object sender, ExecutedRoutedEventArgs e)
+        {
+            // TODO prompt for confirmation
+
+            ProjectFile? project = default;
+            WorkspaceUri? uri = default;
+
+            if (e.Parameter is WorkspaceFileUri fileUri)
+            {
+                project = _service.ProjectFiles.SingleOrDefault(e => e.Uri == fileUri.WorkspaceRoot);
+                if (project != null)
+                {
+                    var file = project.VBProject.OtherFiles.SingleOrDefault(e => e.Uri == fileUri.AbsoluteLocation.LocalPath);
+                    var srcFile = project.VBProject.Modules.SingleOrDefault(e => e.Uri == fileUri.AbsoluteLocation.LocalPath);
+
+                    if (file != null)
+                    {
+                        var files = project.VBProject.OtherFiles.Except([file]);
+                        project.VBProject.OtherFiles = files.ToArray();
+                        uri = fileUri;
+                    }
+                    else if (srcFile != null)
+                    {
+                        var srcFiles = project.VBProject.Modules.Except([srcFile]);
+                        project.VBProject.Modules = srcFiles.ToArray();
+                        uri = fileUri;
+                    }
+                }
+            }
+            else if (e.Parameter is WorkspaceFolderUri folderUri)
+            {
+                project = _service.ProjectFiles.SingleOrDefault(e => e.Uri == folderUri.WorkspaceRoot);
+                if (project != null)
+                {
+                    var folder = project.VBProject.Folders.SingleOrDefault(e => e.Uri == folderUri.AbsoluteLocation.LocalPath);
+                    if (folder != null)
+                    {
+                        var folders = project.VBProject.Folders.Except([folder]);
+                        project.VBProject.Folders = folders.ToArray();
+                        uri = folderUri;
+                    }
+                }
+            }
+
+            if (uri != null)
+            {
+                var workspace = Workspaces.SingleOrDefault(e => e.Uri.WorkspaceRoot == uri.WorkspaceRoot);
+                if (workspace is WorkspaceViewModel vm)
+                {
+                    vm.ExcludeFromProject(uri);
+                }
+            }
+        }
 
         private void OnWorkspaceClosed(object? sender, WorkspaceServiceEventArgs e)
         {

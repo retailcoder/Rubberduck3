@@ -183,6 +183,12 @@
   <data name="WorkspaceExplorerCommands_DeleteUriCommandText" xml:space="preserve">
     <value>Delete</value>
   </data>
+  <data name="WorkspaceExplorerCommands_ExcludeFileCommandText" xml:space="preserve">
+    <value>Exclude from Project</value>
+  </data>
+  <data name="WorkspaceExplorerCommands_IncludeFileCommandText" xml:space="preserve">
+    <value>Include in Project</value>
+  </data>
   <data name="WorkspaceExplorerCommands_OpenFileCommandText" xml:space="preserve">
     <value>Open</value>
   </data>

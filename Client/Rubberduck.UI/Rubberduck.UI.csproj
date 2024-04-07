@@ -228,6 +228,7 @@
     <None Remove="Resources\FontAwesome\windows-32.png" />
     <None Remove="Resources\FontAwesome\windows.png" />
     <None Remove="Resources\FontAwesome\xmark-solid.png" />
+    <None Remove="Resources\FugueIcons\blue-document.png" />
     <None Remove="Resources\FugueIcons\blue-folder-horizontal-open.png" />
     <None Remove="Resources\FugueIcons\blue-folder-horizontal.png" />
     <None Remove="Resources\FugueIcons\blue-folder-search-result.png" />
@@ -502,6 +503,7 @@
     <Resource Include="Resources\FontAwesome\windows-32.png" />
     <Resource Include="Resources\FontAwesome\windows.png" />
     <Resource Include="Resources\FontAwesome\xmark-solid.png" />
+    <Resource Include="Resources\FugueIcons\blue-document.png" />
     <Resource Include="Resources\FugueIcons\blue-folder-horizontal-open.png" />
     <Resource Include="Resources\FugueIcons\blue-folder-horizontal.png" />
     <Resource Include="Resources\FugueIcons\blue-folder-search-result.png" />

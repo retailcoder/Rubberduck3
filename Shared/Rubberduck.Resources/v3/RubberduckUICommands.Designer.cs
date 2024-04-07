@@ -259,6 +259,24 @@ namespace Rubberduck.Resources.v3 {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Exclude from Project.
+        /// </summary>
+        public static string WorkspaceExplorerCommands_ExcludeFileCommandText {
+            get {
+                return ResourceManager.GetString("WorkspaceExplorerCommands_ExcludeFileCommandText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Include in Project.
+        /// </summary>
+        public static string WorkspaceExplorerCommands_IncludeFileCommandText {
+            get {
+                return ResourceManager.GetString("WorkspaceExplorerCommands_IncludeFileCommandText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Open.
         /// </summary>
         public static string WorkspaceExplorerCommands_OpenFileCommandText {
