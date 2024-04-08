@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Windows.Data;
@@ -21,6 +20,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             var vm = new WorkspaceViewModel(service)
             {
                 Name = model.VBProject.Name,
+                DisplayName = model.VBProject.Name,
                 Uri = new WorkspaceFolderUri(null, new Uri(service.FileSystem.Path.Combine(model.Uri.LocalPath, WorkspaceUri.SourceRootName + "\\"))),
                 //IsFileSystemWatcherEnabled = service.IsFileSystemWatcherEnabled(model.Uri),
                 IsExpanded = true
@@ -203,7 +203,9 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         public ObservableCollection<IWorkspaceTreeNode> Children => _children;
 
         public string Name { get; set; } = string.Empty;
-        public string DisplayName => Name;
+        public string DisplayName { get; set; }
+
+        public bool IsEditingName { get; set; }
 
         private bool _showFileExtensions;
         public bool ShowFileExtensions

@@ -95,7 +95,11 @@
                 <StackPanel Orientation="Horizontal">
                     <Image Source="{DynamicResource GhostDocumentIcon16}" />
 
-                    <Label Content="{Binding DisplayName}" Style="{DynamicResource NodeLabelStyle}" Foreground="{StaticResource ThemeTextInactiveColorBrush}" MouseDoubleClick="OnFileDoubleClick" />
+                    <TextBox IsReadOnly="{Binding IsEditingName, Converter={StaticResource InverseBoolConverter}}" 
+                             Text="{Binding DisplayName}" BorderThickness="0" VerticalContentAlignment="Center"
+                             Foreground="{StaticResource ThemeTextInactiveColorBrush}" 
+                             MouseDoubleClick="OnFileDoubleClick" />
+                    
                     <StackPanel.ContextMenu>
                         <ContextMenu>
                             <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.OpenFileCommand}" CommandParameter="{Binding Uri}" />
@@ -107,7 +111,7 @@
                     </StackPanel.ContextMenu>
                 </StackPanel>
             </DataTemplate>
-
+            
             <HierarchicalDataTemplate x:Key="GhostFolderTemplate" DataType="local:IWorkspaceFolderViewModel" ItemsSource="{Binding ItemsViewSource}">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="{StaticResource GhostFolderClosedIcon16}">

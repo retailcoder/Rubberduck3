@@ -15,7 +15,7 @@ namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
     {
         WorkspaceUri Uri { get; }
         string FileName { get; }
-        string DisplayName { get; }
+        string DisplayName { get; set; }
         bool ShowFileExtensions { get; set; }
         bool ShowAllFiles { get; set; }
         ICollectionView ItemsViewSource { get; }
@@ -25,6 +25,7 @@ namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
         bool IsSelected { get; set; }
         bool Filtered { get; set; }
         bool IsExpanded { get; set; }
+        bool IsEditingName { get; set; }
 
         public bool IsInProject { get; set; }
     }

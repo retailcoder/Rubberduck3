@@ -29,11 +29,24 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _name = value;
                     OnPropertyChanged();
+                    DisplayName = _name;
                 }
             }
         }
 
-        public virtual string DisplayName => Name;
+        private string _displayName;
+        public virtual string DisplayName 
+        {
+            get => _displayName;
+            set
+            {
+                if (_displayName != value)
+                {
+                    _displayName = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         private WorkspaceUri _uri = null!;
         public WorkspaceUri Uri

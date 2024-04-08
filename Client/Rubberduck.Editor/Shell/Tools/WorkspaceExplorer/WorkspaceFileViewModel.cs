@@ -18,9 +18,17 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             };
         }
 
-        public override string DisplayName => ShowFileExtensions 
+        public override string DisplayName 
+        {
+            get => ShowFileExtensions
             ? ((WorkspaceFileUri)Uri).FileName
             : ((WorkspaceFileUri)Uri).FileNameWithoutExtension;
+
+            set
+            {
+                Name = value;
+            }
+        } 
 
         private bool _isAutoOpen;
         public bool IsAutoOpen
