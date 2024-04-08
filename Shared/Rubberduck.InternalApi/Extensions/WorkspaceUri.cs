@@ -73,7 +73,7 @@ public abstract class WorkspaceUri : Uri
         // null -> root level
         if (string.IsNullOrWhiteSpace(relativeUriString))
         {
-            return '/' + WorkspaceUri.SourceRootName;
+            return "";
         }
 
         if (relativeUriString.StartsWith("file:///"))
@@ -104,7 +104,7 @@ public abstract class WorkspaceUri : Uri
             {
                 sane = stdSlashRelativeUriString.Substring(stdSlashRelativeUriString.IndexOf(stdSlashRoot.AbsolutePath) + stdSlashRoot.AbsolutePath.Length);
             }
-            return sane.TrimStart('/');
+            return sane.TrimStart('/').TrimStart('.').TrimStart('/');
         }
 
         return stdSlashRelativeUriString.TrimStart('/');
@@ -119,11 +119,13 @@ public abstract class WorkspaceUri : Uri
     public WorkspaceUri([StringSyntax("Uri")] string? relativeUriString, Uri workspaceRoot)
         : base('/' + SanitizedRelativeUriString(relativeUriString, workspaceRoot), UriKind.Relative)
     {
+        relativeUriString = SanitizedRelativeUriString(relativeUriString, workspaceRoot);
+
         _root = workspaceRoot;
         _srcRoot = new(System.IO.Path.Combine(workspaceRoot.LocalPath, WorkspaceUri.SourceRootName));
-        IsSrcRoot = relativeUriString is null;
+        IsSrcRoot = string.IsNullOrWhiteSpace(relativeUriString) || relativeUriString == "./" || relativeUriString == ".src/";
 
-        _relativeUri = SanitizedRelativeUriString(relativeUriString, workspaceRoot);
+        _relativeUri = relativeUriString;
         Name = System.IO.Path.GetFileName(_relativeUri);
     }
 

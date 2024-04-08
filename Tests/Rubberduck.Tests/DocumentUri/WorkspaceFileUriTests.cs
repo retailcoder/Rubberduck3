@@ -39,4 +39,17 @@ public class WorkspaceFileUriTests
         Assert.IsFalse(result.IsAbsoluteUri);
         Assert.AreEqual(expected.Replace("\\", "/"), result.ToString());
     }
+
+    [TestMethod]
+    [TestCategory("WorkspaceUri")]
+    public void GivenRelativePath_ExcludesSrcRootFromRelativeString()
+    {
+        var expected = $"SomeFolder\\Module1.bas";
+        var absolute = $"{_workspaceRoot}\\{WorkspaceUri.SourceRootName}\\{expected}";
+
+        var result = new SUT(absolute, _workspaceRoot);
+
+        Assert.IsFalse(result.IsAbsoluteUri);
+        Assert.AreEqual(expected.Replace("\\", "/"), result.ToString());
+    }
 }
