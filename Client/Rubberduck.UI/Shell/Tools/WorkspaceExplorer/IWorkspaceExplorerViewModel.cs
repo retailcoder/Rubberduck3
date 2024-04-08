@@ -12,5 +12,8 @@ namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
         ObservableCollection<IWorkspaceViewModel> Workspaces { get; }
 
         ICommand OpenDocumentCommand { get; }
+
+        bool ShowFileExtensions { get; set; }
+        bool ShowAllFiles { get; set; }
     }
 }

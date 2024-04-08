@@ -29,11 +29,11 @@ public class WorkspaceFileUri : WorkspaceUri
     /// <summary>
     /// Gets the file name, without its extension.
     /// </summary>
-    public string FileNameWithoutExtension => System.IO.Path.GetFileNameWithoutExtension(AbsoluteLocation.AbsolutePath);
+    public string FileNameWithoutExtension => System.IO.Path.GetFileNameWithoutExtension(AbsoluteLocation.LocalPath);
     /// <summary>
     /// Gets the file name, including its extension.
     /// </summary>
-    public string FileName => System.IO.Path.GetFileName(AbsoluteLocation.AbsolutePath);
+    public string FileName => System.IO.Path.GetFileName(AbsoluteLocation.LocalPath);
 }
 
 /// <summary>
@@ -51,7 +51,7 @@ public class WorkspaceFolderUri : WorkspaceUri
     /// </summary>
     public string FolderName => IsSrcRoot 
         ? WorkspaceRoot.Segments[^1] // this should be the workspace name
-        : System.IO.Path.GetFileName(AbsoluteLocation.AbsolutePath);
+        : System.IO.Path.GetFileName(AbsoluteLocation.LocalPath);
 }
 
 /// <summary>
@@ -87,11 +87,11 @@ public abstract class WorkspaceUri : Uri
         }
 
         // ['/','\'] -> stdSlash
-        var stdSlashRoot = new Uri(workspaceRoot.AbsolutePath.Replace("\\", "/"));
+        var stdSlashRoot = new Uri(workspaceRoot.LocalPath.Replace("\\", "/"));
         var stdSlashRelativeUriString = relativeUriString.Replace("\\", "/");
 
         // absolute -> relative
-        if (stdSlashRelativeUriString.ToLowerInvariant().StartsWith(stdSlashRoot.AbsolutePath.ToLowerInvariant()))
+        if (stdSlashRelativeUriString.ToLowerInvariant().StartsWith(stdSlashRoot.LocalPath.ToLowerInvariant()))
         {
             var marker = $"/{WorkspaceUri.SourceRootName}";
             var sane = stdSlashRelativeUriString;
@@ -100,9 +100,9 @@ public abstract class WorkspaceUri : Uri
                 sane = stdSlashRelativeUriString.Substring(stdSlashRelativeUriString.IndexOf(marker) + marker.Length);
             }
 
-            if (sane.StartsWith(stdSlashRoot.AbsolutePath))
+            if (sane.StartsWith(stdSlashRoot.LocalPath))
             {
-                sane = stdSlashRelativeUriString.Substring(stdSlashRelativeUriString.IndexOf(stdSlashRoot.AbsolutePath) + stdSlashRoot.AbsolutePath.Length);
+                sane = stdSlashRelativeUriString.Substring(stdSlashRelativeUriString.IndexOf(stdSlashRoot.LocalPath) + stdSlashRoot.LocalPath.Length);
             }
             return sane.TrimStart('/').TrimStart('.').TrimStart('/');
         }

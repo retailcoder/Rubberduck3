@@ -1,15 +1,24 @@
 ﻿using Rubberduck.InternalApi.Extensions;
 using Rubberduck.UI;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
-using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
-using System.Reflection.Emit;
+using System.Windows.Data;
 
 namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 {
     public class WorkspaceTreeNodeViewModel : ViewModelBase, IWorkspaceTreeNode
     {
+        public ICollectionView ItemsViewSource { get; }
+
+        public WorkspaceTreeNodeViewModel()
+        {
+            ItemsViewSource = CollectionViewSource.GetDefaultView(_children);
+            ItemsViewSource.Filter = o => ShowAllFiles || ((IWorkspaceTreeNode)o).IsInProject;
+        }
+
+
         private string _name = null!;
         public virtual string Name
         {
@@ -176,6 +185,44 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                     _isEditingName = value;
                     OnPropertyChanged();
                 }
+            }
+        }
+
+        private bool _showFileExtensions;
+        public bool ShowFileExtensions
+        {
+            get => _showFileExtensions;
+            set
+            {
+                if (_showFileExtensions != value)
+                {
+                    _showFileExtensions = value;
+                    foreach (var node in Children)
+                    {
+                        node.ShowFileExtensions = _showFileExtensions;
+                    }
+                    OnPropertyChanged();
+                }
+                ItemsViewSource.Refresh();
+            }
+        }
+
+        private bool _showAllFiles;
+        public bool ShowAllFiles
+        {
+            get => _showAllFiles;
+            set
+            {
+                if (_showAllFiles != value)
+                {
+                    _showAllFiles = value;
+                    foreach (var node in Children)
+                    {
+                        node.ShowAllFiles = _showAllFiles;
+                    }
+                    OnPropertyChanged();
+                }
+                ItemsViewSource.Refresh();
             }
         }
     }

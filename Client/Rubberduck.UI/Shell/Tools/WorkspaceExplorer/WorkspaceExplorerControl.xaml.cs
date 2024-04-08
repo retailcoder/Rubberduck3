@@ -3,6 +3,7 @@ using Rubberduck.UI.Windows;
 using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
 {
@@ -44,6 +45,11 @@ namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
             {
                 WorkspaceExplorerCommands.OpenFileCommand.Execute(uri, this);
             }
+        }
+
+        private void FlatToggleButton_Checked(object sender, System.Windows.RoutedEventArgs e)
+        {
+            InvalidateVisual();
         }
     }
 }

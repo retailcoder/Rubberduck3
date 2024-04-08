@@ -17,6 +17,8 @@ using System.Collections.ObjectModel;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -188,6 +190,42 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 if (_selection != value)
                 {
                     _selection = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _showFileExtensions;
+        public bool ShowFileExtensions
+        {
+            get => _showFileExtensions;
+            set
+            {
+                if (_showFileExtensions != value)
+                {
+                    _showFileExtensions = value;
+                    foreach (var workspace in Workspaces)
+                    {
+                        workspace.ShowFileExtensions = _showFileExtensions;
+                    }
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _showAllFiles;
+        public bool ShowAllFiles
+        {
+            get => _showAllFiles;
+            set
+            {
+                if (_showAllFiles != value)
+                {
+                    _showAllFiles = value;
+                    foreach (var workspace in Workspaces)
+                    {
+                        workspace.ShowAllFiles = _showAllFiles;
+                    }
                     OnPropertyChanged();
                 }
             }

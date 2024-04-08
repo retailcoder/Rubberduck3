@@ -18,7 +18,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             };
         }
 
-        public override string DisplayName => IsWithFileExtension 
+        public override string DisplayName => ShowFileExtensions 
             ? ((WorkspaceFileUri)Uri).FileName
             : ((WorkspaceFileUri)Uri).FileNameWithoutExtension;
 
@@ -46,21 +46,6 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isReadOnly = value;
                     OnPropertyChanged();
-                }
-            }
-        }
-
-        private bool _isWithFileExtension;
-        public bool IsWithFileExtension
-        {
-            get => _isWithFileExtension;
-            set
-            {
-                if (_isWithFileExtension != value)
-                {
-                    _isWithFileExtension = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(DisplayName));
                 }
             }
         }

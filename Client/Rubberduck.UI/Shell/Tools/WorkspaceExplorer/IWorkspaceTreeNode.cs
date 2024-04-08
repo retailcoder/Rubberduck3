@@ -16,6 +16,9 @@ namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
         WorkspaceUri Uri { get; }
         string FileName { get; }
         string DisplayName { get; }
+        bool ShowFileExtensions { get; set; }
+        bool ShowAllFiles { get; set; }
+        ICollectionView ItemsViewSource { get; }
         ObservableCollection<IWorkspaceTreeNode> Children { get; }
         void AddChildNode(IWorkspaceTreeNode childNode);
 

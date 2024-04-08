@@ -6,8 +6,11 @@ using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Windows.Data;
 
 namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 {
@@ -129,9 +132,13 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         }
 
         private readonly IAppWorkspacesService _workspaces;
+        public ICollectionView ItemsViewSource { get; }
+
         public WorkspaceViewModel(IAppWorkspacesService workspaces)
         {
             _workspaces = workspaces;
+            ItemsViewSource = CollectionViewSource.GetDefaultView(_children);
+            ItemsViewSource.Filter = o => ShowAllFiles || ((IWorkspaceTreeNode)o).IsInProject;
         }
 
         private bool _isFileSystemWatcherEnabled;
@@ -197,6 +204,45 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
         public string Name { get; set; } = string.Empty;
         public string DisplayName => Name;
+
+        private bool _showFileExtensions;
+        public bool ShowFileExtensions
+        {
+            get => _showFileExtensions;
+            set
+            {
+                if (_showFileExtensions != value)
+                {
+                    _showFileExtensions = value;
+                    foreach (var node in Children)
+                    {
+                        node.ShowFileExtensions = _showFileExtensions;
+                    }
+                    OnPropertyChanged();
+                    ItemsViewSource.Refresh();
+                }
+            }
+        }
+
+        private bool _showAllFiles;
+        public bool ShowAllFiles
+        {
+            get => _showAllFiles;
+            set
+            {
+                if (_showAllFiles != value)
+                {
+                    _showAllFiles = value;
+                    foreach (var node in Children)
+                    {
+                        node.ShowAllFiles = _showAllFiles;
+                    }
+                    OnPropertyChanged();
+                    ItemsViewSource.Refresh();
+                }
+            }
+        }
+
         public WorkspaceUri Uri { get; set; } = default!; // FIXME this will come back to bite me...
         public string FileName => Uri.GetComponents(UriComponents.Path, UriFormat.Unescaped).Split('/').Last();
 
