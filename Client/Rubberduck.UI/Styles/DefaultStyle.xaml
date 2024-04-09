@@ -77,6 +77,14 @@
     <converters:ServerConnectionStateToIconConverter x:Key="ServerConnectionStateToIconConverter" />
     <converters:LogLevelToIconConverter x:Key="LogLevelIconConverter" />
     <converters:DiagnosticSeverityToIconConverter x:Key="DiagnosticSeverityIconConverter" />
+    <converters:WorkspaceExplorerNodeIconConverter x:Key="IconConverter"
+        GhostFileIcon="{StaticResource GhostDocumentIcon16}"
+        GhostFolderClosedIcon="{StaticResource GhostFolderClosedIcon16}"
+        GhostFolderOpenIcon="{StaticResource GhostFolderOpenIcon16}"
+        WorkspaceFolderClosedIcon="{StaticResource FolderClosedIcon16}"
+        WorkspaceFolderOpenIcon="{StaticResource FolderOpenIcon16}"
+        WorkspaceOtherFileIcon="{StaticResource DocumentIcon16}"
+        WorkspaceSourceFileIcon="{StaticResource SourceDocumentIcon16}"/>
 
     <SolidColorBrush x:Key="TextBox.MouseOver.Border" Color="{DynamicResource ThemeAccent1MediumColor}"/>
     <SolidColorBrush x:Key="TextBox.Focus.Border" Color="{DynamicResource ThemeAccent1DarkColor}"/>
@@ -808,5 +816,16 @@
                 <Setter Property="IsChecked" Value="True" />
             </DataTrigger>
         </Style.Triggers>
+    </Style>
+    
+    <Style x:Key="TreeNodeEditableLabel" TargetType="TextBox">
+        <Setter Property="MaxLength" Value="255" />
+        <Setter Property="Foreground" Value="{DynamicResource ThemeTextColorBrush}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="BorderThickness" Value="0" />
+        <!--<Setter Property="IsHitTestVisible" Value="False" />-->
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0,1" />
     </Style>
 </ResourceDictionary>

@@ -1,7 +1,6 @@
-﻿namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
+﻿namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
+
+public interface IWorkspaceViewModel : IWorkspaceTreeNode
 {
-    public interface IWorkspaceViewModel : IWorkspaceTreeNode
-    {
-        bool IsFileSystemWatcherEnabled { get; set; }
-    }
+    bool IsFileSystemWatcherEnabled { get; set; }
 }

@@ -7,8 +7,8 @@
         xmlns:xb="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:shell="clr-namespace:Rubberduck.UI.Shell" 
         xmlns:cmd="clr-namespace:Rubberduck.UI.Command.StaticRouted" 
-        xmlns:local="clr-namespace:Rubberduck.UI.Shell.Tools.WorkspaceExplorer"
-        d:DataContext="{d:DesignInstance Type=local:IWorkspaceExplorerViewModel, IsDesignTimeCreatable=False}"
+        xmlns:local="clr-namespace:Rubberduck.UI.Shell.Tools.WorkspaceExplorer" xmlns:converters="clr-namespace:Rubberduck.UI.Converters"
+             d:DataContext="{d:DesignInstance Type=local:IWorkspaceExplorerViewModel, IsDesignTimeCreatable=False}"
         mc:Ignorable="d" 
         x:Name="WorkspaceExplorerRoot"
         d:DesignHeight="450" d:DesignWidth="400">
@@ -29,19 +29,51 @@
                 <Setter Property="Margin" Value="0,0,5,0" />
             </Style>
 
-            <HierarchicalDataTemplate x:Key="WorkspaceFolderTemplate" DataType="local:IWorkspaceFolderViewModel" ItemsSource="{Binding ItemsViewSource}">
+            <HierarchicalDataTemplate x:Key="WorkspaceExplorerNodeTemplate" DataType="local:IWorkspaceTreeNode" ItemsSource="{Binding ItemsViewSource}">
                 <StackPanel Orientation="Horizontal">
-                    <Image Source="{StaticResource SharpFolderClosedIcon}">
-                        <Image.Style>
-                            <Style TargetType="Image" BasedOn="{StaticResource NodeIconStyle}">
+                    <Image Style="{DynamicResource NodeIconStyle}">
+                        <Image.Source>
+                            <MultiBinding Converter="{StaticResource IconConverter}">
+                                <Binding RelativeSource="{RelativeSource Mode=Self}" Path="DataContext" />
+                            </MultiBinding>
+                        </Image.Source>
+                    </Image>
+                    <Label Content="{Binding DisplayName}" Style="{StaticResource NodeLabelStyle}" />
+                    <!--<TextBox Text="{Binding DisplayName, UpdateSourceTrigger=LostFocus}" 
+                             LostFocus="TextBox_LostFocus"
+                             MouseDoubleClick="OnFileDoubleClick" 
+                             MouseUp="TextBox_MouseUp" 
+                             PreviewMouseDown="TextBox_PreviewMouseDown"
+                             IsReadOnly="{Binding IsEditingName}" IsReadOnlyCaretVisible="False">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Esc" Command="{Binding CancelEditCommand, ElementName=WorkspaceExplorerRoot}" CommandParameter="{Binding}" />
+                        </TextBox.InputBindings>
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" BasedOn="{StaticResource TreeNodeEditableLabel}">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                                        <Setter Property="Source" Value="{StaticResource SharpFolderOpenIcon}" />
+                                    <DataTrigger Binding="{Binding IsEditingName}" Value="True">
+                                        <Setter Property="IsReadOnly" Value="False" />
+                                        <Setter Property="Background" Value="{DynamicResource ThemeBackgroundColorBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </Image.Style>
-                    </Image>
+                        </TextBox.Style>
+                    </TextBox>-->
+                </StackPanel>
+            </HierarchicalDataTemplate>
+
+            <!--<HierarchicalDataTemplate x:Key="WorkspaceFolderTemplate" DataType="local:IWorkspaceFolderViewModel" ItemsSource="{Binding ItemsViewSource}">
+                <HierarchicalDataTemplate.Resources>
+                    <Style x:Key="FolderIconStyle" TargetType="Image" BasedOn="{StaticResource NodeIconStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                <Setter Property="Source" Value="{StaticResource SharpFolderOpenIcon}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </HierarchicalDataTemplate.Resources>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="{DynamicResource SharpFolderClosedIcon}" Style="{DynamicResource FolderIconStyle}" />
                     <Label Content="{Binding DisplayName}" Style="{DynamicResource NodeLabelStyle}" />
 
                     <StackPanel.ContextMenu>
@@ -113,18 +145,17 @@
             </DataTemplate>
             
             <HierarchicalDataTemplate x:Key="GhostFolderTemplate" DataType="local:IWorkspaceFolderViewModel" ItemsSource="{Binding ItemsViewSource}">
+                <HierarchicalDataTemplate.Resources>
+                    <Style x:Key="FolderIconStyle" TargetType="Image" BasedOn="{StaticResource NodeIconStyle}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                <Setter Property="Source" Value="{StaticResource GhostFolderOpenIcon16}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </HierarchicalDataTemplate.Resources>
                 <StackPanel Orientation="Horizontal">
-                    <Image Source="{StaticResource GhostFolderClosedIcon16}">
-                        <Image.Style>
-                            <Style TargetType="Image" BasedOn="{StaticResource NodeIconStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                                        <Setter Property="Source" Value="{StaticResource GhostFolderOpenIcon16}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Image.Style>
-                    </Image>
+                    <Image Source="{DynamicResource GhostFolderClosedIcon16}" Style="{DynamicResource FolderIconStyle}" />
                     <Label Content="{Binding DisplayName}" Style="{DynamicResource NodeLabelStyle}" Foreground="{StaticResource ThemeTextInactiveColorBrush}" />
 
                     <StackPanel.ContextMenu>
@@ -142,7 +173,7 @@
                                                  SourceFileTemplate="{StaticResource SourceFileTemplate}"
                                                  WorkspaceFileTemplate="{StaticResource OtherFileTemplate}" 
                                                  GhostFileTemplate="{StaticResource GhostFileTemplate}"
-                                                 GhostFolderTemplate="{StaticResource GhostFolderTemplate}"/>
+                                                 GhostFolderTemplate="{StaticResource GhostFolderTemplate}"/>-->
 
 
             <!-- TODO horizontal-friendly layout with a ListView
@@ -220,7 +251,7 @@
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ShowFileExtensions}" Value="True">
+                                    <DataTrigger Binding="{Binding ShowFileExtensions}" Value="False">
                                         <Setter Property="Foreground" Value="{DynamicResource ThemeTextInactiveColorBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -230,12 +261,12 @@
                 </StackPanel>
             </DockPanel>
 
-            <TreeView Grid.Row="1" 
-                      BorderBrush="{DynamicResource ThemeWhiteMediumColorBrush}" BorderThickness="1" 
-                      Background="{DynamicResource ThemeWhiteLightColorBrush75}"
-                      ItemsSource="{Binding Workspaces}"
-                      ItemContainerStyle="{StaticResource TreeViewContainerStyle}">
-
+            <shell:StretchingTreeView Grid.Row="1" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch"
+                                      BorderBrush="{DynamicResource ThemeWhiteMediumColorBrush}" BorderThickness="1" 
+                                      Background="{DynamicResource ThemeWhiteLightColorBrush75}"
+                                      ItemsSource="{Binding Workspaces}"
+                                      MouseDoubleClick="OnFileDoubleClick"
+                                      ItemContainerStyle="{StaticResource TreeViewContainerStyle}">
                 <xb:Interaction.Behaviors>
                     <b:BindableSelectedItemBehavior SelectedItem="{Binding Selection, Mode=TwoWay}" />
                 </xb:Interaction.Behaviors>
@@ -250,9 +281,9 @@
 
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate DataType="local:IWorkspaceTreeNode" 
-                            ItemsSource="{Binding ItemsViewSource}"
-                            ItemContainerStyle="{StaticResource TreeViewContainerStyle}"
-                            ItemTemplateSelector="{StaticResource NodeTemplateSelector}">
+                                              ItemsSource="{Binding ItemsViewSource}"
+                                              ItemContainerStyle="{StaticResource TreeViewContainerStyle}"
+                                              ItemTemplate="{StaticResource WorkspaceExplorerNodeTemplate}">
                         <Label Content="{Binding DisplayName}" Style="{DynamicResource NodeLabelStyle}" FontWeight="SemiBold">
                             <Label.ContextMenu>
                                 <ContextMenu>
@@ -272,7 +303,7 @@
                         </Label>
                     </HierarchicalDataTemplate>
                 </TreeView.ItemTemplate>
-            </TreeView>
+            </shell:StretchingTreeView>
         </Grid>
     </shell:ThunderFrame>
 </UserControl>
