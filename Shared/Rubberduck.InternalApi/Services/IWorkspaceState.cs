@@ -66,6 +66,9 @@ public interface IWorkspaceState
     /// <param name="newUri">The new URI.</param>
     /// <returns><c>true</c> if the rename was successful.</returns>
     bool RenameWorkspaceFile(WorkspaceFileUri oldUri, WorkspaceFileUri newUri);
+    void DeleteWorkspaceUri(WorkspaceFileUri uri);
+    void DeleteWorkspaceUri(WorkspaceFolderUri uri);
+
     /// <summary>
     /// Unloads the specified workspace URI.
     /// </summary>

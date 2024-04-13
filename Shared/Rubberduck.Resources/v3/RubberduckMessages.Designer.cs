@@ -70,6 +70,33 @@ namespace Rubberduck.Resources.v3 {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; and all its contents will be deleted permanently. Confirm?.
+        /// </summary>
+        public static string DeleteUriCommand_ConfirmFolderMessage {
+            get {
+                return ResourceManager.GetString("DeleteUriCommand_ConfirmFolderMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; will be deleted permanently. Confirm?.
+        /// </summary>
+        public static string DeleteUriCommand_ConfirmMessage {
+            get {
+                return ResourceManager.GetString("DeleteUriCommand_ConfirmMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Confirm deletion.
+        /// </summary>
+        public static string DeleteUriCommand_ConfirmTitle {
+            get {
+                return ResourceManager.GetString("DeleteUriCommand_ConfirmTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Do not show this message again.
         /// </summary>
         public static string DoNotShowAgain {

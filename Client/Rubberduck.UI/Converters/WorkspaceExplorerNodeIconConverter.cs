@@ -17,27 +17,37 @@ public class WorkspaceExplorerNodeIconConverter : ImageSourceConverter, IMultiVa
     public ImageSource GhostFolderOpenIcon { get; set; }
     public ImageSource GhostFileIcon { get; set; }
 
+    public ImageSource LoadErrorFileIcon { get; set; }
+    public ImageSource LoadErrorFolderIcon { get; set; }
 
     public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         switch (value)
         {
             case IWorkspaceSourceFileViewModel sourceFile:
-                return sourceFile.IsInProject
-                    ? WorkspaceSourceFileIcon
-                    : GhostFileIcon;
+                return sourceFile.IsLoadError 
+                    ? LoadErrorFileIcon
+                    : sourceFile.IsInProject
+                        ? WorkspaceSourceFileIcon
+                        : GhostFileIcon;
+
             case IWorkspaceFileViewModel file:
-                return file.IsInProject
-                    ? WorkspaceOtherFileIcon
-                    : GhostFileIcon;
+                return file.IsLoadError 
+                    ? LoadErrorFileIcon
+                    : file.IsInProject
+                        ? WorkspaceOtherFileIcon
+                        : GhostFileIcon;
+
             case IWorkspaceFolderViewModel folder:
-                return folder.IsInProject
-                    ? folder.IsExpanded
-                        ? WorkspaceFolderOpenIcon
-                        : WorkspaceFolderClosedIcon
-                    : folder.IsExpanded
-                        ? GhostFolderOpenIcon
-                        : GhostFolderClosedIcon;
+                return folder.IsLoadError
+                    ? LoadErrorFolderIcon
+                    : folder.IsInProject
+                        ? folder.IsExpanded
+                            ? WorkspaceFolderOpenIcon
+                            : WorkspaceFolderClosedIcon
+                        : folder.IsExpanded
+                            ? GhostFolderOpenIcon
+                            : GhostFolderClosedIcon;
             default:
                 return null!;
         }

@@ -119,9 +119,14 @@ public abstract class WorkspaceUri : Uri
     public WorkspaceUri([StringSyntax("Uri")] string? relativeUriString, Uri workspaceRoot)
         : base('/' + SanitizedRelativeUriString(relativeUriString, workspaceRoot), UriKind.Relative)
     {
-        relativeUriString = SanitizedRelativeUriString(relativeUriString, workspaceRoot);
+        if (System.IO.Path.TrimEndingDirectorySeparator(workspaceRoot.LocalPath).EndsWith($"{WorkspaceUri.SourceRootName}"))
+        {
+            workspaceRoot = new Uri(System.IO.Path.TrimEndingDirectorySeparator(workspaceRoot.LocalPath[..^5]));
+        }
 
+        relativeUriString = SanitizedRelativeUriString(relativeUriString, workspaceRoot);
         _root = workspaceRoot;
+
         _srcRoot = new(System.IO.Path.Combine(workspaceRoot.LocalPath, WorkspaceUri.SourceRootName));
         IsSrcRoot = string.IsNullOrWhiteSpace(relativeUriString) || relativeUriString == "./" || relativeUriString == ".src/";
 

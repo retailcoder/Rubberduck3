@@ -6,6 +6,6 @@ namespace Rubberduck.InternalApi.Services;
 
 public interface IProjectFileService
 {
-    void CreateFile(ProjectFile model);
+    void WriteFile(ProjectFile model);
     ProjectFile ReadFile(Uri root);
 }

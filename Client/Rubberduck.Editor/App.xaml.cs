@@ -279,6 +279,7 @@ namespace Rubberduck.Editor
         private void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<Func<ILanguageClient>>(provider => () => _languageClient.LanguageClient!);
+            services.AddSingleton<Func<IWorkspaceExplorerViewModel>>(provider => () => provider.GetRequiredService<IWorkspaceExplorerViewModel>());
             services.AddSingleton<LanguageClientApp>(provider => _languageClient);
             services.AddSingleton<ILanguageClientService, LanguageClientService>();
             services.AddSingleton<ILanguageServerConnectionStatusProvider, LanguageClientService>(provider => (LanguageClientService)provider.GetRequiredService<ILanguageClientService>());
@@ -352,6 +353,8 @@ namespace Rubberduck.Editor
             services.AddSingleton<OpenDocumentCommand>();
 
             services.AddSingleton<FileCommandHandlers>();
+            services.AddSingleton<WorkspaceExplorerCommandHandlers>();
+
             services.AddSingleton<NewProjectCommand>();
             services.AddSingleton<INewProjectDialogService, NewProjectDialogService>();
             services.AddSingleton<IWindowFactory<NewProjectWindow, NewProjectWindowViewModel>, NewProjectWindowFactory>();
@@ -368,6 +371,9 @@ namespace Rubberduck.Editor
             services.AddSingleton<SynchronizeWorkspaceCommand>();
             services.AddSingleton<ExitCommand>();
             services.AddSingleton<OpenUriInWindowsExplorerCommand>();
+            services.AddSingleton<DeleteUriCommand>();
+            services.AddSingleton<IncludeInProjectCommand>();
+            services.AddSingleton<ExcludeFromProjectCommand>();
 
             services.AddSingleton<ViewCommandHandlers>();
             services.AddSingleton<ShowWorkspaceExplorerCommand>();

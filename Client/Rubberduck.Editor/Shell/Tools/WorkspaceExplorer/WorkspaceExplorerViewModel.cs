@@ -5,25 +5,18 @@ using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model.Editor.Tools;
-using Rubberduck.ServerPlatform.Model.Telemetry;
 using Rubberduck.UI;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Command.SharedHandlers;
 using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Services.Abstract;
-using Rubberduck.UI.Shell;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO.Abstractions;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -32,11 +25,11 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
     public class WorkspaceExplorerViewModel : ToolWindowViewModelBase, IWorkspaceExplorerViewModel, ICommandBindingProvider
     {
         private readonly IAppWorkspacesService _service;
-        private readonly FileCommandHandlers _fileCmdHandlers;
+        private readonly WorkspaceExplorerCommandHandlers _handlers;
 
         public WorkspaceExplorerViewModel(RubberduckSettingsProvider settingsProvider,
             IAppWorkspacesService service, 
-            FileCommandHandlers fileCmdHandlers,
+            WorkspaceExplorerCommandHandlers handlers,
             ShowRubberduckSettingsCommand showSettingsCommand, 
             CloseToolWindowCommand closeToolwindowCommand,
             OpenDocumentCommand openDocumentCommand)
@@ -45,7 +38,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             Title = "Workspace Explorer"; // TODO localize
 
             _service = service;
-            _fileCmdHandlers = fileCmdHandlers;
+            _handlers = handlers;
 
             Workspaces = new(service.ProjectFiles.Select(workspace => WorkspaceViewModel.FromModel(workspace, _service)));
             OpenDocumentCommand = openDocumentCommand;
@@ -78,20 +71,20 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
             CommandBindings = [
                 new CommandBinding(WorkspaceExplorerCommands.OpenFileCommand, openDocumentCommand.ExecutedRouted(), openDocumentCommand.CanExecuteRouted()),
-                new CommandBinding(WorkspaceExplorerCommands.IncludeFileCommand, ExecuteIncludeUriCommand),
-                new CommandBinding(WorkspaceExplorerCommands.ExcludeFileCommand, ExecuteExcludeUriCommand),
+                new CommandBinding(WorkspaceExplorerCommands.IncludeFileCommand, ((CommandBase)_handlers.IncludeUriCommand).ExecutedRouted(), ((CommandBase)_handlers.IncludeUriCommand).CanExecuteRouted()),
+                new CommandBinding(WorkspaceExplorerCommands.ExcludeFileCommand, ((CommandBase)_handlers.ExcludeUriCommand).ExecutedRouted(), ((CommandBase)_handlers.ExcludeUriCommand).CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.CreateFileCommand),
                 new CommandBinding(WorkspaceExplorerCommands.CreateFolderCommand),
-                new CommandBinding(WorkspaceExplorerCommands.DeleteUriCommand),
+                new CommandBinding(WorkspaceExplorerCommands.DeleteUriCommand, ((CommandBase)_handlers.DeleteUriCommand).ExecutedRouted(), ((CommandBase)_handlers.DeleteUriCommand).CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.RenameUriCommand),
                 new CommandBinding(WorkspaceExplorerCommands.ExpandFolderCommand, expandFolderCommand.ExecutedRouted(), expandFolderCommand.CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.CollapseFolderCommand, collapseFolderCommand.ExecutedRouted(), collapseFolderCommand.CanExecuteRouted()),
-                new CommandBinding(FileCommands.NewProjectCommand),
-                new CommandBinding(FileCommands.OpenProjectWorkspaceCommand),
-                new CommandBinding(FileCommands.CloseProjectWorkspaceCommand),
-                new CommandBinding(FileCommands.SynchronizeProjectWorkspaceCommand),
-                new CommandBinding(FileCommands.RenameProjectWorkspaceCommand),
-                new CommandBinding(FileCommands.OpenFolderInWindowsExplorerCommand, ((CommandBase)_fileCmdHandlers.OpenUriInWindowsExplorerCommand).ExecutedRouted())
+                new CommandBinding(WorkspaceExplorerCommands.NewProjectCommand,((CommandBase)_handlers.NewProjectCommand).ExecutedRouted()),
+                new CommandBinding(WorkspaceExplorerCommands.OpenProjectWorkspaceCommand,((CommandBase)_handlers.OpenProjectCommand).ExecutedRouted()),
+                new CommandBinding(WorkspaceExplorerCommands.CloseProjectWorkspaceCommand,((CommandBase)_handlers.CloseWorkspaceCommand).ExecutedRouted(),((CommandBase)_handlers.CloseWorkspaceCommand).CanExecuteRouted()),
+                new CommandBinding(WorkspaceExplorerCommands.SynchronizeProjectWorkspaceCommand,((CommandBase)_handlers.SynchronizeWorkspaceCommand).ExecutedRouted(),((CommandBase)_handlers.SynchronizeWorkspaceCommand).CanExecuteRouted()),
+                new CommandBinding(WorkspaceExplorerCommands.RenameProjectWorkspaceCommand),
+                new CommandBinding(WorkspaceExplorerCommands.OpenFolderInWindowsExplorerCommand, ((CommandBase)_handlers.OpenUriInWindowsExplorerCommand).ExecutedRouted(), ((CommandBase)_handlers.OpenUriInWindowsExplorerCommand).CanExecuteRouted())
             ];
         }
 
@@ -109,105 +102,6 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
         private Dispatcher _dispatcher;
 
-        private void ExecuteIncludeUriCommand(object sender, ExecutedRoutedEventArgs e)
-        {
-            ProjectFile? project = default;
-            WorkspaceUri? uri = default;
-
-            if (e.Parameter is WorkspaceFileUri fileUri)
-            {
-                // TODO prompt for confirmation
-                project = _service.ProjectFiles.SingleOrDefault(e => e.Uri == fileUri.WorkspaceRoot);
-                if (project != null)
-                {
-                    var file = File.FromWorkspaceUri(fileUri);
-                    if (file.HasSourceFileExtension(SupportedLanguage.VBA) || file.HasSourceFileExtension(SupportedLanguage.VB6))
-                    {
-                        var module = new Module { Name = fileUri.Name, Uri = fileUri.AbsoluteLocation.LocalPath };
-                        project.VBProject.Modules = project.VBProject.Modules.Append(module).ToArray();
-                    }
-                    else
-                    {
-                        project.VBProject.OtherFiles = project.VBProject.OtherFiles.Append(file).ToArray();
-                    }
-                    uri = file.GetWorkspaceUri(fileUri.WorkspaceRoot);
-                }
-            }
-            else if (e.Parameter is WorkspaceFolderUri folderUri)
-            {
-                // TODO prompt for confirmation for folder uri: AcceptFolderOnly | AcceptRecursiveContent
-                project = _service.ProjectFiles.SingleOrDefault(e => e.Uri == folderUri.WorkspaceRoot);
-                if (project != null)
-                {
-                    var folder = Folder.FromWorkspaceUri(folderUri);
-                    project.VBProject.Folders = project.VBProject.Folders.Append(folder).ToArray();
-                }
-            }
-
-            if (uri != null)
-            {
-                var workspace = Workspaces.SingleOrDefault(e => e.Uri.SourceRoot.LocalPath == uri.SourceRoot.LocalPath);
-                
-                if (workspace is WorkspaceViewModel vm)
-                {
-                    vm.IncludeInProject(uri);
-                }
-            }
-        }
-
-        private void ExecuteExcludeUriCommand(object sender, ExecutedRoutedEventArgs e)
-        {
-            // TODO prompt for confirmation
-
-            ProjectFile? project = default;
-            WorkspaceUri? uri = default;
-
-            if (e.Parameter is WorkspaceFileUri fileUri)
-            {
-                project = _service.ProjectFiles.SingleOrDefault(e => e.Uri == fileUri.WorkspaceRoot);
-                if (project != null)
-                {
-                    var file = project.VBProject.OtherFiles.SingleOrDefault(e => e.Uri == fileUri.AbsoluteLocation.LocalPath);
-                    var srcFile = project.VBProject.Modules.SingleOrDefault(e => e.Uri == fileUri.AbsoluteLocation.LocalPath);
-
-                    if (file != null)
-                    {
-                        var files = project.VBProject.OtherFiles.Except([file]);
-                        project.VBProject.OtherFiles = files.ToArray();
-                        uri = fileUri;
-                    }
-                    else if (srcFile != null)
-                    {
-                        var srcFiles = project.VBProject.Modules.Except([srcFile]);
-                        project.VBProject.Modules = srcFiles.ToArray();
-                        uri = fileUri;
-                    }
-                }
-            }
-            else if (e.Parameter is WorkspaceFolderUri folderUri)
-            {
-                project = _service.ProjectFiles.SingleOrDefault(e => e.Uri == folderUri.WorkspaceRoot);
-                if (project != null)
-                {
-                    var folder = project.VBProject.Folders.SingleOrDefault(e => e.Uri == folderUri.AbsoluteLocation.LocalPath);
-                    if (folder != null)
-                    {
-                        var folders = project.VBProject.Folders.Except([folder]);
-                        project.VBProject.Folders = folders.ToArray();
-                        uri = folderUri;
-                    }
-                }
-            }
-
-            if (uri != null)
-            {
-                var workspace = Workspaces.SingleOrDefault(e => e.Uri.WorkspaceRoot == uri.WorkspaceRoot);
-                if (workspace is WorkspaceViewModel vm)
-                {
-                    vm.ExcludeFromProject(uri);
-                }
-            }
-        }
 
         private void OnWorkspaceClosed(object? sender, WorkspaceServiceEventArgs e)
         {

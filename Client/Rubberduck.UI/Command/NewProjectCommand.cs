@@ -61,7 +61,7 @@ namespace Rubberduck.UI.Command
 
                     var workspaceSrcRoot = _fileSystem.Path.Combine(workspaceRootUri.LocalPath, WorkspaceUri.SourceRootName);
                     _workspaceFolderService.CreateWorkspaceFolders(projectFile);
-                    _projectFileService.CreateFile(projectFile);
+                    _projectFileService.WriteFile(projectFile);
 
                     if (_workspaceModulesService is not null)
                     {

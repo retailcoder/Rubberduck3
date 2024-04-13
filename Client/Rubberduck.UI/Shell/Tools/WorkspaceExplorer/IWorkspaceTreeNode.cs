@@ -29,6 +29,8 @@ namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
         bool IsEditingName { get; set; }
 
         bool IsInProject { get; set; }
+        bool IsLoadError { get; set; }
+        bool IsVisible { get; set; }
 
         IEnumerable<object> ContextMenuItems { get; }
     }

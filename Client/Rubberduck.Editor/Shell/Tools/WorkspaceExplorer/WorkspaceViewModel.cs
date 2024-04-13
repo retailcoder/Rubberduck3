@@ -4,6 +4,7 @@ using Rubberduck.InternalApi.Services;
 using Rubberduck.UI;
 using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
+using SharpVectors.Net;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -74,17 +75,25 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             }
 
             var projectFolderPaths = projectFolders.Select(e => e.Uri.AbsoluteLocation.LocalPath).ToHashSet();
-            foreach (var subFolder in Directory.EnumerateDirectories(localPath))
-            {
-                if (!projectFolderPaths.Contains(subFolder))
-                {
-                    var ghostUri = new WorkspaceFolderUri(subFolder, workspaceFolderUri.WorkspaceRoot);
-                    var node = new WorkspaceFolderViewModel { IsInProject = false, Uri = ghostUri, Name = ghostUri.FolderName };
-                    AddFolderContent(service, node, projectFilesByFolder, projectFolders);
 
-                    folder.AddChildNode(node);
-                    AddFolderFileNodes(service, node, [], []);
+            try
+            {
+                foreach (var subFolder in Directory.EnumerateDirectories(localPath))
+                {
+                    if (!projectFolderPaths.Contains(subFolder))
+                    {
+                        var ghostUri = new WorkspaceFolderUri(subFolder, workspaceFolderUri.WorkspaceRoot);
+                        var node = new WorkspaceFolderViewModel { IsInProject = false, Uri = ghostUri, Name = ghostUri.FolderName };
+                        AddFolderContent(service, node, projectFilesByFolder, projectFolders);
+
+                        folder.AddChildNode(node);
+                        AddFolderFileNodes(service, node, [], []);
+                    }
                 }
+            }
+            catch (Exception)
+            {
+                folder.IsLoadError = true;
             }
 
             // add the files last to keep folders together
@@ -153,7 +162,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         {
             _workspaces = workspaces;
             ItemsViewSource = CollectionViewSource.GetDefaultView(_children);
-            ItemsViewSource.Filter = o => ShowAllFiles || ((IWorkspaceTreeNode)o).IsInProject;
+            ItemsViewSource.Filter = o => ((IWorkspaceTreeNode)o).IsVisible && (ShowAllFiles || ((IWorkspaceTreeNode)o).IsInProject);
 
             IsInProject = true;
         }
@@ -174,32 +183,38 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
         public void IncludeInProject(WorkspaceUri uri)
         {
-            var node = FindNode(uri, this);
-            if (node != null)
+            var result = FindNode(uri, this);
+            if (result != null)
             {
+                var (node, parent) = result.Value;
                 node.IsInProject = true;
             }
         }
 
-        private IWorkspaceTreeNode? FindNode(WorkspaceUri uri, IWorkspaceTreeNode root)
+        private (IWorkspaceTreeNode, IWorkspaceTreeNode)? FindNode(WorkspaceUri uri, IWorkspaceTreeNode root)
         {
             var target = uri.AbsoluteLocation.LocalPath;
             if (root.Uri.AbsoluteLocation.LocalPath == target)
             {
-                return root;
+                return (root, root);
             }
 
             foreach (var node in root.Children)
             {
                 if (node.Uri.AbsoluteLocation.LocalPath == target)
                 {
-                    return node;
+                    return (node, root);
                 }
+
                 if (node.Children.Count > 0)
                 {
                     foreach (var child in node.Children)
                     {
-                        return FindNode(uri, child);
+                        var found = FindNode(uri, child);
+                        if (found != default)
+                        {
+                            return found;
+                        }
                     }
                 }
             }
@@ -209,10 +224,15 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
         public void ExcludeFromProject(WorkspaceUri uri)
         {
-            var node = FindNode(uri, this);
-            if (node != null)
+            var result = FindNode(uri, this);
+            if (result != null)
             {
+                var (node, parent) = result.Value;
                 node.IsInProject = false;
+                node.IsVisible = !node.IsLoadError;
+
+                parent.Children.Remove(node);
+                ItemsViewSource.Refresh();
             }
         }
 
@@ -270,6 +290,52 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             _children.Add(childNode);
         }
 
+        public IWorkspaceTreeNode? FindChildNode(WorkspaceUri uri, IWorkspaceTreeNode? parent = null)
+        {
+            if (parent is null)
+            {
+                parent = this;
+            }
+
+            foreach (var child in parent.Children)
+            {
+                if (child.Uri == uri)
+                {
+                    return child;
+                }
+
+                var recursive = FindChildNode(uri, child);
+                if (recursive != null)
+                {
+                    return recursive;
+                }
+            }
+
+            return null;
+        }
+
+        public void RemoveWorkspaceUri(WorkspaceFileUri uri)
+        {
+            var node = FindChildNode(uri);
+            if (node != null)
+            {
+                node.IsLoadError = true;
+                node.IsVisible = false;
+                ItemsViewSource.Refresh();
+            }
+        }
+
+        public void RemoveWorkspaceUri(WorkspaceFolderUri uri)
+        {
+            var node = FindChildNode(uri);
+            if (node != null)
+            {
+                node.IsLoadError = true;
+                node.IsVisible = false;
+                ItemsViewSource.Refresh();
+            }
+        }
+
         private bool _isSelected;
         public bool IsSelected
         {
@@ -321,6 +387,34 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 if (_isInProject != value)
                 {
                     _isInProject = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _isLoadError;
+        public bool IsLoadError
+        {
+            get => _isLoadError;
+            set
+            {
+                if (_isLoadError != value)
+                {
+                    _isLoadError = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _isVisible = true;
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set
+            {
+                if (_isVisible != value)
+                {
+                    _isVisible = value;
                     OnPropertyChanged();
                 }
             }

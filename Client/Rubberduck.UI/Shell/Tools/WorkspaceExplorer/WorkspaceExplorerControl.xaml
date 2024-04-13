@@ -27,6 +27,10 @@
                     <DataTrigger Binding="{Binding IsInProject}" Value="False">
                         <Setter Property="Foreground" Value="{DynamicResource ThemeTextInactiveColorBrush}" />
                     </DataTrigger>
+                    <DataTrigger Binding="{Binding IsLoadError}" Value="True">
+                        <Setter Property="FontStyle" Value="Italic" />
+                        <Setter Property="ToolTip" Value="Load error" />
+                    </DataTrigger>
                 </Style.Triggers>
             </Style>
 

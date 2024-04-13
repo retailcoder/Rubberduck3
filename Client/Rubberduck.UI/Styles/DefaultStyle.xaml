@@ -84,7 +84,10 @@
         WorkspaceFolderClosedIcon="{StaticResource FolderClosedIcon16}"
         WorkspaceFolderOpenIcon="{StaticResource FolderOpenIcon16}"
         WorkspaceOtherFileIcon="{StaticResource DocumentIcon16}"
-        WorkspaceSourceFileIcon="{StaticResource SourceDocumentIcon16}"/>
+        WorkspaceSourceFileIcon="{StaticResource SourceDocumentIcon16}"
+        LoadErrorFileIcon="{StaticResource ErrorLogIcon16}"
+        LoadErrorFolderIcon="{StaticResource SadFolderIcon16}"
+    />
 
     <SolidColorBrush x:Key="TextBox.MouseOver.Border" Color="{DynamicResource ThemeAccent1MediumColor}"/>
     <SolidColorBrush x:Key="TextBox.Focus.Border" Color="{DynamicResource ThemeAccent1DarkColor}"/>

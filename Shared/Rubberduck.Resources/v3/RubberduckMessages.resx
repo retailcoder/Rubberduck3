@@ -160,4 +160,13 @@ Are you sure you want to **overwrite an existing project**?</value>
   <data name="ConfirmResetSettings" xml:space="preserve">
     <value>This will reset all settings to their default values. Proceed?</value>
   </data>
+  <data name="DeleteUriCommand_ConfirmMessage" xml:space="preserve">
+    <value>'{0}' will be deleted permanently. Confirm?</value>
+  </data>
+  <data name="DeleteUriCommand_ConfirmTitle" xml:space="preserve">
+    <value>Confirm deletion</value>
+  </data>
+  <data name="DeleteUriCommand_ConfirmFolderMessage" xml:space="preserve">
+    <value>'{0}' and all its contents will be deleted permanently. Confirm?</value>
+  </data>
 </root>

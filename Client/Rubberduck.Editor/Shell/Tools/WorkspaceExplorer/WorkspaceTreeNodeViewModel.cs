@@ -26,7 +26,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 new MenuItem { Command = WorkspaceExplorerCommands.CreateFileCommand },
                 new MenuItem { Command = WorkspaceExplorerCommands.CreateFolderCommand },
                 new Separator(),
-                new MenuItem { Command = FileCommands.OpenFolderInWindowsExplorerCommand, CommandParameter = Uri },
+                new MenuItem { Command = WorkspaceExplorerCommands.OpenFolderInWindowsExplorerCommand, CommandParameter = Uri },
             };
 
 
@@ -247,6 +247,34 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                     OnPropertyChanged();
                 }
                 ItemsViewSource.Refresh();
+            }
+        }
+
+        private bool _isLoadError;
+        public bool IsLoadError
+        {
+            get => _isLoadError;
+            set
+            {
+                if (_isLoadError != value)
+                {
+                    _isLoadError = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _isVisible = true;
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set
+            {
+                if (_isVisible != value)
+                {
+                    _isVisible = value;
+                    OnPropertyChanged();
+                }
             }
         }
     }

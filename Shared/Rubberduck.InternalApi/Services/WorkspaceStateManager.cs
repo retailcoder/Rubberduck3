@@ -201,6 +201,20 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
             }
             return false;
         }
+
+        public void DeleteWorkspaceUri(WorkspaceFileUri uri)
+        {
+            _store.TryRemove(uri);
+        }
+
+        public void DeleteWorkspaceUri(WorkspaceFolderUri uri)
+        {
+            var folder = _folders.SingleOrDefault(e => e.GetWorkspaceUri(uri.WorkspaceRoot) == uri);
+            if (folder != null)
+            {
+                _folders.Remove(folder);
+            }
+        }
     }
 
     private readonly DocumentContentStore _store;

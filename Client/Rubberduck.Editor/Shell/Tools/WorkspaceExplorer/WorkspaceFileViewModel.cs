@@ -16,7 +16,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 Uri = new WorkspaceFileUri(model.Uri, workspaceRoot),
                 Name = model.Name,
                 IsAutoOpen = model.IsAutoOpen,
-                IsInProject = true
+                IsInProject = true,
             };
         }
 

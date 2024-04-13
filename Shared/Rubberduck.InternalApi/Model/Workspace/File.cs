@@ -2,6 +2,7 @@
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using System;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Rubberduck.InternalApi.Model.Workspace;
 
@@ -38,4 +39,7 @@ public record class File
     /// Gets a strongly-typed relative <c>WorkspaceUri</c> for the specified absolute workspace root.
     /// </summary>
     public WorkspaceFileUri GetWorkspaceUri(Uri workspaceRoot) => new WorkspaceFileUri(Uri, workspaceRoot);
+
+    [JsonIgnore]
+    public bool IsLoadError { get; set; }
 }

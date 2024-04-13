@@ -1,6 +1,7 @@
 ﻿using Rubberduck.UI.Command;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Command.StaticRouted;
+using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System.Collections.Generic;
 using System.Windows.Input;
 
@@ -18,8 +19,7 @@ namespace Rubberduck.Editor.Commands
             CloseAllDocumentsCommand closeAllDocumentsCommand,
             CloseWorkspaceCommand closeWorkspaceCommand,
             SynchronizeWorkspaceCommand synchronizeWorkspaceCommand,
-            ExitCommand exitCommand,
-            OpenUriInWindowsExplorerCommand openInWinExplorerCommand)
+            ExitCommand exitCommand)
         {
             NewProjectCommand = newProjectCommand;
             OpenProjectCommand = openProjectCommand;
@@ -32,7 +32,6 @@ namespace Rubberduck.Editor.Commands
             CloseWorkspaceCommand = closeWorkspaceCommand;
             SynchronizeWorkspaceCommand = synchronizeWorkspaceCommand;
             ExitCommand = exitCommand;
-            OpenUriInWindowsExplorerCommand = openInWinExplorerCommand;
         }
 
         public ICommand NewProjectCommand { get; init; }
@@ -46,7 +45,7 @@ namespace Rubberduck.Editor.Commands
         public ICommand CloseWorkspaceCommand { get; init; }
         public ICommand SynchronizeWorkspaceCommand { get; init; }
         public ICommand ExitCommand { get; init; }
-        public ICommand OpenUriInWindowsExplorerCommand { get; init; }
+
 
         public override IEnumerable<CommandBinding> CreateCommandBindings() =>
             Bind(
@@ -61,7 +60,7 @@ namespace Rubberduck.Editor.Commands
                 (FileCommands.CloseProjectWorkspaceCommand, CloseWorkspaceCommand),
                 (FileCommands.SynchronizeProjectWorkspaceCommand, SynchronizeWorkspaceCommand),
                 (FileCommands.ExitCommand, ExitCommand),
-                (FileCommands.OpenFolderInWindowsExplorerCommand, OpenUriInWindowsExplorerCommand)
+                (FileCommands.CloseActiveDocumentCommand, CloseDocumentCommand)
             );
     }
 }

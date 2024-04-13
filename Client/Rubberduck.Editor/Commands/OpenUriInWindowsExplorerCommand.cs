@@ -15,6 +15,21 @@ public class OpenUriInWindowsExplorerCommand : CommandBase
         : base(service)
     {
         _navigator = navigator;
+        AddToCanExecuteEvaluation(CanExecuteWithParameter);
+    }
+
+    private bool CanExecuteWithParameter(object? parameter)
+    {
+        if (parameter is WorkspaceFolderUri folderUri)
+        {
+            return System.IO.Directory.Exists(folderUri.AbsoluteLocation.LocalPath);
+        }
+        else if (parameter is WorkspaceFileUri fileUri)
+        {
+            return System.IO.File.Exists(fileUri.AbsoluteLocation.LocalPath);
+        }
+
+        return false;
     }
 
     protected override Task OnExecuteAsync(object? parameter)

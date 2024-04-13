@@ -1,4 +1,5 @@
-﻿using Rubberduck.InternalApi.Model.Workspace;
+﻿using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.UI.Windows;
 using System.Collections.ObjectModel;
 using System.Windows.Input;

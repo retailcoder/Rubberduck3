@@ -18,7 +18,7 @@ public class ProjectFileService : ServiceBase, IProjectFileService
         _fileSystem = fileSystem;
     }
 
-    public void CreateFile(ProjectFile model)
+    public void WriteFile(ProjectFile model)
     {
         var path = _fileSystem.Path.Combine(model.Uri.LocalPath, ProjectFile.FileName);
         var content = JsonSerializer.Serialize(model);
