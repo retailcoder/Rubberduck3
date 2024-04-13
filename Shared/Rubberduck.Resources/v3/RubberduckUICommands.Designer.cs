@@ -232,6 +232,24 @@ namespace Rubberduck.Resources.v3 {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Settings.
+        /// </summary>
+        public static string SettingCommands_ShowSettingsCommandText {
+            get {
+                return ResourceManager.GetString("SettingCommands_ShowSettingsCommandText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Collapse.
+        /// </summary>
+        public static string WorkspaceExplorerCommands_CollapseFolderCommandText {
+            get {
+                return ResourceManager.GetString("WorkspaceExplorerCommands_CollapseFolderCommandText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Add file....
         /// </summary>
         public static string WorkspaceExplorerCommands_CreateFileCommandText {
@@ -264,6 +282,15 @@ namespace Rubberduck.Resources.v3 {
         public static string WorkspaceExplorerCommands_ExcludeFileCommandText {
             get {
                 return ResourceManager.GetString("WorkspaceExplorerCommands_ExcludeFileCommandText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Expand.
+        /// </summary>
+        public static string WorkspaceExplorerCommands_ExpandFolderCommandText {
+            get {
+                return ResourceManager.GetString("WorkspaceExplorerCommands_ExpandFolderCommandText", resourceCulture);
             }
         }
         

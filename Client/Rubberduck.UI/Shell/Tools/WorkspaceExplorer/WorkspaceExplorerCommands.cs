@@ -25,5 +25,10 @@ namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
             = new RoutedUICommand(Resx.WorkspaceExplorerCommands_IncludeFileCommandText, nameof(IncludeFileCommand), typeof(WorkspaceExplorerControl));
         public static RoutedUICommand ExcludeFileCommand { get; }
             = new RoutedUICommand(Resx.WorkspaceExplorerCommands_ExcludeFileCommandText, nameof(ExcludeFileCommand), typeof(WorkspaceExplorerControl));
+
+        public static RoutedUICommand ExpandFolderCommand { get; }
+            = new RoutedUICommand(Resx.WorkspaceExplorerCommands_ExpandFolderCommandText, nameof(ExpandFolderCommand), typeof(WorkspaceExplorerControl));
+        public static RoutedUICommand CollapseFolderCommand { get; }
+            = new RoutedUICommand(Resx.WorkspaceExplorerCommands_CollapseFolderCommandText, nameof(CollapseFolderCommand), typeof(WorkspaceExplorerControl));
     }
 }

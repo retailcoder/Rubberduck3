@@ -7,8 +7,10 @@ using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model.Editor.Tools;
 using Rubberduck.ServerPlatform.Model.Telemetry;
 using Rubberduck.UI;
+using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Command.SharedHandlers;
 using Rubberduck.UI.Command.StaticRouted;
+using Rubberduck.UI.Services;
 using Rubberduck.UI.Services.Abstract;
 using Rubberduck.UI.Shell;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
@@ -17,6 +19,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO.Abstractions;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -52,10 +55,38 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
             IsPinned = !settingsProvider.Settings.EditorSettings.ToolsSettings.WorkspaceExplorerSettings.AutoHide;
 
+            var expandFolderCommand = new DelegateCommand(UIServiceHelper.Instance, 
+                parameter =>
+                {
+                    if (parameter is IWorkspaceFolderViewModel folder) 
+                    {
+                        folder.IsExpanded = true;
+                    }
+                }, parameter => parameter is IWorkspaceFolderViewModel folder && !folder.IsExpanded);
+            var collapseFolderCommand = new DelegateCommand(UIServiceHelper.Instance,
+                parameter =>
+                {
+                    if (parameter is IWorkspaceFolderViewModel folder)
+                    {
+                        folder.IsExpanded = false;
+                    }
+                }, parameter => parameter is IWorkspaceFolderViewModel folder && folder.IsExpanded);
+
             CommandBindings = [
                 new CommandBinding(WorkspaceExplorerCommands.OpenFileCommand, openDocumentCommand.ExecutedRouted(), openDocumentCommand.CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.IncludeFileCommand, ExecuteIncludeUriCommand),
                 new CommandBinding(WorkspaceExplorerCommands.ExcludeFileCommand, ExecuteExcludeUriCommand),
+                new CommandBinding(WorkspaceExplorerCommands.CreateFileCommand),
+                new CommandBinding(WorkspaceExplorerCommands.CreateFolderCommand),
+                new CommandBinding(WorkspaceExplorerCommands.DeleteUriCommand),
+                new CommandBinding(WorkspaceExplorerCommands.RenameUriCommand),
+                new CommandBinding(WorkspaceExplorerCommands.ExpandFolderCommand, expandFolderCommand.ExecutedRouted(), expandFolderCommand.CanExecuteRouted()),
+                new CommandBinding(WorkspaceExplorerCommands.CollapseFolderCommand, collapseFolderCommand.ExecutedRouted(), collapseFolderCommand.CanExecuteRouted()),
+                new CommandBinding(FileCommands.NewProjectCommand),
+                new CommandBinding(FileCommands.OpenProjectWorkspaceCommand),
+                new CommandBinding(FileCommands.CloseProjectWorkspaceCommand),
+                new CommandBinding(FileCommands.SynchronizeProjectWorkspaceCommand),
+                new CommandBinding(FileCommands.RenameProjectWorkspaceCommand),
             ];
         }
 
@@ -63,7 +94,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             {
                 new MenuItem { Command = FileCommands.NewProjectCommand },
                 new MenuItem { Command = FileCommands.OpenProjectWorkspaceCommand },
-                new MenuItem { Command = FileCommands.SynchronizeProjectWorkspaceCommand },
+                new Separator(),
+                new MenuItem { Command = SettingCommands.ShowSettingsCommand, CommandParameter = SettingKey }
             };
 
         public override IEnumerable<CommandBinding> CommandBindings { get; }

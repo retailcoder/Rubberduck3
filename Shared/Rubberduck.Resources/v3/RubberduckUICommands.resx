@@ -174,6 +174,12 @@
   <data name="ServerTraceCommands_ShutdownServerCommandText" xml:space="preserve">
     <value>Shutdown server</value>
   </data>
+  <data name="SettingCommands_ShowSettingsCommandText" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="WorkspaceExplorerCommands_CollapseFolderCommandText" xml:space="preserve">
+    <value>Collapse</value>
+  </data>
   <data name="WorkspaceExplorerCommands_CreateFileCommandText" xml:space="preserve">
     <value>Add file...</value>
   </data>
@@ -185,6 +191,9 @@
   </data>
   <data name="WorkspaceExplorerCommands_ExcludeFileCommandText" xml:space="preserve">
     <value>Exclude from Project</value>
+  </data>
+  <data name="WorkspaceExplorerCommands_ExpandFolderCommandText" xml:space="preserve">
+    <value>Expand</value>
   </data>
   <data name="WorkspaceExplorerCommands_IncludeFileCommandText" xml:space="preserve">
     <value>Include in Project</value>

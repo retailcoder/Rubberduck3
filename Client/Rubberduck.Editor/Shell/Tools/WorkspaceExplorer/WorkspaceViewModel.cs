@@ -142,6 +142,11 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                     new MenuItem { Command = WorkspaceExplorerCommands.CreateFolderCommand, CommandParameter = Uri },
                     new Separator(),
                     new MenuItem { Command = FileCommands.OpenFolderInWindowsExplorerCommand, CommandParameter = Uri },
+                    new MenuItem { Command = FileCommands.RenameProjectWorkspaceCommand, CommandParameter = Uri },
+                    new Separator(),
+                    new MenuItem { Command = FileCommands.SynchronizeProjectWorkspaceCommand, CommandParameter = Uri },
+                    new Separator(),
+                    new MenuItem { Command = FileCommands.CloseProjectWorkspaceCommand, CommandParameter = Uri },
                 };
 
         public WorkspaceViewModel(IAppWorkspacesService workspaces)
