@@ -2,7 +2,7 @@
 
 namespace Rubberduck.UI.Services.Abstract
 {
-    public interface IWebNavigator
+    public interface IUriNavigator
     {
         /// <summary>
         /// Opens the specified URI in the default browser.

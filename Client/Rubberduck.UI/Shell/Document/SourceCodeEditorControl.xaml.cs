@@ -77,7 +77,7 @@ public partial class SourceCodeEditorControl : UserControl
     {
         if (parameter is Uri uri)
         {
-            new WebNavigator().Navigate(uri);
+            new UriNavigator().Navigate(uri);
         }
     }
 

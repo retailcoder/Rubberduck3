@@ -289,6 +289,7 @@ namespace Rubberduck.Editor
             services.AddSingleton<IFileSystem, FileSystem>();
             services.AddSingleton<PerformanceRecordAggregator>();
 
+            services.AddSingleton<IUriNavigator, UriNavigator>();
             services.AddSingleton<UIServiceHelper>();
             services.AddSingleton<ServerPlatformServiceHelper>();
             services.AddSingleton<EditorServerState>();
@@ -366,6 +367,7 @@ namespace Rubberduck.Editor
             services.AddSingleton<CloseWorkspaceCommand>();
             services.AddSingleton<SynchronizeWorkspaceCommand>();
             services.AddSingleton<ExitCommand>();
+            services.AddSingleton<OpenUriInWindowsExplorerCommand>();
 
             services.AddSingleton<ViewCommandHandlers>();
             services.AddSingleton<ShowWorkspaceExplorerCommand>();

@@ -14,12 +14,12 @@ namespace Rubberduck.UI.Shared.About
     public class AboutWindowViewModel : ViewModelBase, IAboutWindowViewModel
     {
         //private readonly IMessageBox _messageBox;
-        private readonly IWebNavigator _web;
+        private readonly IUriNavigator _web;
         private readonly Version _version;
 
         public AboutWindowViewModel() { /* designer ctor */ }
 
-        public AboutWindowViewModel(UIServiceHelper service, IWebNavigator web/*, IMessageBox messageBox*/, Version version)
+        public AboutWindowViewModel(UIServiceHelper service, IUriNavigator web/*, IMessageBox messageBox*/, Version version)
         {
             //_messageBox = messageBox;
 

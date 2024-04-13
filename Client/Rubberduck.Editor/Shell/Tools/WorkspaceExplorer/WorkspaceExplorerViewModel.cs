@@ -32,9 +32,11 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
     public class WorkspaceExplorerViewModel : ToolWindowViewModelBase, IWorkspaceExplorerViewModel, ICommandBindingProvider
     {
         private readonly IAppWorkspacesService _service;
+        private readonly FileCommandHandlers _fileCmdHandlers;
 
         public WorkspaceExplorerViewModel(RubberduckSettingsProvider settingsProvider,
             IAppWorkspacesService service, 
+            FileCommandHandlers fileCmdHandlers,
             ShowRubberduckSettingsCommand showSettingsCommand, 
             CloseToolWindowCommand closeToolwindowCommand,
             OpenDocumentCommand openDocumentCommand)
@@ -43,6 +45,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             Title = "Workspace Explorer"; // TODO localize
 
             _service = service;
+            _fileCmdHandlers = fileCmdHandlers;
+
             Workspaces = new(service.ProjectFiles.Select(workspace => WorkspaceViewModel.FromModel(workspace, _service)));
             OpenDocumentCommand = openDocumentCommand;
             
@@ -87,6 +91,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 new CommandBinding(FileCommands.CloseProjectWorkspaceCommand),
                 new CommandBinding(FileCommands.SynchronizeProjectWorkspaceCommand),
                 new CommandBinding(FileCommands.RenameProjectWorkspaceCommand),
+                new CommandBinding(FileCommands.OpenFolderInWindowsExplorerCommand, ((CommandBase)_fileCmdHandlers.OpenUriInWindowsExplorerCommand).ExecutedRouted())
             ];
         }
 
