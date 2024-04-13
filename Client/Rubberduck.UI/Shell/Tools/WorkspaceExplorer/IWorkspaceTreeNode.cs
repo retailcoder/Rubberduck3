@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows.Controls;
 
 namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
 {
@@ -27,6 +28,8 @@ namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
         bool IsExpanded { get; set; }
         bool IsEditingName { get; set; }
 
-        public bool IsInProject { get; set; }
+        bool IsInProject { get; set; }
+
+        IEnumerable<object> ContextMenuItems { get; }
     }
 }

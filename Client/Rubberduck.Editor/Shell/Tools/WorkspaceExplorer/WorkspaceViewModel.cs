@@ -2,6 +2,7 @@
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.UI;
+using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Windows.Controls;
 using System.Windows.Data;
 
 namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
@@ -134,11 +136,21 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         private readonly IAppWorkspacesService _workspaces;
         public ICollectionView ItemsViewSource { get; }
 
+        public virtual IEnumerable<object> ContextMenuItems => new object[]
+                {
+                    new MenuItem { Command = WorkspaceExplorerCommands.CreateFileCommand, CommandParameter = Uri },
+                    new MenuItem { Command = WorkspaceExplorerCommands.CreateFolderCommand, CommandParameter = Uri },
+                    new Separator(),
+                    new MenuItem { Command = FileCommands.OpenFolderInWindowsExplorerCommand, CommandParameter = Uri },
+                };
+
         public WorkspaceViewModel(IAppWorkspacesService workspaces)
         {
             _workspaces = workspaces;
             ItemsViewSource = CollectionViewSource.GetDefaultView(_children);
             ItemsViewSource.Filter = o => ShowAllFiles || ((IWorkspaceTreeNode)o).IsInProject;
+
+            IsInProject = true;
         }
 
         private bool _isFileSystemWatcherEnabled;

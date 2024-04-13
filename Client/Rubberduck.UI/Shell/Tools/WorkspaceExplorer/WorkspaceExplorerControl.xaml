@@ -23,14 +23,27 @@
                 <Setter Property="FontWeight" Value="Normal" />
                 <Setter Property="Margin" Value="5,0" />
                 <Setter Property="Padding" Value="0" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsInProject}" Value="False">
+                        <Setter Property="Foreground" Value="{DynamicResource ThemeTextInactiveColorBrush}" />
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="NodeIconStyle" TargetType="Image" BasedOn="{StaticResource IconStyle16}">
                 <Setter Property="Margin" Value="0,0,5,0" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsInProject}" Value="False">
+                        <Setter Property="Opacity" Value="0.5" />
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <HierarchicalDataTemplate x:Key="WorkspaceExplorerNodeTemplate" DataType="local:IWorkspaceTreeNode" ItemsSource="{Binding ItemsViewSource}">
-                <StackPanel Orientation="Horizontal">
+                <DockPanel HorizontalAlignment="Stretch">
+                    <DockPanel.ContextMenu>
+                        <ContextMenu ItemsSource="{Binding ContextMenuItems}" />
+                    </DockPanel.ContextMenu>
                     <Image Style="{DynamicResource NodeIconStyle}">
                         <Image.Source>
                             <MultiBinding Converter="{StaticResource IconConverter}">
@@ -39,159 +52,25 @@
                         </Image.Source>
                     </Image>
                     <Label Content="{Binding DisplayName}" Style="{StaticResource NodeLabelStyle}" />
-                    <!--<TextBox Text="{Binding DisplayName, UpdateSourceTrigger=LostFocus}" 
-                             LostFocus="TextBox_LostFocus"
-                             MouseDoubleClick="OnFileDoubleClick" 
-                             MouseUp="TextBox_MouseUp" 
-                             PreviewMouseDown="TextBox_PreviewMouseDown"
-                             IsReadOnly="{Binding IsEditingName}" IsReadOnlyCaretVisible="False">
-                        <TextBox.InputBindings>
-                            <KeyBinding Key="Esc" Command="{Binding CancelEditCommand, ElementName=WorkspaceExplorerRoot}" CommandParameter="{Binding}" />
-                        </TextBox.InputBindings>
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" BasedOn="{StaticResource TreeNodeEditableLabel}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsEditingName}" Value="True">
-                                        <Setter Property="IsReadOnly" Value="False" />
-                                        <Setter Property="Background" Value="{DynamicResource ThemeBackgroundColorBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBox.Style>
-                    </TextBox>-->
-                </StackPanel>
+                </DockPanel>
             </HierarchicalDataTemplate>
-
-            <!--<HierarchicalDataTemplate x:Key="WorkspaceFolderTemplate" DataType="local:IWorkspaceFolderViewModel" ItemsSource="{Binding ItemsViewSource}">
-                <HierarchicalDataTemplate.Resources>
-                    <Style x:Key="FolderIconStyle" TargetType="Image" BasedOn="{StaticResource NodeIconStyle}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                                <Setter Property="Source" Value="{StaticResource SharpFolderOpenIcon}" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </HierarchicalDataTemplate.Resources>
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="{DynamicResource SharpFolderClosedIcon}" Style="{DynamicResource FolderIconStyle}" />
-                    <Label Content="{Binding DisplayName}" Style="{DynamicResource NodeLabelStyle}" />
-
-                    <StackPanel.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Add">
-                                <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.CreateFolderCommand}" CommandParameter="{Binding Uri}" />
-                                <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.CreateFileCommand}" CommandParameter="{Binding Uri}" />
-                            </MenuItem>
-                            <Separator />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.ExcludeFileCommand}" CommandParameter="{Binding Uri}" />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.RenameUriCommand}" CommandParameter="{Binding Uri}" />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.DeleteUriCommand}" CommandParameter="{Binding Uri}" />
-                        </ContextMenu>
-                    </StackPanel.ContextMenu>
-                </StackPanel>
-            </HierarchicalDataTemplate>
-
-            <DataTemplate x:Key="SourceFileTemplate" DataType="local:IWorkspaceSourceFileViewModel">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="{DynamicResource SourceDocumentIcon16}" />
-                    <Label Content="{Binding DisplayName}" Style="{DynamicResource NodeLabelStyle}" MouseDoubleClick="OnFileDoubleClick" />
-                    <StackPanel.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem FontWeight="SemiBold" Command="{x:Static local:WorkspaceExplorerCommands.OpenFileCommand}" CommandParameter="{Binding Uri}" />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.ExcludeFileCommand}" CommandParameter="{Binding Uri}" />
-                            <Separator />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.RenameUriCommand}" CommandParameter="{Binding Uri}" />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.DeleteUriCommand}" CommandParameter="{Binding Uri}" />
-                        </ContextMenu>
-                    </StackPanel.ContextMenu>
-                </StackPanel>
-            </DataTemplate>
             
-            <DataTemplate x:Key="OtherFileTemplate" DataType="local:IWorkspaceFileViewModel">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="{DynamicResource DocumentIcon16}" />
-                    <Label Content="{Binding DisplayName}" Style="{DynamicResource NodeLabelStyle}" MouseDoubleClick="OnFileDoubleClick" />
-                    <StackPanel.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem FontWeight="SemiBold" Command="{x:Static local:WorkspaceExplorerCommands.OpenFileCommand}" CommandParameter="{Binding Uri}" />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.ExcludeFileCommand}" CommandParameter="{Binding Uri}" />
-                            <Separator />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.RenameUriCommand}" CommandParameter="{Binding Uri}" />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.DeleteUriCommand}" CommandParameter="{Binding Uri}" />
-                        </ContextMenu>
-                    </StackPanel.ContextMenu>
-                </StackPanel>
-            </DataTemplate>
-
-            <DataTemplate x:Key="GhostFileTemplate" DataType="local:IWorkspaceFileViewModel">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="{DynamicResource GhostDocumentIcon16}" />
-
-                    <TextBox IsReadOnly="{Binding IsEditingName, Converter={StaticResource InverseBoolConverter}}" 
-                             Text="{Binding DisplayName}" BorderThickness="0" VerticalContentAlignment="Center"
-                             Foreground="{StaticResource ThemeTextInactiveColorBrush}" 
-                             MouseDoubleClick="OnFileDoubleClick" />
-                    
-                    <StackPanel.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.OpenFileCommand}" CommandParameter="{Binding Uri}" />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.IncludeFileCommand}" CommandParameter="{Binding Uri}" />
-                            <Separator />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.RenameUriCommand}" CommandParameter="{Binding Uri}" />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.DeleteUriCommand}" CommandParameter="{Binding Uri}" />
-                        </ContextMenu>
-                    </StackPanel.ContextMenu>
-                </StackPanel>
-            </DataTemplate>
-            
-            <HierarchicalDataTemplate x:Key="GhostFolderTemplate" DataType="local:IWorkspaceFolderViewModel" ItemsSource="{Binding ItemsViewSource}">
-                <HierarchicalDataTemplate.Resources>
-                    <Style x:Key="FolderIconStyle" TargetType="Image" BasedOn="{StaticResource NodeIconStyle}">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                                <Setter Property="Source" Value="{StaticResource GhostFolderOpenIcon16}" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </HierarchicalDataTemplate.Resources>
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="{DynamicResource GhostFolderClosedIcon16}" Style="{DynamicResource FolderIconStyle}" />
-                    <Label Content="{Binding DisplayName}" Style="{DynamicResource NodeLabelStyle}" Foreground="{StaticResource ThemeTextInactiveColorBrush}" />
-
-                    <StackPanel.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.IncludeFileCommand}" CommandParameter="{Binding Uri}" />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.RenameUriCommand}" CommandParameter="{Binding Uri}" />
-                            <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.DeleteUriCommand}" CommandParameter="{Binding Uri}" />
-                        </ContextMenu>
-                    </StackPanel.ContextMenu>
-                </StackPanel>
+            <HierarchicalDataTemplate x:Key="WorkspaceExplorerNodeEditingTemplate" DataType="local:IWorkspaceTreeNode" ItemsSource="{Binding ItemsViewSource}">
+                <DockPanel HorizontalAlignment="Stretch">
+                    <Image Style="{DynamicResource NodeIconStyle}">
+                        <Image.Source>
+                            <MultiBinding Converter="{StaticResource IconConverter}">
+                                <Binding RelativeSource="{RelativeSource Mode=Self}" Path="DataContext" />
+                            </MultiBinding>
+                        </Image.Source>
+                    </Image>
+                    <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=LostFocus}" Style="{StaticResource TreeNodeEditableLabel}" />
+                </DockPanel>
             </HierarchicalDataTemplate>
 
-            <local:WorkspaceNodeTemplateSelector x:Key="NodeTemplateSelector" 
-                                                 FolderTemplate="{StaticResource WorkspaceFolderTemplate}"
-                                                 SourceFileTemplate="{StaticResource SourceFileTemplate}"
-                                                 WorkspaceFileTemplate="{StaticResource OtherFileTemplate}" 
-                                                 GhostFileTemplate="{StaticResource GhostFileTemplate}"
-                                                 GhostFolderTemplate="{StaticResource GhostFolderTemplate}"/>-->
-
-
-            <!-- TODO horizontal-friendly layout with a ListView
-            <ControlTemplate x:Key="ContentAsListView">
-                
-                <ListView BorderBrush="{DynamicResource ThemeWhiteMediumColorBrush}" BorderThickness="1"
-                          Background="{DynamicResource ThemeWhiteLightColorBrush75}"
-                          ItemsSource="{Binding Workspaces}">
-                    <ListView.ItemTemplate>
-                        <HierarchicalDataTemplate DataType="local:IWorkspaceTreeNode"
-                            ItemsSource="{Binding Children}"
-                            ItemContainerStyle="{StaticResource ListViewContainerStyle}"
-                            ItemTemplateSelector="{StaticResource NodeTemplateSelector}">
-                            
-                        </HierarchicalDataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </ControlTemplate>-->
+            <local:WorkspaceNodeTemplateSelector x:Key="WorkspaceNodeTemplateSelector" 
+                                                 WorkspaceNodeTemplate="{StaticResource WorkspaceExplorerNodeTemplate}"
+                                                 EditingTemplate="{StaticResource WorkspaceExplorerNodeEditingTemplate}" />
             
         </ResourceDictionary>
     </UserControl.Resources>
@@ -265,6 +144,7 @@
                                       BorderBrush="{DynamicResource ThemeWhiteMediumColorBrush}" BorderThickness="1" 
                                       Background="{DynamicResource ThemeWhiteLightColorBrush75}"
                                       ItemsSource="{Binding Workspaces}"
+                                      MouseDown="StretchingTreeView_MouseDown"
                                       MouseDoubleClick="OnFileDoubleClick"
                                       ItemContainerStyle="{StaticResource TreeViewContainerStyle}">
                 <xb:Interaction.Behaviors>
@@ -272,33 +152,17 @@
                 </xb:Interaction.Behaviors>
 
                 <TreeView.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Command="{x:Static cmd:FileCommands.NewProjectCommand}" />
-                        <MenuItem Command="{x:Static cmd:FileCommands.OpenProjectWorkspaceCommand}" />
-                        <MenuItem Command="{x:Static cmd:FileCommands.SynchronizeProjectWorkspaceCommand}" />
-                    </ContextMenu>
+                    <ContextMenu ItemsSource="{Binding ContextMenuItems}" />
                 </TreeView.ContextMenu>
 
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate DataType="local:IWorkspaceTreeNode" 
                                               ItemsSource="{Binding ItemsViewSource}"
                                               ItemContainerStyle="{StaticResource TreeViewContainerStyle}"
-                                              ItemTemplate="{StaticResource WorkspaceExplorerNodeTemplate}">
+                                              ItemTemplateSelector="{StaticResource WorkspaceNodeTemplateSelector}">
                         <Label Content="{Binding DisplayName}" Style="{DynamicResource NodeLabelStyle}" FontWeight="SemiBold">
                             <Label.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="Add">
-                                        <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.CreateFolderCommand}" CommandParameter="{Binding Uri}" />
-                                        <MenuItem Command="{x:Static local:WorkspaceExplorerCommands.CreateFileCommand}" CommandParameter="{Binding Uri}" />
-                                    </MenuItem>
-                                    <Separator />
-                                    <MenuItem Command="{x:Static cmd:FileCommands.SynchronizeProjectWorkspaceCommand}" CommandParameter="{Binding Uri}" />
-                                    <MenuItem Command="{x:Static cmd:FileCommands.OpenFolderInWindowsExplorerCommand}" CommandParameter="{Binding Uri}" />
-                                    <Separator />
-                                    <MenuItem Command="{x:Static cmd:FileCommands.RenameProjectWorkspaceCommand}" CommandParameter="{Binding Uri}" />
-                                    <Separator />
-                                    <MenuItem Command="{x:Static cmd:FileCommands.CloseProjectWorkspaceCommand}" CommandParameter="{Binding Uri}" />
-                                </ContextMenu>
+                                <ContextMenu ItemsSource="{Binding ContextMenuItems}" />
                             </Label.ContextMenu>
                         </Label>
                     </HierarchicalDataTemplate>

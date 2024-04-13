@@ -1,9 +1,12 @@
 ﻿using Rubberduck.InternalApi.Extensions;
 using Rubberduck.UI;
+using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows.Controls;
 using System.Windows.Data;
 
 namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
@@ -17,6 +20,14 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             ItemsViewSource = CollectionViewSource.GetDefaultView(_children);
             ItemsViewSource.Filter = o => ShowAllFiles || ((IWorkspaceTreeNode)o).IsInProject;
         }
+
+        public virtual IEnumerable<object> ContextMenuItems => new object[]
+            {
+                new MenuItem { Command = WorkspaceExplorerCommands.CreateFileCommand },
+                new MenuItem { Command = WorkspaceExplorerCommands.CreateFolderCommand },
+                new Separator(),
+                new MenuItem { Command = FileCommands.OpenFolderInWindowsExplorerCommand, CommandParameter = Uri },
+            };
 
 
         private string _name = null!;

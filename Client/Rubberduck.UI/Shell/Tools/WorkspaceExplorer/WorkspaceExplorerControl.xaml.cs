@@ -3,6 +3,7 @@ using Rubberduck.UI.Services;
 using Rubberduck.UI.Shell;
 using Rubberduck.UI.Windows;
 using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -94,6 +95,31 @@ public partial class WorkspaceExplorerControl : UserControl
         if (sender is TextBox box && box.DataContext is IWorkspaceTreeNode node)
         {
             node.IsEditingName = false;
+        }
+    }
+
+    private void StretchingTreeView_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is TreeView tree)
+        {
+            var point = e.GetPosition(tree);
+            var node = tree.InputHitTest(point);
+            if (node is DependencyObject depObj) 
+            {
+                var item = UIHelper.FindVisualParent<TreeViewItem>(depObj);
+                if (item is TreeViewItem && item.DataContext is IWorkspaceTreeNode itemNode)
+                {
+                    itemNode.IsSelected = true;
+                }
+            }
+            else
+            {
+                var selectedNodes = tree.ItemsSource.OfType<IWorkspaceTreeNode>().Where(e => e.IsSelected);
+                foreach (var selectedNode in selectedNodes)
+                {
+                    selectedNode.IsSelected = false;
+                }
+            }
         }
     }
 }

@@ -8,10 +8,22 @@ public class StretchingTreeViewItem : TreeViewItem
     public StretchingTreeViewItem()
     {
         Loaded += StretchingTreeViewItem_Loaded;
+        Expanded += StretchingTreeViewItem_Expanded;
+        Collapsed += StretchingTreeViewItem_Collapsed;
     }
 
+    private void StretchingTreeViewItem_Collapsed(object sender, RoutedEventArgs e)
+    {
+        _tree?.InvalidateVisual();
+    }
+
+    private void StretchingTreeViewItem_Expanded(object sender, RoutedEventArgs e)
+    {
+        _tree?.InvalidateVisual();
+    }
+
+    private TreeView _tree;
     private Grid _grid;
-    private double _leftPadding;
 
     private void StretchingTreeViewItem_Loaded(object sender, RoutedEventArgs e)
     {
@@ -19,6 +31,8 @@ public class StretchingTreeViewItem : TreeViewItem
         {
             if (GetVisualChild(0) is Grid grid)
             {
+                _grid = grid;
+
                 grid.HorizontalAlignment = HorizontalAlignment.Stretch;
                 if (grid.ColumnDefinitions.Count == 3)
                 {
@@ -26,23 +40,23 @@ public class StretchingTreeViewItem : TreeViewItem
                     grid.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
                 }
 
-                _leftPadding = grid.ColumnDefinitions[0].ActualWidth;
                 var parent = UIHelper.FindVisualParent<TreeView>(this);
                 if (parent is TreeView tree)
                 {
-                    grid.Width = tree.ActualWidth - _leftPadding - 4;
+                    _tree = tree;
+                    OnResize(tree);
                     tree.SizeChanged += Tree_SizeChanged;
                 }
-
-                _grid = grid;
             }
         }
     }
 
-    private void Tree_SizeChanged(object sender, SizeChangedEventArgs e)
+    private void Tree_SizeChanged(object sender, SizeChangedEventArgs e) => OnResize((TreeView)sender);
+
+    private void OnResize(TreeView tree)
     {
-        var tree = (TreeView)sender;
-        _grid.Width = tree.ActualWidth - _leftPadding - 4;
+        var leftPadding = _grid.ColumnDefinitions[0].ActualWidth + tree.Padding.Left + tree.Padding.Right;
+        _grid.Width = tree.ActualWidth - leftPadding - 8;
     }
 
     protected override DependencyObject GetContainerForItemOverride()

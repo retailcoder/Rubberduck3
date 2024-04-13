@@ -8,6 +8,7 @@ using Rubberduck.InternalApi.Settings.Model.Editor.Tools;
 using Rubberduck.ServerPlatform.Model.Telemetry;
 using Rubberduck.UI;
 using Rubberduck.UI.Command.SharedHandlers;
+using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Services.Abstract;
 using Rubberduck.UI.Shell;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
@@ -17,6 +18,7 @@ using System.Collections.ObjectModel;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -56,6 +58,13 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 new CommandBinding(WorkspaceExplorerCommands.ExcludeFileCommand, ExecuteExcludeUriCommand),
             ];
         }
+
+        public IEnumerable<object> ContextMenuItems => new object[]
+            {
+                new MenuItem { Command = FileCommands.NewProjectCommand },
+                new MenuItem { Command = FileCommands.OpenProjectWorkspaceCommand },
+                new MenuItem { Command = FileCommands.SynchronizeProjectWorkspaceCommand },
+            };
 
         public override IEnumerable<CommandBinding> CommandBindings { get; }
 
