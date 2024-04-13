@@ -31,9 +31,10 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 }
             : new object[]
                 {
-                    new MenuItem { Command = WorkspaceExplorerCommands.IncludeFileCommand, CommandParameter = Uri },
                     new MenuItem { Command = WorkspaceExplorerCommands.RenameUriCommand, CommandParameter = Uri },
                     new MenuItem { Command = WorkspaceExplorerCommands.DeleteUriCommand, CommandParameter = Uri },
+                    new Separator(),
+                    new MenuItem { Command = WorkspaceExplorerCommands.IncludeFileCommand, CommandParameter = Uri },
                 };
 
         public override string DisplayName 

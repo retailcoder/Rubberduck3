@@ -38,12 +38,14 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 }
             : new object[]
                 {
-                    new MenuItem { Command = WorkspaceExplorerCommands.IncludeFileCommand, CommandParameter = Uri },
+                    new MenuItem { Command = WorkspaceExplorerCommands.ExpandFolderCommand, CommandParameter = this },
+                    new MenuItem { Command = WorkspaceExplorerCommands.CollapseFolderCommand, CommandParameter = this },
+                    new Separator(),
+                    new MenuItem { Command = FileCommands.OpenFolderInWindowsExplorerCommand, CommandParameter = Uri },
                     new MenuItem { Command = WorkspaceExplorerCommands.RenameUriCommand, CommandParameter = Uri },
                     new MenuItem { Command = WorkspaceExplorerCommands.DeleteUriCommand, CommandParameter = Uri },
                     new Separator(),
-                    new MenuItem { Command = WorkspaceExplorerCommands.ExpandFolderCommand, CommandParameter = this },
-                    new MenuItem { Command = WorkspaceExplorerCommands.CollapseFolderCommand, CommandParameter = this },
+                    new MenuItem { Command = WorkspaceExplorerCommands.IncludeFileCommand, CommandParameter = Uri },
                 };
     }
 }
