@@ -14,8 +14,11 @@ namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
 
     public interface IWorkspaceTreeNode : INotifyPropertyChanged
     {
-        WorkspaceUri Uri { get; }
-        string FileName { get; }
+        WorkspaceUri Uri { get; set; }
+        /// <summary>
+        /// The name of the file, without its extension.
+        /// </summary>
+        string FileName { get; set; }
         string DisplayName { get; set; }
         bool ShowFileExtensions { get; set; }
         bool ShowAllFiles { get; set; }
@@ -26,11 +29,15 @@ namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
         bool IsSelected { get; set; }
         bool Filtered { get; set; }
         bool IsExpanded { get; set; }
-        bool IsEditingName { get; set; }
 
+        event EventHandler<CancelEventArgs> NameEditCompleted;
+        bool IsEditingName { get; set; }
+        string EditName { get; set; }
         bool IsInProject { get; set; }
         bool IsLoadError { get; set; }
         bool IsVisible { get; set; }
+
+        bool IsDeleted { get; set; }
 
         IEnumerable<object> ContextMenuItems { get; }
     }

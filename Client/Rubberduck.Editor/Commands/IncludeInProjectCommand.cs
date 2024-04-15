@@ -35,7 +35,7 @@ public class IncludeInProjectCommand : CommandBase
                 file.IsLoadError = !System.IO.File.Exists(fileUri.AbsoluteLocation.LocalPath);
                 if (file.HasSourceFileExtension(SupportedLanguage.VBA) || file.HasSourceFileExtension(SupportedLanguage.VB6))
                 {
-                    var module = new Module { Name = fileUri.Name, Uri = fileUri.AbsoluteLocation.LocalPath, IsLoadError = file.IsLoadError };
+                    var module = new Module { Name = fileUri.Name, RelativeUri = fileUri.AbsoluteLocation.LocalPath, IsLoadError = file.IsLoadError };
                     project.VBProject.Modules = project.VBProject.Modules.Append(module).ToArray();
                 }
                 else
@@ -58,7 +58,7 @@ public class IncludeInProjectCommand : CommandBase
             {
                 var folder = Folder.FromWorkspaceUri(folderUri);
                 folder.IsLoadError = !System.IO.Directory.Exists(folderUri.AbsoluteLocation.LocalPath);
-                project.VBProject.Folders = project.VBProject.Folders.Append(folder).ToArray();
+                project.VBProject.Folders = project.VBProject.Folders.Append(folder.RelativeUri).ToArray();
 
                 var workspace = _workspaces.Workspaces.Workspaces.SingleOrDefault(e => e.WorkspaceRoot?.SourceRoot.LocalPath == folderUri.SourceRoot.LocalPath);
                 if (workspace != null)

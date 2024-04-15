@@ -13,19 +13,22 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         {
             return new WorkspaceFileViewModel
             {
-                Uri = new WorkspaceFileUri(model.Uri, workspaceRoot),
+                Model = model,
+                Uri = new WorkspaceFileUri(model.RelativeUri, workspaceRoot),
                 Name = model.Name,
                 IsAutoOpen = model.IsAutoOpen,
                 IsInProject = true,
             };
         }
 
+        public File Model { get; init; }
+
         public override IEnumerable<object> ContextMenuItems => IsInProject
             ? new object[] 
                 {
                     new MenuItem { Command = WorkspaceExplorerCommands.OpenFileCommand, CommandParameter = Uri },
                     new MenuItem { Command = WorkspaceExplorerCommands.RenameUriCommand, CommandParameter = Uri },
-                    new MenuItem { Command = WorkspaceExplorerCommands.DeleteUriCommand, CommandParameter = Uri },
+                    new MenuItem { Command = WorkspaceExplorerCommands.DeleteUriCommand, CommandParameter = this },
                     new Separator(),
                     new MenuItem { Command = WorkspaceExplorerCommands.ExcludeFileCommand, CommandParameter = Uri },
                 }
@@ -45,7 +48,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
             set
             {
-                Name = value;
+                Name = System.IO.Path.GetFileNameWithoutExtension(value);
             }
         } 
 

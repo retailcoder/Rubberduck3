@@ -158,7 +158,7 @@ namespace Rubberduck.InternalApi.Services
         {
             foreach (var file in projectFile.VBProject.Modules.Concat(projectFile.VBProject.OtherFiles))
             {
-                var uri = new WorkspaceFileUri(file.Uri, workspaceRoot);
+                var uri = new WorkspaceFileUri(file.RelativeUri, workspaceRoot);
                 LoadWorkspaceFile(uri, isSourceFile: file is Module, file.IsAutoOpen, projectFile.VBProject.ProjectType);
             }
         }

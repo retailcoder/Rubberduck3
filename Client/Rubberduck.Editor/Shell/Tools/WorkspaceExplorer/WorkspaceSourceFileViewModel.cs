@@ -11,13 +11,16 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         {
             return new WorkspaceSourceFileViewModel
             {
-                Uri = new WorkspaceFileUri(model.Uri, workspaceRoot),
+                Module = model,
+                Uri = new WorkspaceFileUri(model.RelativeUri, workspaceRoot),
                 Name = model.Name,
                 IsAutoOpen = model.IsAutoOpen,
                 DocumentClassType = model.Super,
                 IsInProject = true
             };
         }
+
+        public Module Module { get; init; }
 
         private DocClassType? _documentClassType;
         public DocClassType? DocumentClassType

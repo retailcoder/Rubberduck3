@@ -12,8 +12,10 @@ using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Services.Abstract;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -26,19 +28,22 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
     {
         private readonly IAppWorkspacesService _service;
         private readonly WorkspaceExplorerCommandHandlers _handlers;
+        private readonly RenameUriCommand _renameUriCommand;
 
         public WorkspaceExplorerViewModel(RubberduckSettingsProvider settingsProvider,
             IAppWorkspacesService service, 
             WorkspaceExplorerCommandHandlers handlers,
             ShowRubberduckSettingsCommand showSettingsCommand, 
             CloseToolWindowCommand closeToolwindowCommand,
-            OpenDocumentCommand openDocumentCommand)
+            OpenDocumentCommand openDocumentCommand,
+            RenameUriCommand renameUriCommand)
             : base(DockingLocation.DockLeft, showSettingsCommand, closeToolwindowCommand)
         {
             Title = "Workspace Explorer"; // TODO localize
 
             _service = service;
             _handlers = handlers;
+            _renameUriCommand = renameUriCommand;
 
             Workspaces = new(service.ProjectFiles.Select(workspace => WorkspaceViewModel.FromModel(workspace, _service)));
             OpenDocumentCommand = openDocumentCommand;
@@ -69,6 +74,17 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                     }
                 }, parameter => parameter is IWorkspaceFolderViewModel folder && folder.IsExpanded);
 
+            var prepareRenameUriCommand = new DelegateCommand(UIServiceHelper.Instance,
+                parameter =>
+                {
+                    var node = this.Workspaces.Select(e => e.FindChildNode((WorkspaceUri)parameter)).SingleOrDefault();
+                    if (node != null)
+                    {
+                        node.IsEditingName = true;
+                        node.NameEditCompleted += OnNameEditCompleted;
+                    }
+                });
+
             CommandBindings = [
                 new CommandBinding(WorkspaceExplorerCommands.OpenFileCommand, openDocumentCommand.ExecutedRouted(), openDocumentCommand.CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.IncludeFileCommand, ((CommandBase)_handlers.IncludeUriCommand).ExecutedRouted(), ((CommandBase)_handlers.IncludeUriCommand).CanExecuteRouted()),
@@ -76,7 +92,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 new CommandBinding(WorkspaceExplorerCommands.CreateFileCommand),
                 new CommandBinding(WorkspaceExplorerCommands.CreateFolderCommand),
                 new CommandBinding(WorkspaceExplorerCommands.DeleteUriCommand, ((CommandBase)_handlers.DeleteUriCommand).ExecutedRouted(), ((CommandBase)_handlers.DeleteUriCommand).CanExecuteRouted()),
-                new CommandBinding(WorkspaceExplorerCommands.RenameUriCommand),
+                new CommandBinding(WorkspaceExplorerCommands.RenameUriCommand, prepareRenameUriCommand.ExecutedRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.ExpandFolderCommand, expandFolderCommand.ExecutedRouted(), expandFolderCommand.CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.CollapseFolderCommand, collapseFolderCommand.ExecutedRouted(), collapseFolderCommand.CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.NewProjectCommand,((CommandBase)_handlers.NewProjectCommand).ExecutedRouted()),
@@ -86,6 +102,15 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 new CommandBinding(WorkspaceExplorerCommands.RenameProjectWorkspaceCommand),
                 new CommandBinding(WorkspaceExplorerCommands.OpenFolderInWindowsExplorerCommand, ((CommandBase)_handlers.OpenUriInWindowsExplorerCommand).ExecutedRouted(), ((CommandBase)_handlers.OpenUriInWindowsExplorerCommand).CanExecuteRouted())
             ];
+        }
+
+        private void OnNameEditCompleted(object? sender, CancelEventArgs e)
+        {
+            if (sender is IWorkspaceTreeNode node)
+            {
+                node.NameEditCompleted -= OnNameEditCompleted;
+                _renameUriCommand.Execute(node);
+            }
         }
 
         public IEnumerable<object> ContextMenuItems => new object[]

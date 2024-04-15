@@ -1,6 +1,5 @@
 ﻿using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
-using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
 using System.Collections.Generic;
@@ -15,9 +14,10 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         {
             return new WorkspaceFolderViewModel
             {
-                Uri = new WorkspaceFolderUri(model.Uri, workspaceRoot),
-                Name = model.Name.Split('.').Last(),
+                Uri = new WorkspaceFolderUri(model.RelativeUri, workspaceRoot),
+                Name = model.Name,
                 IsInProject = true,
+                IsLoadError = model.IsLoadError,
             };
         }
 
@@ -32,7 +32,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                     new Separator(),
                     new MenuItem { Command = WorkspaceExplorerCommands.OpenFolderInWindowsExplorerCommand, CommandParameter = Uri },
                     new MenuItem { Command = WorkspaceExplorerCommands.RenameUriCommand, CommandParameter = Uri },
-                    new MenuItem { Command = WorkspaceExplorerCommands.DeleteUriCommand, CommandParameter = Uri },
+                    new MenuItem { Command = WorkspaceExplorerCommands.DeleteUriCommand, CommandParameter = this },
                     new Separator(),
                     new MenuItem { Command = WorkspaceExplorerCommands.ExcludeFileCommand, CommandParameter = Uri },
                 }

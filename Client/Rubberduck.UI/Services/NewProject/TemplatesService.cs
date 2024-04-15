@@ -74,10 +74,10 @@ namespace Rubberduck.UI.Services.NewProject
                 {
                     if (!TryRunAction(() =>
                     {
-                        var originalPath = _fileSystem.Path.Combine(projectFile.Uri.LocalPath, WorkspaceUri.SourceRootName, indexedFile.File.Uri);
+                        var originalPath = _fileSystem.Path.Combine(projectFile.Uri.LocalPath, WorkspaceUri.SourceRootName, indexedFile.File.RelativeUri);
                         var fileLength = _fileSystem.FileInfo.New(originalPath).Length;
 
-                        var newPath = _fileSystem.Path.Combine(sourceRoot, indexedFile.File.Uri);
+                        var newPath = _fileSystem.Path.Combine(sourceRoot, indexedFile.File.RelativeUri);
                         _fileSystem.Directory.CreateDirectory(newPath);
                         _fileSystem.File.Copy(originalPath, newPath, overwrite: true);
 
@@ -88,7 +88,7 @@ namespace Rubberduck.UI.Services.NewProject
                     {
                         if (exception is not null)
                         {
-                            LogException(exception, $"Ignoring file: '{indexedFile.File.Uri}'");
+                            LogException(exception, $"Ignoring file: '{indexedFile.File.RelativeUri}'");
                         }
                     }
                 }
@@ -145,7 +145,7 @@ namespace Rubberduck.UI.Services.NewProject
             return path;
         }
 
-        private string CreateTemplateSourceFolder(string root, IEnumerable<Folder> folders)
+        private string CreateTemplateSourceFolder(string root, IEnumerable<string> folders)
         {
             var path = _fileSystem.Path.Combine(root, ProjectTemplate.TemplateSourceFolderName);
             if (!TryRunAction(() =>
@@ -153,10 +153,10 @@ namespace Rubberduck.UI.Services.NewProject
                 _fileSystem.Directory.CreateDirectory(path);
                 LogTrace($"Created .template source folder.", $"Path: {path}");
 
-                foreach (var folder in folders)
+                foreach (var relativeUri in folders)
                 {
-                    _fileSystem.Directory.CreateDirectory(folder.Uri);
-                    LogTrace($"Created folder: {folder.Uri}");
+                    _fileSystem.Directory.CreateDirectory(relativeUri);
+                    LogTrace($"Created folder: {relativeUri}");
                 }
             }, out var exception))
             {

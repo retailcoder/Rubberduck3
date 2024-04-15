@@ -4,7 +4,6 @@ using Rubberduck.InternalApi.Services;
 using Rubberduck.UI;
 using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
-using SharpVectors.Net;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -18,9 +17,11 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 {
     public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceViewModel
     {
+        public event EventHandler<CancelEventArgs> NameEditCompleted = delegate { };
+
         public static WorkspaceViewModel FromModel(ProjectFile model, IAppWorkspacesService service)
         {
-            var vm = new WorkspaceViewModel(service)
+            var vm = new WorkspaceViewModel(model, service)
             {
                 Name = model.VBProject.Name,
                 DisplayName = model.VBProject.Name,
@@ -31,7 +32,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
             var sourceFiles = model.VBProject.Modules.Select(e => WorkspaceSourceFileViewModel.FromModel(e, model.Uri) as WorkspaceTreeNodeViewModel);
             var otherFiles = model.VBProject.OtherFiles.Select(e => WorkspaceFileViewModel.FromModel(e, model.Uri) as WorkspaceTreeNodeViewModel);
-            var projectFolders = model.VBProject.Folders.Select(e => WorkspaceFolderViewModel.FromModel(e, model.Uri)).OrderBy(e => e.Name).ToList();
+            var projectFolders = model.VBProject.Folders.Select(relativeUri => WorkspaceFolderViewModel.FromModel(new Folder { RelativeUri = relativeUri }, model.Uri)).OrderBy(e => e.Name).ToList();
             var rootFolders = projectFolders.Where(e => ((WorkspaceFolderUri)e.Uri).RelativeUriString!.Count(c => c == '/') == 0);
 
             var projectFilesByFolder = sourceFiles.Concat(otherFiles)
@@ -158,14 +159,17 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                     new MenuItem { Command = FileCommands.CloseProjectWorkspaceCommand, CommandParameter = Uri },
                 };
 
-        public WorkspaceViewModel(IAppWorkspacesService workspaces)
+        public WorkspaceViewModel(ProjectFile model, IAppWorkspacesService workspaces)
         {
             _workspaces = workspaces;
             ItemsViewSource = CollectionViewSource.GetDefaultView(_children);
             ItemsViewSource.Filter = o => ((IWorkspaceTreeNode)o).IsVisible && (ShowAllFiles || ((IWorkspaceTreeNode)o).IsInProject);
 
+            Model = model;
             IsInProject = true;
         }
+
+        public ProjectFile Model { get; init; }
 
         private bool _isFileSystemWatcherEnabled;
         public bool IsFileSystemWatcherEnabled
@@ -188,6 +192,19 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             {
                 var (node, parent) = result.Value;
                 node.IsInProject = true;
+
+                if (node is WorkspaceSourceFileViewModel sourceFile)
+                {
+                    Model.VBProject.Modules = Model.VBProject.Modules.Append(sourceFile.Module).ToArray();
+                }
+                else if (node is WorkspaceFileViewModel file)
+                {
+                    Model.VBProject.OtherFiles = Model.VBProject.OtherFiles.Append(file.Model).ToArray();
+                }
+                else if (node is WorkspaceFolderViewModel folder)
+                {
+                    Model.VBProject.Folders = Model.VBProject.Folders.Append(folder.Uri.RelativeUriString!).ToHashSet().ToArray();
+                }
             }
         }
 
@@ -233,6 +250,21 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
                 parent.Children.Remove(node);
                 ItemsViewSource.Refresh();
+
+                if (node is WorkspaceSourceFileViewModel sourceFile)
+                {
+                    Model.VBProject.Modules = Model.VBProject.Modules.Where(e => e.RelativeUri != uri.RelativeUriString).ToArray();
+                }
+                else if (node is WorkspaceFileViewModel file)
+                {
+                    Model.VBProject.OtherFiles = Model.VBProject.OtherFiles.Where(e => e.RelativeUri != uri.RelativeUriString).ToArray();
+                }
+                else if (node is WorkspaceFolderViewModel folder)
+                {
+                    Model.VBProject.Folders = Model.VBProject.Folders.Where(e => !e.StartsWith(folder.Uri.RelativeUriString!)).ToArray();
+                    Model.VBProject.Modules = Model.VBProject.Modules.Where(e => !e.RelativeUri.StartsWith(uri.RelativeUriString!)).ToArray();
+                    Model.VBProject.OtherFiles = Model.VBProject.OtherFiles.Where(e => !e.RelativeUri.StartsWith(uri.RelativeUriString!)).ToArray();
+                }
             }
         }
 
@@ -243,6 +275,31 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         public string DisplayName { get; set; }
 
         public bool IsEditingName { get; set; }
+        private string _editName;
+        public virtual string EditName
+        {
+            get => _editName;
+            set
+            {
+                if (_editName != value)
+                {
+                    var oldName = Name;
+
+                    _editName = value;
+                    OnPropertyChanged();
+
+                    var args = new CancelEventArgs();
+                    NameEditCompleted?.Invoke(this, args);
+
+                    if (args.Cancel)
+                    {
+                        _editName = oldName;
+                        OnPropertyChanged();
+                    }
+                    IsEditingName = false;
+                }
+            }
+        }
 
         private bool _showFileExtensions;
         public bool ShowFileExtensions
@@ -283,7 +340,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         }
 
         public WorkspaceUri Uri { get; set; } = default!; // FIXME this will come back to bite me...
-        public string FileName => Uri.GetComponents(UriComponents.Path, UriFormat.Unescaped).Split('/').Last();
+        public string FileName { get; set; } = ProjectFile.FileName;
 
         public void AddChildNode(IWorkspaceTreeNode childNode)
         {
@@ -415,6 +472,20 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 if (_isVisible != value)
                 {
                     _isVisible = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _isDeleted;
+        public bool IsDeleted
+        {
+            get => _isDeleted;
+            set
+            {
+                if (_isDeleted != value)
+                {
+                    _isDeleted = value;
                     OnPropertyChanged();
                 }
             }

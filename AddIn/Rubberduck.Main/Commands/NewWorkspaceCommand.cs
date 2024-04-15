@@ -55,7 +55,7 @@ namespace Rubberduck.Main.Commands.NewWorkspace
                 var component = qualifiedComponent.Component;
                 if (workspaceModules.TryGetValue(component.Name, out var module))
                 {
-                    var uri = new WorkspaceFileUri(module.Uri, workspaceRoot);
+                    var uri = new WorkspaceFileUri(module.RelativeUri, workspaceRoot);
                     component.ExportAsSourceFile(uri.WorkspaceFolder.AbsoluteLocation.LocalPath);
                 }
             }
@@ -71,7 +71,7 @@ namespace Rubberduck.Main.Commands.NewWorkspace
 
                 if (workspaceModules.TryGetValue(component.Name, out var module))
                 {
-                    var uri = new WorkspaceFileUri(module.Uri, workspaceRoot);
+                    var uri = new WorkspaceFileUri(module.RelativeUri, workspaceRoot);
                     collection.RemoveSafely(component);
                     collection.ImportSourceFile(uri.AbsoluteLocation.LocalPath);
                 }
@@ -121,7 +121,7 @@ namespace Rubberduck.Main.Commands.NewWorkspace
                 {
                     Name = module.Name,
                     IsAutoOpen = false,
-                    Uri = uri.ToString(),
+                    RelativeUri = uri.ToString(),
                     Super = docClassType
                 };
             }

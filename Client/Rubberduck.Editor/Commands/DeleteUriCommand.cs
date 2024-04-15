@@ -2,8 +2,8 @@
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+using Rubberduck.Editor.Shell.Tools.WorkspaceExplorer;
 using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Services;
@@ -12,69 +12,10 @@ using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 using System.Threading.Tasks;
 using Resx = Rubberduck.Resources.v3.RubberduckMessages;
 
 namespace Rubberduck.Editor.Commands;
-
-public class RemoveUriCommand : CommandBase
-{
-    private readonly IMessageService _messages;
-    private readonly IAppWorkspacesService _workspaces;
-    private readonly IProjectFileService _projectFile;
-
-    public RemoveUriCommand(UIServiceHelper service, IMessageService messages,
-        IAppWorkspacesService workspaces, IProjectFileService projectFile)
-        : base(service)
-    {
-        _messages = messages;
-        _workspaces = workspaces;
-        _projectFile = projectFile;
-    }
-
-    protected override Task OnExecuteAsync(object? parameter)
-    {
-        if (parameter is WorkspaceUri uri)
-        {
-            var rdproj = _workspaces.ProjectFiles.SingleOrDefault(e => e.Uri == uri.WorkspaceRoot);
-            if (rdproj != null)
-            {
-                if (uri is WorkspaceFileUri fileUri)
-                {
-                    var relativeUri = "\\" + fileUri.RelativeUriString.Replace("/", "\\");
-                    var sourceFile = rdproj.VBProject.Modules.SingleOrDefault(e => e.Uri == relativeUri);
-                    if (sourceFile != null)
-                    {
-                        rdproj.VBProject.Modules = rdproj.VBProject.Modules.Except([sourceFile]).ToArray();
-                    }
-                    else
-                    {
-                        var otherFile = rdproj.VBProject.OtherFiles.SingleOrDefault(e => e.Uri == fileUri.AbsoluteLocation.LocalPath);
-                        if (otherFile != null)
-                        {
-                            rdproj.VBProject.OtherFiles = rdproj.VBProject.OtherFiles.Except([otherFile]).ToArray();
-                        }
-                    }
-                }
-                else if (uri is WorkspaceFolderUri folderUri)
-                {
-                    var folder = rdproj.VBProject.Folders.SingleOrDefault(e => e.Uri == folderUri.AbsoluteLocation.LocalPath);
-                    if (folder != null)
-                    {
-                        rdproj.VBProject.Folders = rdproj.VBProject.Folders.Except([folder]).ToArray();
-                    }
-
-                    rdproj.VBProject.Modules = rdproj.VBProject.Modules.Where(e => !e.Uri.StartsWith(folderUri.AbsoluteLocation.LocalPath)).ToArray();
-                    rdproj.VBProject.OtherFiles = rdproj.VBProject.OtherFiles.Where(e => !e.Uri.StartsWith(folderUri.AbsoluteLocation.LocalPath)).ToArray();
-                    rdproj.VBProject.Folders = rdproj.VBProject.Folders.Where(e => !e.Uri.StartsWith(folderUri.AbsoluteLocation.LocalPath)).ToArray();
-                }
-            }
-        }
-
-        return Task.CompletedTask;
-    }
-}
 
 public class DeleteUriCommand : CommandBase
 {
@@ -101,13 +42,13 @@ public class DeleteUriCommand : CommandBase
 
     private bool CanExecuteWithParameter(object? parameter)
     {
-        if (parameter is WorkspaceFolderUri folderUri)
+        if (parameter is WorkspaceFolderViewModel folderVM)
         {
-            return Directory.Exists(folderUri.AbsoluteLocation.LocalPath);
+            return Directory.Exists(folderVM.Uri.AbsoluteLocation.LocalPath);
         }
-        else if (parameter is WorkspaceFileUri fileUri)
+        else if (parameter is WorkspaceFileViewModel fileVM)
         {
-            return File.Exists(fileUri.AbsoluteLocation.LocalPath);
+            return File.Exists(fileVM.Uri.AbsoluteLocation.LocalPath);
         }
 
         return false;
@@ -118,17 +59,19 @@ public class DeleteUriCommand : CommandBase
         WorkspaceUri? uri;
         bool wasDeleted;
 
-        if (parameter is WorkspaceFileUri file)
+        if (parameter is WorkspaceFileViewModel fileVM)
         {
-            var name = file.FileName;
-            uri = file;
-            wasDeleted = DeleteUri(file, name);
+            var name = fileVM.FileName;
+            uri = fileVM.Uri;
+            wasDeleted = DeleteUri((WorkspaceFileUri)fileVM.Uri, name);
+            fileVM.IsDeleted = true;
         }
-        else if (parameter is WorkspaceFolderUri folder)
+        else if (parameter is WorkspaceFolderViewModel folderVM)
         {
-            var name = folder.Name;
-            uri = folder;
-            wasDeleted = DeleteUri(folder, name);
+            var name = folderVM.Name;
+            uri = folderVM.Uri;
+            wasDeleted = DeleteUri((WorkspaceFolderUri)uri, name);
+            folderVM.IsDeleted = true;
         }
         else
         {
@@ -138,64 +81,25 @@ public class DeleteUriCommand : CommandBase
         if (wasDeleted && uri is WorkspaceUri)
         {
             var workspace = _workspaces.Workspaces.GetWorkspace(uri.WorkspaceRoot);
-            var workspaceFile = workspace.WorkspaceFiles.SingleOrDefault(e => e.Uri.ToString().StartsWith(uri.ToString()));
-
-            var vm = _workspaceExplorer.Value.Workspaces.SingleOrDefault(e => e.Uri.AbsoluteLocation.LocalPath == uri.WorkspaceRoot.LocalPath);
-
-            var rdproj = _workspaces.ProjectFiles.SingleOrDefault(e => e.Uri == uri.WorkspaceRoot);
-            if (rdproj != null)
+            var vm = _workspaceExplorer.Value.Workspaces.OfType<WorkspaceViewModel>().SingleOrDefault(e => e.Uri.AbsoluteLocation.LocalPath == uri.WorkspaceRoot.LocalPath);
+            if (vm != null)
             {
                 if (uri is WorkspaceFileUri fileUri)
                 {
-                    workspace.DeleteWorkspaceUri(fileUri);
-                    var relativeUri = "\\" + fileUri.RelativeUriString.Replace("/", "\\");
-                    var sourceFile = rdproj.VBProject.Modules.SingleOrDefault(e => e.Uri == relativeUri);
-                    if (sourceFile != null)
-                    {
-                        rdproj.VBProject.Modules = rdproj.VBProject.Modules.Except([sourceFile]).ToArray();
-                    }
-                    else
-                    {
-                        var otherFile = rdproj.VBProject.OtherFiles.SingleOrDefault(e => e.Uri == fileUri.AbsoluteLocation.LocalPath);
-                        if (otherFile != null)
-                        {
-                            rdproj.VBProject.OtherFiles = rdproj.VBProject.OtherFiles.Except([otherFile]).ToArray();
-                        }
-                    }
-
-                    if (vm != null)
-                    {
-                        vm.RemoveWorkspaceUri(fileUri);
-                    }
+                    vm.RemoveWorkspaceUri(fileUri);
                 }
                 else if (uri is WorkspaceFolderUri folderUri)
                 {
-                    workspace.DeleteWorkspaceUri(folderUri);
-
-                    var folder = rdproj.VBProject.Folders.SingleOrDefault(e => e.Uri == folderUri.AbsoluteLocation.LocalPath);
-                    if (folder != null)
-                    {
-                        rdproj.VBProject.Folders = rdproj.VBProject.Folders.Except([folder]).ToArray();
-                    }
-
-                    rdproj.VBProject.Modules = rdproj.VBProject.Modules.Where(e => !e.Uri.StartsWith(folderUri.AbsoluteLocation.LocalPath)).ToArray();
-                    rdproj.VBProject.OtherFiles = rdproj.VBProject.OtherFiles.Where(e => !e.Uri.StartsWith(folderUri.AbsoluteLocation.LocalPath)).ToArray();
-                    rdproj.VBProject.Folders = rdproj.VBProject.Folders.Where(e => !e.Uri.StartsWith(folderUri.AbsoluteLocation.LocalPath)).ToArray();
-
-                    if (vm != null)
-                    {
-                        vm.RemoveWorkspaceUri(folderUri);
-                    }
+                    vm.RemoveWorkspaceUri(folderUri);
                 }
-
-                _projectFile.WriteFile(rdproj);
-
-                var request = new DidDeleteFileParams
-                {
-                    Files = new Container<FileDelete>(new FileDelete { Uri = uri })
-                };
-                _languageClient.Value.DidDeleteFile(request);
+                _projectFile.WriteFile(vm.Model);
             }
+
+            var request = new DidDeleteFileParams
+            {
+                Files = new Container<FileDelete>(new FileDelete { Uri = uri })
+            };
+            _languageClient.Value.DidDeleteFile(request);
         }
 
         return Task.CompletedTask;

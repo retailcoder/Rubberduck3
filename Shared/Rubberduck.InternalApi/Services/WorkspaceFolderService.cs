@@ -22,8 +22,8 @@ public class WorkspaceFolderService : ServiceBase, IWorkspaceFolderService
     {
         foreach (var file in projectFile.VBProject.AllFiles)
         {
-            var sourcePath = _fileSystem.Path.Combine(templateSourceRoot, file.Uri);
-            var destinationUri = new WorkspaceFileUri(file.Uri, projectFile.Uri);
+            var sourcePath = _fileSystem.Path.Combine(templateSourceRoot, file.RelativeUri);
+            var destinationUri = new WorkspaceFileUri(file.RelativeUri, projectFile.Uri);
 
             _fileSystem.Directory.CreateDirectory(destinationUri.WorkspaceFolder.AbsoluteLocation.LocalPath);
             _fileSystem.File.Copy(sourcePath, destinationUri.AbsoluteLocation.LocalPath, overwrite: true);
@@ -39,13 +39,15 @@ public class WorkspaceFolderService : ServiceBase, IWorkspaceFolderService
         _fileSystem.Directory.CreateDirectory(sourceRoot);
 
         var folders = projectFile.VBProject.Modules
-            .Select(e => new WorkspaceFileUri(e.Uri, workspaceRoot).WorkspaceFolder)
+            .Select(e => new WorkspaceFileUri(e.RelativeUri, workspaceRoot).WorkspaceFolder)
             .ToHashSet()
             .Select(Folder.FromWorkspaceUri);
 
-        projectFile.VBProject.Folders = folders.ToArray();
+        projectFile.VBProject.Folders = folders
+            .Select(e => e.RelativeUri)
+            .ToArray();
 
-        foreach (var folder in projectFile.VBProject.Folders)
+        foreach (var folder in folders)
         {
             var path = folder.GetWorkspaceUri(workspaceRoot).AbsoluteLocation.LocalPath;
             _fileSystem.Directory.CreateDirectory(path);

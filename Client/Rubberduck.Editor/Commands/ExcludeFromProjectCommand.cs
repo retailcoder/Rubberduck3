@@ -30,8 +30,8 @@ public class ExcludeFromProjectCommand : CommandBase
             project = _workspaces.ProjectFiles.SingleOrDefault(e => e.Uri == fileUri.WorkspaceRoot);
             if (project != null)
             {
-                var file = project.VBProject.OtherFiles.SingleOrDefault(e => e.Uri == fileUri.RelativeUriString);
-                var srcFile = project.VBProject.Modules.SingleOrDefault(e => e.Uri == fileUri.RelativeUriString);
+                var file = project.VBProject.OtherFiles.SingleOrDefault(e => e.RelativeUri == fileUri.RelativeUriString);
+                var srcFile = project.VBProject.Modules.SingleOrDefault(e => e.RelativeUri == fileUri.RelativeUriString);
 
                 if (file != null)
                 {
@@ -59,7 +59,7 @@ public class ExcludeFromProjectCommand : CommandBase
             project = _workspaces.ProjectFiles.SingleOrDefault(e => e.Uri == folderUri.WorkspaceRoot);
             if (project != null)
             {
-                var folder = project.VBProject.Folders.SingleOrDefault(e => e.Uri == "\\" + folderUri.RelativeUriString?.Replace("/", "\\"));
+                var folder = project.VBProject.Folders.SingleOrDefault(relativeUri => relativeUri == "\\" + folderUri.RelativeUriString?.Replace("/", "\\"));
                 if (folder != null)
                 {
                     var folders = project.VBProject.Folders.Except([folder]);

@@ -2,10 +2,12 @@
 using Rubberduck.UI;
 using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Windows.Controls;
 using System.Windows.Data;
 
@@ -15,10 +17,13 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
     {
         public ICollectionView ItemsViewSource { get; }
 
+        public event EventHandler<CancelEventArgs> NameEditCompleted = delegate { };
+
         public WorkspaceTreeNodeViewModel()
         {
             ItemsViewSource = CollectionViewSource.GetDefaultView(_children);
             ItemsViewSource.Filter = o => ShowAllFiles || ((IWorkspaceTreeNode)o).IsInProject;
+            _editName = Name;
         }
 
         public virtual IEnumerable<object> ContextMenuItems => new object[]
@@ -41,6 +46,32 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                     _name = value;
                     OnPropertyChanged();
                     DisplayName = _name;
+                }
+            }
+        }
+
+        private string _editName;
+        public virtual string EditName
+        {
+            get => _editName;
+            set
+            {
+                if (_editName != value)
+                {
+                    var oldName = Name;
+
+                    _editName = value;
+                    OnPropertyChanged();
+
+                    var args = new CancelEventArgs();
+                    NameEditCompleted?.Invoke(this, args);
+
+                    if (args.Cancel)
+                    {
+                        _editName = oldName;
+                        OnPropertyChanged();
+                    }
+                    IsEditingName = false;
                 }
             }
         }
@@ -76,7 +107,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         private string _fileName = null!;
         public string FileName
         {
-            get => _uri.Segments.Last();
+            get => System.IO.Path.GetFileNameWithoutExtension(_uri.AbsoluteLocation.LocalPath);
             set
             {
                 if (_fileName != value)
@@ -85,7 +116,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                     _fileName = value;
                     OnPropertyChanged();
 
-                    Uri = new WorkspaceFileUri(System.IO.Path.Combine(_uri.LocalPath[..^(oldValue?.Length ?? 0)], value), _uri.WorkspaceRoot);
+                    var extension = _uri.AbsoluteLocation.LocalPath.Split(".").Last();
+                    Uri = new WorkspaceFileUri(System.IO.Path.Combine(_uri.AbsoluteLocation.LocalPath[..^(oldValue?.Length ?? 0)] + "." + extension, value), _uri.WorkspaceRoot);
                 }
             }
         }
@@ -168,6 +200,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         public void AddChildNode(IWorkspaceTreeNode childNode)
         {
             _children.Add(childNode);
+            
         }
 
         private bool _isFiltered;
@@ -273,6 +306,20 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 if (_isVisible != value)
                 {
                     _isVisible = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _isDeleted = true;
+        public bool IsDeleted
+        {
+            get => _isDeleted;
+            set
+            {
+                if (_isDeleted != value)
+                {
+                    _isDeleted = value;
                     OnPropertyChanged();
                 }
             }

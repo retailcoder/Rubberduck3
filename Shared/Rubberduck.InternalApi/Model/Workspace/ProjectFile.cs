@@ -28,7 +28,7 @@ public record class ProjectFile
     /// <summary>
     /// Information about the VBA project.
     /// </summary>
-    public Project VBProject { get; init; } = new();
+    public RubberduckProject VBProject { get; init; } = new();
 
     public ProjectFile WithUri(Uri uri) => this with { Uri = uri };
 }

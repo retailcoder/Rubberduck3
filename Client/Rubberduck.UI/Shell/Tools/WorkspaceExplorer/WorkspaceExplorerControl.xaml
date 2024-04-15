@@ -68,7 +68,7 @@
                             </MultiBinding>
                         </Image.Source>
                     </Image>
-                    <TextBox Text="{Binding DisplayName, UpdateSourceTrigger=LostFocus}" Style="{StaticResource TreeNodeEditableLabel}" />
+                    <TextBox Text="{Binding EditName, UpdateSourceTrigger=LostFocus}" Style="{StaticResource TreeNodeEditableLabel}" />
                 </DockPanel>
             </HierarchicalDataTemplate>
 
@@ -78,6 +78,7 @@
             
         </ResourceDictionary>
     </UserControl.Resources>
+    
     <shell:ThunderFrame Margin="2" ShowAcceptButton="False" ShowCancelButton="False" 
                         ShowPinButton="True" ShowCloseButton="True"
                         ShowSettingsCommand="{Binding ShowSettingsCommand}" ShowSettingsCommandParameter="{Binding SettingKey}"

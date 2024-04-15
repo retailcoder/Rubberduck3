@@ -374,6 +374,7 @@ namespace Rubberduck.Editor
             services.AddSingleton<DeleteUriCommand>();
             services.AddSingleton<IncludeInProjectCommand>();
             services.AddSingleton<ExcludeFromProjectCommand>();
+            services.AddSingleton<RenameUriCommand>();
 
             services.AddSingleton<ViewCommandHandlers>();
             services.AddSingleton<ShowWorkspaceExplorerCommand>();

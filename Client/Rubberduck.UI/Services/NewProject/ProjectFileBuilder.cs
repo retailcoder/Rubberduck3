@@ -20,7 +20,7 @@ namespace Rubberduck.UI.Services.NewProject
         private readonly HashSet<File> _files = [];
         private readonly Dictionary<string, Module> _modules = [];
         private readonly HashSet<Reference> _references = [];
-        private readonly HashSet<Folder> _folders = [];
+        private readonly HashSet<string> _folders = [];
 
         public ProjectFileBuilder(IFileSystem fileSystem, RubberduckSettingsProvider settings)
         {
@@ -91,7 +91,7 @@ namespace Rubberduck.UI.Services.NewProject
             _modules.TryAdd(name, new()
             {
                 Name = name,
-                Uri = uri,
+                RelativeUri = uri,
                 Super = supertype
             });
 
@@ -124,7 +124,7 @@ namespace Rubberduck.UI.Services.NewProject
 
         public ProjectFileBuilder WithFolder(WorkspaceFolderUri uri)
         {
-            _folders.Add(Folder.FromWorkspaceUri(uri));
+            _folders.Add(Folder.FromWorkspaceUri(uri).RelativeUri);
             return this;
         }
 

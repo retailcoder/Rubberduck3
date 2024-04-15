@@ -11,7 +11,7 @@ public enum ProjectType
     VB6,
 }
 
-public record class Project
+public record class RubberduckProject
 {
     /// <summary>
     /// The name of the project.
@@ -38,11 +38,11 @@ public record class Project
     /// <remarks>
     /// For example a <c>README.md</c> or <c>LICENSE.md</c> markdown file could be part of the project (/repository) without synchronizing with the VBE.
     /// </remarks>
-    public File[] OtherFiles { get; set; } = Array.Empty<File>();
+    public File[] OtherFiles { get; set; } = [];
     /// <summary>
-    /// All folders in the project, whether they contain any files or not.
+    /// A relative URI for all folders in the project, whether they contain files or not.
     /// </summary>
-    public Folder[] Folders { get; set; } = Array.Empty<Folder>();
+    public string[] Folders { get; set; } = [];
 
     /// <summary>
     /// Gets all files in the project, regardless of whether they're source files or not.
