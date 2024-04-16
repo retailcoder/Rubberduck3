@@ -1,14 +1,17 @@
 ﻿using Rubberduck.UI.Chrome;
 using Rubberduck.UI.Command.SharedHandlers;
 using Rubberduck.UI.Services;
+using Rubberduck.UI.Shared.Message;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using Rubberduck.UI.Windows;
 using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.Linq;
+using System.Windows.Input;
 
 namespace Rubberduck.Editor.Shell.Dialogs
 {
+
     public class SaveAsTemplateWindowViewModel : DialogWindowViewModel
     {
         private readonly IFileSystem _fileSystem;

@@ -315,6 +315,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>RubberduckUI.resx</DependentUpon>
     </Compile>
+    <Compile Update="v3\DialogsUI.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DialogsUI.resx</DependentUpon>
+    </Compile>
     <Compile Update="v3\Icons.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -349,6 +354,10 @@
     <EmbeddedResource Update="RubberduckUI.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>RubberduckUI.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="v3\DialogsUI.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>DialogsUI.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="v3\Icons.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

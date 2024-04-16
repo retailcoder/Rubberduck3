@@ -8,7 +8,7 @@
         xmlns:local="clr-namespace:Rubberduck.UI.Shared.Settings" xmlns:settings="clr-namespace:Rubberduck.UI.Services.Settings" xmlns:componentmodel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         d:DataContext="{d:DesignInstance Type=settings:SettingsWindowViewModel}"
         mc:Ignorable="d"
-        Title="Settings" 
+        Title="{Binding Title}" 
         WindowStyle="None"
         ResizeMode="NoResize"
         Style="{DynamicResource ThemedWindowStyle}"

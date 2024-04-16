@@ -27,7 +27,7 @@ namespace Rubberduck.UI.Services.NewProject
             _messages = messages;
         }
 
-        public void DeleteTemplate(string name)
+        public void DeleteProjectTemplate(string name)
         {
             TryRunAction(() =>
             {
@@ -129,7 +129,7 @@ namespace Rubberduck.UI.Services.NewProject
                     {
                         throw new OperationCanceledException();
                     }
-                    DeleteTemplate(name);
+                    DeleteProjectTemplate(name);
                 }
 
                 _fileSystem.Directory.CreateDirectory(path);
@@ -180,6 +180,13 @@ namespace Rubberduck.UI.Services.NewProject
             };
 
             return _messages.ShowMessageRequest(model)?.MessageAction.IsDefaultAction ?? false;
+        }
+
+        public FileTemplates GetFileTemplates()
+        {
+            var path = _fileSystem.Path.Combine(Settings.GeneralSettings.TemplatesLocation.LocalPath, "files.json");
+            var json = _fileSystem.File.ReadAllText(path);
+            return JsonSerializer.Deserialize<FileTemplates>(json) ?? throw new InvalidOperationException("Could not deserialize file templates metadata.");
         }
 
         public IEnumerable<ProjectTemplate> GetProjectTemplates()
