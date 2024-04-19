@@ -1,11 +1,10 @@
 ﻿using Rubberduck.UI.Services.Abstract;
 
-namespace Rubberduck.UI
+namespace Rubberduck.UI;
+
+public interface IPresenter
 {
-    public interface IPresenter
-    {
-        void Show(WindowSize windowSize = WindowSize.MediumDialog);
-        void Hide();
-        void Close();
-    }
+    void Show(WindowSize windowSize = WindowSize.MediumDialog);
+    void Hide();
+    void Close();
 }

@@ -4,17 +4,16 @@ using Rubberduck.UI.Windows;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
-namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
+namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
+
+public interface IWorkspaceExplorerViewModel : IToolWindowViewModel
 {
-    public interface IWorkspaceExplorerViewModel : IToolWindowViewModel
-    {
-        void Load(ProjectFile workspace);
-        IWorkspaceTreeNode? Selection { get; set; }
-        ObservableCollection<IWorkspaceViewModel> Workspaces { get; }
+    void Load(ProjectFile workspace);
+    IWorkspaceTreeNode? Selection { get; set; }
+    ObservableCollection<IWorkspaceViewModel> Workspaces { get; }
 
-        ICommand OpenDocumentCommand { get; }
+    ICommand OpenDocumentCommand { get; }
 
-        bool ShowFileExtensions { get; set; }
-        bool ShowAllFiles { get; set; }
-    }
+    bool ShowFileExtensions { get; set; }
+    bool ShowAllFiles { get; set; }
 }

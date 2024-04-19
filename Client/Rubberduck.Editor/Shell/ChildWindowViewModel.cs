@@ -1,7 +1,7 @@
 ﻿using Dragablz;
 using Rubberduck.InternalApi.Settings.Model.Editor.Tools;
 using Rubberduck.UI;
-using Rubberduck.UI.Chrome;
+using Rubberduck.UI.Shell;
 using Rubberduck.UI.Shell.Document;
 using Rubberduck.UI.Shell.StatusBar;
 using Rubberduck.UI.Windows;

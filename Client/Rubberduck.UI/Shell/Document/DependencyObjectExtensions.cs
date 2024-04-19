@@ -1,22 +1,21 @@
 ﻿using System.Windows;
 using System.Windows.Media;
 
-namespace Rubberduck.UI.Shell.Document
+namespace Rubberduck.UI.Shell.Document;
+
+public static class DependencyObjectExtensions
 {
-    public static class DependencyObjectExtensions
+    public static T? GetChildOfType<T>(this DependencyObject depObj) where T : DependencyObject
     {
-        public static T? GetChildOfType<T>(this DependencyObject depObj) where T : DependencyObject
+        if (depObj == null) return null;
+
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
         {
-            if (depObj == null) return null;
+            var child = VisualTreeHelper.GetChild(depObj, i);
 
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
-            {
-                var child = VisualTreeHelper.GetChild(depObj, i);
-
-                var result = (child as T) ?? GetChildOfType<T>(child);
-                if (result != null) return result;
-            }
-            return null;
+            var result = (child as T) ?? GetChildOfType<T>(child);
+            if (result != null) return result;
         }
+        return null;
     }
 }

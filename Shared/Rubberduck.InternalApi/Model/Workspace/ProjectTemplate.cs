@@ -21,7 +21,7 @@ public record class FileTemplates
 public record class FileTemplate
 {
     public string Key { get; init; } = "StdModule";
-    public string Categories { get; init; } = "VBA,VB6";
+    public string[] Categories { get; init; } = ["VBA","VB6"];
     public bool IsSourceFile => Key.Contains("Module");
 
     public string DefaultFileName { get; init; } = "file";

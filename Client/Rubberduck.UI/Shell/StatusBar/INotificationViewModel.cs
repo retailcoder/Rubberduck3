@@ -1,11 +1,10 @@
 ﻿using Rubberduck.UI.Shared.Message;
 
-namespace Rubberduck.UI.Shell.StatusBar
+namespace Rubberduck.UI.Shell.StatusBar;
+
+public interface INotificationViewModel
 {
-    public interface INotificationViewModel
-    {
-        string Title { get; set; }
-        string Description { get; set; }
-        MessageAction[] Actions { get; } 
-    }
+    string Title { get; set; }
+    string Description { get; set; }
+    MessageAction[] Actions { get; } 
 }

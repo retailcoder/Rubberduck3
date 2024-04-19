@@ -3,37 +3,36 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace Rubberduck.UI.Converters
+namespace Rubberduck.UI.Converters;
+
+public class DeclarationToQualifiedNameConverter : IValueConverter
 {
-    public class DeclarationToQualifiedNameConverter : IValueConverter
+    //private readonly IValueConverter _declarationTypeConverter;
+
+    public DeclarationToQualifiedNameConverter()
     {
-        //private readonly IValueConverter _declarationTypeConverter;
+        //_declarationTypeConverter = new EnumToLocalizedStringConverter
+        //{
+        //    ResourcePrefix = "DeclarationType_"
+        //};
+    }
 
-        public DeclarationToQualifiedNameConverter()
-        {
-            //_declarationTypeConverter = new EnumToLocalizedStringConverter
-            //{
-            //    ResourcePrefix = "DeclarationType_"
-            //};
-        }
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return null!;
+        //if (!(value is Declaration declaration))
+        //{
+        //    throw new ArgumentException("The value must be an instance of Declaration.", "value");
+        //}
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return null!;
-            //if (!(value is Declaration declaration))
-            //{
-            //    throw new ArgumentException("The value must be an instance of Declaration.", "value");
-            //}
+        //var qualifiedNameText = declaration.QualifiedName.ToString();
+        //var declarationTypeText = _declarationTypeConverter.Convert(declaration.DeclarationType, targetType, null, culture);
 
-            //var qualifiedNameText = declaration.QualifiedName.ToString();
-            //var declarationTypeText = _declarationTypeConverter.Convert(declaration.DeclarationType, targetType, null, culture);
+        //return $"{qualifiedNameText} ({declarationTypeText})";
+    }
 
-            //return $"{qualifiedNameText} ({declarationTypeText})";
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return DependencyProperty.UnsetValue;
-        }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return DependencyProperty.UnsetValue;
     }
 }

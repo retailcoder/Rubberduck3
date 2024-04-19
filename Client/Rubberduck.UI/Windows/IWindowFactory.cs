@@ -1,7 +1,6 @@
-﻿namespace Rubberduck.UI.Windows
+﻿namespace Rubberduck.UI.Windows;
+
+public interface IWindowFactory<TView, TViewModel>
 {
-    public interface IWindowFactory<TView, TViewModel>
-    {
-        TView Create(TViewModel model);
-    }
+    TView Create(TViewModel model);
 }

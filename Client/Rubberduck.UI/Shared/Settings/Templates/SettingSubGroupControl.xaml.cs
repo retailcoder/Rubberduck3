@@ -12,16 +12,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Rubberduck.UI.Shared.Settings.Templates
+namespace Rubberduck.UI.Shared.Settings.Templates;
+
+/// <summary>
+/// Interaction logic for SettingSubGroupControl.xaml
+/// </summary>
+public partial class SettingSubGroupControl : UserControl
 {
-    /// <summary>
-    /// Interaction logic for SettingSubGroupControl.xaml
-    /// </summary>
-    public partial class SettingSubGroupControl : UserControl
+    public SettingSubGroupControl()
     {
-        public SettingSubGroupControl()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

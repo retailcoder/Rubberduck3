@@ -3,90 +3,89 @@ using Rubberduck.UI.Command.SharedHandlers;
 using Rubberduck.UI.Windows;
 using System.Windows.Input;
 
-namespace Rubberduck.UI.Services.Abstract
+namespace Rubberduck.UI.Services.Abstract;
+
+public abstract class ToolWindowViewModelBase : WindowViewModel, IToolWindowViewModel
 {
-    public abstract class ToolWindowViewModelBase : WindowViewModel, IToolWindowViewModel
+    protected ToolWindowViewModelBase(DockingLocation location, 
+        ShowRubberduckSettingsCommand showSettingsCommand,
+        CloseToolWindowCommand closeToolWindowCommand)
+        : base(showSettingsCommand, closeToolWindowCommand)
     {
-        protected ToolWindowViewModelBase(DockingLocation location, 
-            ShowRubberduckSettingsCommand showSettingsCommand,
-            CloseToolWindowCommand closeToolWindowCommand)
-            : base(showSettingsCommand, closeToolWindowCommand)
-        {
-            DockingLocation = location;
-            ShowPinButton = location != DockingLocation.None;
-            Header = Title;
-        }
+        DockingLocation = location;
+        ShowPinButton = location != DockingLocation.None;
+        Header = Title;
+    }
 
-        private DockingLocation _location;
-        public DockingLocation DockingLocation
+    private DockingLocation _location;
+    public DockingLocation DockingLocation
+    {
+        get => _location;
+        set
         {
-            get => _location;
-            set
+            if (_location != value)
             {
-                if (_location != value)
-                {
-                    _location = value;
-                    OnPropertyChanged();
-                }
+                _location = value;
+                OnPropertyChanged();
             }
         }
+    }
 
-        public ICommand UndockToolTabCommand { get; }
+    public ICommand UndockToolTabCommand { get; }
 
 
-        private object _header;
-        public virtual object Header
+    private object _header;
+    public virtual object Header
+    {
+        get => _header;
+        set
         {
-            get => _header;
-            set
+            if (_header != value)
             {
-                if (_header != value)
-                {
-                    _header = value;
-                    OnPropertyChanged();
-                }
+                _header = value;
+                OnPropertyChanged();
             }
         }
+    }
 
-        private string _textContent;
-        public string TextContent
+    private string _textContent;
+    public string TextContent
+    {
+        get => _textContent;
+        set
         {
-            get => _textContent;
-            set
+            if (_textContent != value)
             {
-                if (_textContent != value)
-                {
-                    _textContent = value;
-                    OnPropertyChanged();
-                }
+                _textContent = value;
+                OnPropertyChanged();
             }
         }
+    }
 
-        private object _contentControl;
-        public object ContentControl
+    private object _contentControl;
+    public object ContentControl
+    {
+        get => _contentControl;
+        set
         {
-            get => _contentControl;
-            set
+            if (_contentControl != value)
             {
-                if (_contentControl != value)
-                {
-                    _contentControl = value;
-                    OnPropertyChanged();
-                }
+                _contentControl = value;
+                OnPropertyChanged();
             }
         }
+    }
 
-        private bool _isSelected;
-        public bool IsSelected
+    private bool _isSelected;
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
         {
-            get => _isSelected;
-            set
+            if (_isSelected != value)
             {
-                if (_isSelected != value)
-                {
-                    _isSelected = value;
-                    OnPropertyChanged();
-                }
+                _isSelected = value;
+                OnPropertyChanged();
             }
         }
     }

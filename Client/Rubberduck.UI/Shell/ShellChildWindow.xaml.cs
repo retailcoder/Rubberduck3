@@ -4,36 +4,35 @@ using System;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 
-namespace Rubberduck.UI.Shell
+namespace Rubberduck.UI.Shell;
+
+public partial class ShellChildWindow : Window, IShellChildWindow
 {
-    public partial class ShellChildWindow : Window, IShellChildWindow
+    public ShellChildWindow(IDragablzWindowViewModel vm) : this()
     {
-        public ShellChildWindow(IDragablzWindowViewModel vm) : this()
-        {
-            DataContext = vm;
-        }
+        DataContext = vm;
+    }
 
-        public TabablzControl Tabs => DocumentPaneTabs;
+    public TabablzControl Tabs => DocumentPaneTabs;
 
-        public ShellChildWindow()
-        {
-            InitializeComponent();
-        }
+    public ShellChildWindow()
+    {
+        InitializeComponent();
+    }
 
-        private void OnResizeGripDragDelta(object sender, DragDeltaEventArgs e)
-        {
-            var newHeight = Height + e.VerticalChange;
-            var newWidth = Width + e.HorizontalChange;
+    private void OnResizeGripDragDelta(object sender, DragDeltaEventArgs e)
+    {
+        var newHeight = Height + e.VerticalChange;
+        var newWidth = Width + e.HorizontalChange;
 
-            Height = Math.Max(MinHeight, newHeight);
-            Width = Math.Max(MinWidth, newWidth);
+        Height = Math.Max(MinHeight, newHeight);
+        Width = Math.Max(MinWidth, newWidth);
 
-            e.Handled = true;
-        }
+        e.Handled = true;
+    }
 
-        private void OnContentRendered(object sender, EventArgs e)
-        {
-            InvalidateVisual();
-        }
+    private void OnContentRendered(object sender, EventArgs e)
+    {
+        InvalidateVisual();
     }
 }

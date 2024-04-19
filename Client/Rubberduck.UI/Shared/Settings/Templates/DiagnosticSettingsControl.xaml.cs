@@ -13,16 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Rubberduck.UI.Shared.Settings.Templates
+namespace Rubberduck.UI.Shared.Settings.Templates;
+
+/// <summary>
+/// Interaction logic for DiagnosticSettingsControl.xaml
+/// </summary>
+public partial class DiagnosticSettingsControl : UserControl
 {
-    /// <summary>
-    /// Interaction logic for DiagnosticSettingsControl.xaml
-    /// </summary>
-    public partial class DiagnosticSettingsControl : UserControl
+    public DiagnosticSettingsControl()
     {
-        public DiagnosticSettingsControl()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

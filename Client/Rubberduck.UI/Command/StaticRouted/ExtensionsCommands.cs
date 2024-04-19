@@ -1,11 +1,10 @@
 ﻿using System.Windows.Input;
 using System.Windows;
 
-namespace Rubberduck.UI.Command.StaticRouted
+namespace Rubberduck.UI.Command.StaticRouted;
+
+public static class ExtensionsCommands
 {
-    public static class ExtensionsCommands
-    {
-        public static RoutedCommand ManageExtensionsCommand { get; }
-            = new RoutedCommand(nameof(ManageExtensionsCommand), typeof(Window));
-    }
+    public static RoutedCommand ManageExtensionsCommand { get; }
+        = new RoutedCommand(nameof(ManageExtensionsCommand), typeof(Window));
 }

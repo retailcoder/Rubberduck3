@@ -1,24 +1,23 @@
-﻿namespace Rubberduck.UI.Converters
+﻿namespace Rubberduck.UI.Converters;
+
+/*
+class GroupingGridLocationConverter : IValueConverter
 {
-    /*
-    class GroupingGridLocationConverter : IValueConverter
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        if (value is IQualifiedModuleName qualifiedModuleName)
         {
-            if (value is IQualifiedModuleName qualifiedModuleName)
-            {
-                var componentTypeConverter = new ComponentTypeConverter();
-                var localizedComponentType = (string)componentTypeConverter.Convert(qualifiedModuleName.ComponentType, typeof(ComponentType), parameter, culture);
-                return $"{qualifiedModuleName} - {localizedComponentType}";
-            }
-
-            return Binding.DoNothing;
+            var componentTypeConverter = new ComponentTypeConverter();
+            var localizedComponentType = (string)componentTypeConverter.Convert(qualifiedModuleName.ComponentType, typeof(ComponentType), parameter, culture);
+            return $"{qualifiedModuleName} - {localizedComponentType}";
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        return Binding.DoNothing;
     }
-    */
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
 }
+*/

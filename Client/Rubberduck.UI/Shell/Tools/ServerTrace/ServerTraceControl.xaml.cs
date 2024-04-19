@@ -3,38 +3,37 @@ using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace Rubberduck.UI.Shell.Tools.ServerTrace
+namespace Rubberduck.UI.Shell.Tools.ServerTrace;
+
+
+/// <summary>
+/// Interaction logic for LanguageServerTraceControl.xaml
+/// </summary>
+public partial class ServerTraceControl : UserControl
 {
-
-    /// <summary>
-    /// Interaction logic for LanguageServerTraceControl.xaml
-    /// </summary>
-    public partial class ServerTraceControl : UserControl
+    public ServerTraceControl()
     {
-        public ServerTraceControl()
+        InitializeComponent();
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnDataContextChanged(object sender, System.Windows.DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is ITabViewModel vm)
         {
-            InitializeComponent();
-            DataContextChanged += OnDataContextChanged;
+            vm.ContentControl = this;
         }
 
-        private void OnDataContextChanged(object sender, System.Windows.DependencyPropertyChangedEventArgs e)
+        if (e.NewValue is ICommandBindingProvider provider)
         {
-            if (e.NewValue is ITabViewModel vm)
+            var bindings = provider.CommandBindings.ToArray();
+            CommandBindings.AddRange(bindings);
+            foreach (var commandBinding in bindings)
             {
-                vm.ContentControl = this;
+                CommandManager.RegisterClassCommandBinding(typeof(ServerTraceControl), commandBinding);
             }
-
-            if (e.NewValue is ICommandBindingProvider provider)
-            {
-                var bindings = provider.CommandBindings.ToArray();
-                CommandBindings.AddRange(bindings);
-                foreach (var commandBinding in bindings)
-                {
-                    CommandManager.RegisterClassCommandBinding(typeof(ServerTraceControl), commandBinding);
-                }
-            }
-
-            InvalidateVisual();
         }
+
+        InvalidateVisual();
     }
 }

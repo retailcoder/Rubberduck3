@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Windows.Input;
 
-namespace Rubberduck.UI
+namespace Rubberduck.UI;
+
+public interface ICommandBindingProvider
 {
-    public interface ICommandBindingProvider
-    {
-        IEnumerable<CommandBinding> CommandBindings { get; }
-    }
+    IEnumerable<CommandBinding> CommandBindings { get; }
 }

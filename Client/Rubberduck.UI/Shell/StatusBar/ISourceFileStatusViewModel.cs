@@ -1,7 +1,6 @@
-﻿namespace Rubberduck.UI.Shell.StatusBar
+﻿namespace Rubberduck.UI.Shell.StatusBar;
+
+public interface ISourceFileStatusViewModel : IDocumentStatusViewModel
 {
-    public interface ISourceFileStatusViewModel : IDocumentStatusViewModel
-    {
-        IDiagnosticViewModel[] Diagnostics { get; set; }
-    }
+    IDiagnosticViewModel[] Diagnostics { get; set; }
 }

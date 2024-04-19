@@ -13,16 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Rubberduck.UI.Shared.Settings.Templates
+namespace Rubberduck.UI.Shared.Settings.Templates;
+
+/// <summary>
+/// Interaction logic for UriSettingControl.xaml
+/// </summary>
+public partial class UriSettingControl : UserControl
 {
-    /// <summary>
-    /// Interaction logic for UriSettingControl.xaml
-    /// </summary>
-    public partial class UriSettingControl : UserControl
+    public UriSettingControl()
     {
-        public UriSettingControl()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

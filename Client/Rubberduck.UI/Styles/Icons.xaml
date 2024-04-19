@@ -96,7 +96,7 @@
 
     <BitmapImage x:Key="ConnectedIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/drive-network.png" />
     <BitmapImage x:Key="ConnectErrorIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/drive--exclamation.png" />
-    <BitmapImage x:Key="DocInfoIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/document-code.png" />
+    <BitmapImage x:Key="DocInfoIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/document-code.png" /> <!-- need a better icon for docinfo -->
     <BitmapImage x:Key="CaretLocationIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/selection-input.png" />
     <BitmapImage x:Key="NoIssuesIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/tick-circle.png" />
     <BitmapImage x:Key="MemberInfoIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/magnifier-medium.png" />
@@ -107,11 +107,16 @@
     <BitmapImage x:Key="NetworkFolderOpenIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/folder-network-horizontal-open.png" />
     <BitmapImage x:Key="SearchResultsFolderIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/folder-search-result.png" />
     <BitmapImage x:Key="HappyFolderIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/folder-smiley.png" />
+    <BitmapImage x:Key="SadFileIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/document-smiley-sad.png" />
     <BitmapImage x:Key="SadFolderIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/folder-smiley-sad.png" />
 
     <BitmapImage x:Key="DocumentIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/document.png" />
     <BitmapImage x:Key="SourceDocumentIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/document-code.png" />
     <BitmapImage x:Key="DocumentWarningIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/document--exclamation.png" />
+
+    <BitmapImage x:Key="SourceDocumentIcon" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/document-block.png" />
+    <BitmapImage x:Key="TextDocumentIcon" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/document-text.png" />
+    <BitmapImage x:Key="MarkdownDocumentIcon" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/document-globe.png" />
 
     <!-- a "ghost" in this context is a file (or folder) that physically exists under a workspace folder, but isn't included in the .rdproj project file of that workspace -->
     <BitmapImage x:Key="GhostDocumentIcon16" UriSource="pack://application:,,,/Rubberduck.UI;component/Resources/FugueIcons/blue-document.png" />

@@ -12,57 +12,56 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Rubberduck.UI.Shell.Document
+namespace Rubberduck.UI.Shell.Document;
+
+/// <summary>
+/// Interaction logic for TextEditorControl.xaml
+/// </summary>
+public partial class TextEditorControl : UserControl
 {
-    /// <summary>
-    /// Interaction logic for TextEditorControl.xaml
-    /// </summary>
-    public partial class TextEditorControl : UserControl
+    public TextEditorControl()
     {
-        public TextEditorControl()
-        {
-            InitializeComponent();
-            DataContextChanged += OnDataContextChanged;
+        InitializeComponent();
+        DataContextChanged += OnDataContextChanged;
 
-            Editor = (ThunderFrame.Content as DependencyObject)?.GetChildOfType<BindableTextEditor>() ?? throw new InvalidOperationException();
-            Editor.TextArea.SelectionChanged += OnSelectionChanged;
-            Editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
-            Editor.TextChanged += OnTextChanged;
-        }
+        Editor = (ThunderFrame.Content as DependencyObject)?.GetChildOfType<BindableTextEditor>() ?? throw new InvalidOperationException();
+        Editor.TextArea.SelectionChanged += OnSelectionChanged;
+        Editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
+        Editor.TextChanged += OnTextChanged;
+    }
 
-        private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            ViewModel = (IDocumentTabViewModel)e.NewValue;
-            UpdateStatusInfo();
-        }
+    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        ViewModel = (IDocumentTabViewModel)e.NewValue;
+        UpdateStatusInfo();
+    }
 
-        private BindableTextEditor Editor { get; }
-        private IDocumentTabViewModel ViewModel { get; set; }
+    private BindableTextEditor Editor { get; }
+    private IDocumentTabViewModel ViewModel { get; set; }
 
-        private void UpdateStatusInfo()
-        {
-            ViewModel.Status.CaretOffset = Editor.TextArea.Caret.Offset;
-            ViewModel.Status.CaretLine = Editor.TextArea.Caret.Position.Line;
-            ViewModel.Status.CaretColumn = Editor.TextArea.Caret.Position.Column;
+    private void UpdateStatusInfo()
+    {
+        ViewModel.Status.CaretOffset = Editor.TextArea.Caret.Offset;
+        ViewModel.Status.CaretLine = Editor.TextArea.Caret.Position.Line;
+        ViewModel.Status.CaretColumn = Editor.TextArea.Caret.Position.Column;
 
-            ViewModel.Status.DocumentLength = Editor.TextArea.Document.TextLength;
-            ViewModel.Status.DocumentLines = Editor.TextArea.Document.LineCount;
-        }
+        ViewModel.Status.DocumentLength = Editor.TextArea.Document.TextLength;
+        ViewModel.Status.DocumentLines = Editor.TextArea.Document.LineCount;
+    }
 
 
-        private void OnCaretPositionChanged(object? sender, EventArgs e)
-        {
-            UpdateStatusInfo();
-        }
+    private void OnCaretPositionChanged(object? sender, EventArgs e)
+    {
+        UpdateStatusInfo();
+    }
 
-        private void OnTextChanged(object? sender, EventArgs e)
-        {
-            UpdateStatusInfo();
-        }
+    private void OnTextChanged(object? sender, EventArgs e)
+    {
+        UpdateStatusInfo();
+    }
 
-        private void OnSelectionChanged(object? sender, EventArgs e)
-        {
-            UpdateStatusInfo();
-        }
+    private void OnSelectionChanged(object? sender, EventArgs e)
+    {
+        UpdateStatusInfo();
     }
 }

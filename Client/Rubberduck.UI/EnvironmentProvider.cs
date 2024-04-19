@@ -1,22 +1,21 @@
 ﻿using System;
 
-namespace Rubberduck.UI
+namespace Rubberduck.UI;
+
+public interface IEnvironmentProvider
 {
-    public interface IEnvironmentProvider
+    string GetFolderPath(Environment.SpecialFolder folder);
+    // ReSharper disable once InconsistentNaming
+    OperatingSystem OSVersion { get; }
+}
+
+//Wrapper to enable unit testing of folder dialogs.
+public class EnvironmentProvider : IEnvironmentProvider
+{
+    public string GetFolderPath(Environment.SpecialFolder folder)
     {
-        string GetFolderPath(Environment.SpecialFolder folder);
-        // ReSharper disable once InconsistentNaming
-        OperatingSystem OSVersion { get; }
+        return Environment.GetFolderPath(folder);
     }
 
-    //Wrapper to enable unit testing of folder dialogs.
-    public class EnvironmentProvider : IEnvironmentProvider
-    {
-        public string GetFolderPath(Environment.SpecialFolder folder)
-        {
-            return Environment.GetFolderPath(folder);
-        }
-
-        public OperatingSystem OSVersion => Environment.OSVersion;
-    }
+    public OperatingSystem OSVersion => Environment.OSVersion;
 }

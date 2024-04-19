@@ -5,32 +5,31 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Data;
 
-namespace Rubberduck.UI.Converters
+namespace Rubberduck.UI.Converters;
+
+public class SpecificValuesToVisibilityConverter : IValueConverter
 {
-    public class SpecificValuesToVisibilityConverter : IValueConverter
+    public IReadOnlyCollection<object>? SpecialValues { get; set; }
+    public bool CollapseSpecialValues { get; set; } = true;
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        public IReadOnlyCollection<object>? SpecialValues { get; set; }
-        public bool CollapseSpecialValues { get; set; } = true;
-
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        if (value is null)
         {
-            if (value is null)
-            {
-                return null!;
-            }
-
-            return SpecialValues!.Contains(value)
-                ? SpecialValueVisibility
-                : OtherValueVisibility;
+            return null!;
         }
 
-        private Visibility SpecialValueVisibility => CollapseSpecialValues ? Visibility.Collapsed : Visibility.Visible;
-        private Visibility OtherValueVisibility => CollapseSpecialValues ? Visibility.Visible : Visibility.Collapsed;
+        return SpecialValues!.Contains(value)
+            ? SpecialValueVisibility
+            : OtherValueVisibility;
+    }
+
+    private Visibility SpecialValueVisibility => CollapseSpecialValues ? Visibility.Collapsed : Visibility.Visible;
+    private Visibility OtherValueVisibility => CollapseSpecialValues ? Visibility.Visible : Visibility.Collapsed;
 
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return DependencyProperty.UnsetValue;
-        }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return DependencyProperty.UnsetValue;
     }
 }

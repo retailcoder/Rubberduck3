@@ -13,16 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Rubberduck.UI.Shared.Settings.Templates
+namespace Rubberduck.UI.Shared.Settings.Templates;
+
+/// <summary>
+/// Interaction logic for BooleanSettingControl.xaml
+/// </summary>
+public partial class BooleanSettingControl : UserControl
 {
-    /// <summary>
-    /// Interaction logic for BooleanSettingControl.xaml
-    /// </summary>
-    public partial class BooleanSettingControl : UserControl
+    public BooleanSettingControl()
     {
-        public BooleanSettingControl()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

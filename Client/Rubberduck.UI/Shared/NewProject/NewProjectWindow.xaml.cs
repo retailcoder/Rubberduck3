@@ -2,32 +2,31 @@
 using System.Linq;
 using System.Windows;
 
-namespace Rubberduck.UI.Shared.NewProject
+namespace Rubberduck.UI.Shared.NewProject;
+
+/// <summary>
+/// Interaction logic for NewProjectWindow.xaml
+/// </summary>
+public partial class NewProjectWindow : Window
 {
-    /// <summary>
-    /// Interaction logic for NewProjectWindow.xaml
-    /// </summary>
-    public partial class NewProjectWindow : Window
+    public NewProjectWindow(INewProjectWindowViewModel viewModel) : this()
     {
-        public NewProjectWindow(INewProjectWindowViewModel viewModel) : this()
-        {
-            DataContext = viewModel;
-        }
+        DataContext = viewModel;
+    }
 
-        public NewProjectWindow()
-        {
-            InitializeComponent();
-            DataContextChanged += OnDataContextChanged;
-        }
+    public NewProjectWindow()
+    {
+        InitializeComponent();
+        DataContextChanged += OnDataContextChanged;
+    }
 
-        private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        var systemHandlers = new SystemCommandHandlers(this);
+        if (e.NewValue is ICommandBindingProvider provider)
         {
-            var systemHandlers = new SystemCommandHandlers(this);
-            if (e.NewValue is ICommandBindingProvider provider)
-            {
-                CommandBindings.Clear();
-                CommandBindings.AddRange(systemHandlers.CreateCommandBindings().Concat(provider.CommandBindings).ToArray());
-            }
+            CommandBindings.Clear();
+            CommandBindings.AddRange(systemHandlers.CreateCommandBindings().Concat(provider.CommandBindings).ToArray());
         }
     }
 }

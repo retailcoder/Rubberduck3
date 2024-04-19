@@ -13,16 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Rubberduck.UI.Shared.Settings.Templates
+namespace Rubberduck.UI.Shared.Settings.Templates;
+
+/// <summary>
+/// Interaction logic for StringSettingControl.xaml
+/// </summary>
+public partial class StringSettingControl : UserControl
 {
-    /// <summary>
-    /// Interaction logic for StringSettingControl.xaml
-    /// </summary>
-    public partial class StringSettingControl : UserControl
+    public StringSettingControl()
     {
-        public StringSettingControl()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

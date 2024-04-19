@@ -1,7 +1,7 @@
-﻿using Rubberduck.UI.Chrome;
-using Rubberduck.UI.Command.SharedHandlers;
+﻿using Rubberduck.UI.Command.SharedHandlers;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Shared.Message;
+using Rubberduck.UI.Shell;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using Rubberduck.UI.Windows;
 using System.Collections.Generic;

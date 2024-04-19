@@ -14,21 +14,20 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Rubberduck.UI.Shared.Settings.Templates
-{
-    /// <summary>
-    /// Interaction logic for ListSettingControl.xaml
-    /// </summary>
-    public partial class ListSettingControl : UserControl
-    {
-        public ListSettingControl()
-        {
-            InitializeComponent();
-        }
+namespace Rubberduck.UI.Shared.Settings.Templates;
 
-        private void OnAddListItemCommandExecuted(object sender, ExecutedRoutedEventArgs e)
-        {
-            // TODO
-        }
+/// <summary>
+/// Interaction logic for ListSettingControl.xaml
+/// </summary>
+public partial class ListSettingControl : UserControl
+{
+    public ListSettingControl()
+    {
+        InitializeComponent();
+    }
+
+    private void OnAddListItemCommandExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        // TODO
     }
 }

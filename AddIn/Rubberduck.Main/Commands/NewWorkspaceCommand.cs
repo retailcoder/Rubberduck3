@@ -2,7 +2,6 @@
 using Rubberduck.Parsing._v3;
 using Rubberduck.UI.Command;
 using Rubberduck.UI.Services;
-using Rubberduck.UI.Services.NewProject;
 using Rubberduck.Unmanaged;
 using Rubberduck.Unmanaged.Abstract;
 using Rubberduck.VBEditor.UI.OfficeMenus;
@@ -15,6 +14,7 @@ using System.Linq;
 using Reference = Rubberduck.InternalApi.Model.Workspace.Reference;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.ServerPlatform;
+using Rubberduck.UI.Shared.NewProject;
 
 namespace Rubberduck.Main.Commands.NewWorkspace
 {

@@ -1,8 +1,8 @@
 ﻿using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model;
 using Rubberduck.UI;
-using Rubberduck.UI.Chrome;
 using Rubberduck.UI.Services;
+using Rubberduck.UI.Shell;
 using System;
 
 namespace Rubberduck.Editor.Shell

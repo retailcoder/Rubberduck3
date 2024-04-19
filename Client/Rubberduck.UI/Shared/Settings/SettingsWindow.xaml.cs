@@ -7,51 +7,50 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 
-namespace Rubberduck.UI.Shared.Settings
+namespace Rubberduck.UI.Shared.Settings;
+
+/// <summary>
+/// Interaction logic for SettingsWindow.xaml
+/// </summary>
+public partial class SettingsWindow : Window
 {
-    /// <summary>
-    /// Interaction logic for SettingsWindow.xaml
-    /// </summary>
-    public partial class SettingsWindow : Window
+    public SettingsWindow(ISettingsWindowViewModel viewModel) : this()
     {
-        public SettingsWindow(ISettingsWindowViewModel viewModel) : this()
+        DataContext = viewModel;
+    }
+
+    public SettingsWindow()
+    {
+        InitializeComponent();
+        DataContextChanged += OnDataContextChanged;
+
+    }
+
+    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is ICommandBindingProvider provider)
         {
-            DataContext = viewModel;
+            var systemHandlers = new SystemCommandHandlers(this);
+
+            CommandBindings.Clear();
+            CommandBindings.AddRange(systemHandlers.CreateCommandBindings().Concat(provider.CommandBindings).ToArray());
         }
 
-        public SettingsWindow()
+        var viewSource = Resources["SettingsViewSource"] as CollectionViewSource;
+        if (viewSource != null)
         {
-            InitializeComponent();
-            DataContextChanged += OnDataContextChanged;
-
+            viewSource.Source = ((ISettingsWindowViewModel)e.NewValue).Selection?.Items ?? [];
         }
+    }
 
-        private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (e.NewValue is ICommandBindingProvider provider)
-            {
-                var systemHandlers = new SystemCommandHandlers(this);
+    private void OnResizeGripDragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+    {
+        var newHeight = Height + e.VerticalChange;
+        var newWidth = Width + e.HorizontalChange;
 
-                CommandBindings.Clear();
-                CommandBindings.AddRange(systemHandlers.CreateCommandBindings().Concat(provider.CommandBindings).ToArray());
-            }
+        Height = Math.Min(MaxHeight, Math.Max(MinHeight, newHeight));
+        Width = Math.Min(MaxWidth, Math.Max(MinWidth, newWidth));
 
-            var viewSource = Resources["SettingsViewSource"] as CollectionViewSource;
-            if (viewSource != null)
-            {
-                viewSource.Source = ((ISettingsWindowViewModel)e.NewValue).Selection?.Items ?? [];
-            }
-        }
-
-        private void OnResizeGripDragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
-        {
-            var newHeight = Height + e.VerticalChange;
-            var newWidth = Width + e.HorizontalChange;
-
-            Height = Math.Min(MaxHeight, Math.Max(MinHeight, newHeight));
-            Width = Math.Min(MaxWidth, Math.Max(MinWidth, newWidth));
-
-            e.Handled = true;
-        }
+        e.Handled = true;
     }
 }

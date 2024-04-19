@@ -5,47 +5,46 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace Rubberduck.UI.Shared.Settings.Templates
+namespace Rubberduck.UI.Shared.Settings.Templates;
+
+internal class SettingTemplateSelector : DataTemplateSelector
 {
-    internal class SettingTemplateSelector : DataTemplateSelector
+    public DataTemplate? BooleanSettingTemplate { get; set; }
+    public DataTemplate? EnumValueSettingTemplate { get; set; }
+    public DataTemplate? ListSettingTemplate { get; set; }
+    public DataTemplate? NumericSettingTemplate { get; set; }
+    public DataTemplate? SettingSubGroupTemplate { get; set; }
+    public DataTemplate? StringSettingTemplate { get; set; }
+    public DataTemplate? TimeSpanSettingTemplate { get; set; }
+    public DataTemplate? UriSettingTemplate { get; set; }
+    public DataTemplate? DiagnosticSettingTemplate { get; set; }
+
+    private Dictionary<SettingDataType, DataTemplate?> TemplateMap => new()
     {
-        public DataTemplate? BooleanSettingTemplate { get; set; }
-        public DataTemplate? EnumValueSettingTemplate { get; set; }
-        public DataTemplate? ListSettingTemplate { get; set; }
-        public DataTemplate? NumericSettingTemplate { get; set; }
-        public DataTemplate? SettingSubGroupTemplate { get; set; }
-        public DataTemplate? StringSettingTemplate { get; set; }
-        public DataTemplate? TimeSpanSettingTemplate { get; set; }
-        public DataTemplate? UriSettingTemplate { get; set; }
-        public DataTemplate? DiagnosticSettingTemplate { get; set; }
+        [SettingDataType.BooleanSetting] = BooleanSettingTemplate,
+        [SettingDataType.EnumValueSetting] = EnumValueSettingTemplate,
+        [SettingDataType.EnumSettingGroup] = SettingSubGroupTemplate,
+        [SettingDataType.ListSetting] = ListSettingTemplate,
+        [SettingDataType.NumericSetting] = NumericSettingTemplate,
+        [SettingDataType.SettingGroup] = SettingSubGroupTemplate,
+        [SettingDataType.TextSetting] = StringSettingTemplate,
+        [SettingDataType.TimeSpanSetting] = TimeSpanSettingTemplate,
+        [SettingDataType.UriSetting] = UriSettingTemplate,
+    };
 
-        private Dictionary<SettingDataType, DataTemplate?> TemplateMap => new()
+    public override DataTemplate? SelectTemplate(object item, DependencyObject container)
+    {
+        if (item is DiagnosticSettingsViewModel)
         {
-            [SettingDataType.BooleanSetting] = BooleanSettingTemplate,
-            [SettingDataType.EnumValueSetting] = EnumValueSettingTemplate,
-            [SettingDataType.EnumSettingGroup] = SettingSubGroupTemplate,
-            [SettingDataType.ListSetting] = ListSettingTemplate,
-            [SettingDataType.NumericSetting] = NumericSettingTemplate,
-            [SettingDataType.SettingGroup] = SettingSubGroupTemplate,
-            [SettingDataType.TextSetting] = StringSettingTemplate,
-            [SettingDataType.TimeSpanSetting] = TimeSpanSettingTemplate,
-            [SettingDataType.UriSetting] = UriSettingTemplate,
-        };
-
-        public override DataTemplate? SelectTemplate(object item, DependencyObject container)
-        {
-            if (item is DiagnosticSettingsViewModel)
-            {
-                return DiagnosticSettingTemplate;
-            }
-            else if (item is ISettingViewModel setting)
-            {
-                if (TemplateMap.TryGetValue(setting.SettingDataType, out var template))
-                {
-                    return template;
-                }
-            }
-            return null;
+            return DiagnosticSettingTemplate;
         }
+        else if (item is ISettingViewModel setting)
+        {
+            if (TemplateMap.TryGetValue(setting.SettingDataType, out var template))
+            {
+                return template;
+            }
+        }
+        return null;
     }
 }

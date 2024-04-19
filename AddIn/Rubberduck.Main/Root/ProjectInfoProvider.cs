@@ -1,6 +1,6 @@
 ﻿//using IndenterSettings = Rubberduck.SmartIndenter.IndenterSettings;
 using Rubberduck.InternalApi.Model.Workspace;
-using Rubberduck.UI.Services.NewProject;
+using Rubberduck.UI.Shared.NewProject;
 using Rubberduck.Unmanaged;
 using Rubberduck.Unmanaged.Abstract.SafeComWrappers.VB;
 using System;

@@ -9,69 +9,68 @@ using System.IO.Abstractions;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Rubberduck.UI.Command.SharedHandlers
+namespace Rubberduck.UI.Command.SharedHandlers;
+
+public class OpenLogFileCommand : CommandBase
 {
-    public class OpenLogFileCommand : CommandBase
+    private readonly IFileSystem _fileSystem;
+    private readonly IMessageService _messages;
+
+    public OpenLogFileCommand(UIServiceHelper service, IFileSystem fileSystem, IMessageService messages)
+        : base(service)
     {
-        private readonly IFileSystem _fileSystem;
-        private readonly IMessageService _messages;
+        _fileSystem = fileSystem;
+        _messages = messages;
+    }
 
-        public OpenLogFileCommand(UIServiceHelper service, IFileSystem fileSystem, IMessageService messages)
-            : base(service)
+    protected async override Task OnExecuteAsync(object? parameter)
+    {
+        string? path = default;
+        if (parameter is ILanguageServerTraceViewModel)
         {
-            _fileSystem = fileSystem;
-            _messages = messages;
+            path = Service.Settings.LanguageServerSettings.StartupSettings.ServerExecutablePath;
+            if (!_fileSystem.Directory.Exists(path))
+            {
+                path = null;
+            }
+        }
+        // TODO parameter is IUpdateServerTraceViewModel, ITelemetryServerTraceViewModel
+
+        if (path is null)
+        {
+            _messages.ShowMessage(new MessageModel
+            {
+                Key = nameof(OpenLogFileCommand) + "_NoServerPath",
+                Level = LogLevel.Error,
+                Title = "Invalid Configuration",
+                Message = "ServerExecutablePath configuration is invalid; could not locate log directory.",
+            });
+            return;
+        }
+        var logDirectory = _fileSystem.DirectoryInfo.New(_fileSystem.Path.Combine(path, "logs"));
+
+        var currentLog = logDirectory
+            .GetFiles("*.log", System.IO.SearchOption.TopDirectoryOnly)
+            .OrderByDescending(file => file.LastWriteTime)
+            .FirstOrDefault();
+
+        if (currentLog is null)
+        {
+            _messages.ShowMessage(new MessageModel
+            {
+                Key = nameof(OpenLogFileCommand) + "_NoLogFile",
+                Level = LogLevel.Warning,
+                Title = "Nothing to see here...",
+                Message = "Server log directory was found, but it appears to not contain any log files... for now."
+            });
+            return;
         }
 
-        protected async override Task OnExecuteAsync(object? parameter)
+        var startInfo = new ProcessStartInfo
         {
-            string? path = default;
-            if (parameter is ILanguageServerTraceViewModel)
-            {
-                path = Service.Settings.LanguageServerSettings.StartupSettings.ServerExecutablePath;
-                if (!_fileSystem.Directory.Exists(path))
-                {
-                    path = null;
-                }
-            }
-            // TODO parameter is IUpdateServerTraceViewModel, ITelemetryServerTraceViewModel
-
-            if (path is null)
-            {
-                _messages.ShowMessage(new MessageModel
-                {
-                    Key = nameof(OpenLogFileCommand) + "_NoServerPath",
-                    Level = LogLevel.Error,
-                    Title = "Invalid Configuration",
-                    Message = "ServerExecutablePath configuration is invalid; could not locate log directory.",
-                });
-                return;
-            }
-            var logDirectory = _fileSystem.DirectoryInfo.New(_fileSystem.Path.Combine(path, "logs"));
-
-            var currentLog = logDirectory
-                .GetFiles("*.log", System.IO.SearchOption.TopDirectoryOnly)
-                .OrderByDescending(file => file.LastWriteTime)
-                .FirstOrDefault();
-
-            if (currentLog is null)
-            {
-                _messages.ShowMessage(new MessageModel
-                {
-                    Key = nameof(OpenLogFileCommand) + "_NoLogFile",
-                    Level = LogLevel.Warning,
-                    Title = "Nothing to see here...",
-                    Message = "Server log directory was found, but it appears to not contain any log files... for now."
-                });
-                return;
-            }
-
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "explorer",
-                Arguments = "\"" + currentLog.FullName + "\""
-            };
-            Process.Start(startInfo);
-        }
+            FileName = "explorer",
+            Arguments = "\"" + currentLog.FullName + "\""
+        };
+        Process.Start(startInfo);
     }
 }

@@ -1,8 +1,7 @@
-﻿namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer
+﻿namespace Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
+
+public interface IWorkspaceFileViewModel : IWorkspaceTreeNode
 {
-    public interface IWorkspaceFileViewModel : IWorkspaceTreeNode
-    {
-        bool IsAutoOpen { get; set; }
-        bool IsReadOnly { get; set; }
-    }
+    bool IsAutoOpen { get; set; }
+    bool IsReadOnly { get; set; }
 }

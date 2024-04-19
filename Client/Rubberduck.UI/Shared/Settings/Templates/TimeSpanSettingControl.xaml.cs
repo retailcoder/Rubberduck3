@@ -13,16 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Rubberduck.UI.Shared.Settings.Templates
+namespace Rubberduck.UI.Shared.Settings.Templates;
+
+/// <summary>
+/// Interaction logic for TimeSpanSettingControl.xaml
+/// </summary>
+public partial class TimeSpanSettingControl : UserControl
 {
-    /// <summary>
-    /// Interaction logic for TimeSpanSettingControl.xaml
-    /// </summary>
-    public partial class TimeSpanSettingControl : UserControl
+    public TimeSpanSettingControl()
     {
-        public TimeSpanSettingControl()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

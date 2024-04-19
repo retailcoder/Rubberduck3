@@ -3,38 +3,37 @@ using System.Globalization;
 using System.Windows.Data;
 //using Rubberduck.UI.ToDoItems;
 
-namespace Rubberduck.UI.Converters
+namespace Rubberduck.UI.Converters;
+
+//public class ToDoItemGroupingToBooleanConverter : GroupingToBooleanConverter<ToDoItemGrouping> { }
+
+/// <summary>
+/// Provides a mutually exclusive binding between an ToDoItemGrouping and a boolean. 
+/// Note: This is a stateful converter, so each bound control requires its own converter instance.
+/// </summary>
+public class GroupingToBooleanConverter<T> : IValueConverter where T : IConvertible, IComparable
 {
-    //public class ToDoItemGroupingToBooleanConverter : GroupingToBooleanConverter<ToDoItemGrouping> { }
+    private T? _state;
 
-    /// <summary>
-    /// Provides a mutually exclusive binding between an ToDoItemGrouping and a boolean. 
-    /// Note: This is a stateful converter, so each bound control requires its own converter instance.
-    /// </summary>
-    public class GroupingToBooleanConverter<T> : IValueConverter where T : IConvertible, IComparable
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        private T? _state;
-
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        if (parameter is not T governing || value is not T bound)
         {
-            if (parameter is not T governing || value is not T bound)
-            {
-                return false;
-            }
-
-            _state = bound;
-            return _state.Equals(governing);
+            return false;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (parameter is not T governing || value is not bool isSet)
-            {
-                return _state!;
-            }
+        _state = bound;
+        return _state.Equals(governing);
+    }
 
-            _state = isSet ? governing : _state;
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (parameter is not T governing || value is not bool isSet)
+        {
             return _state!;
         }
+
+        _state = isSet ? governing : _state;
+        return _state!;
     }
 }

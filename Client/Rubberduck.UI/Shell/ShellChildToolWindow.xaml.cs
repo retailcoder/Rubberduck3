@@ -2,20 +2,19 @@
 using Rubberduck.UI.Windows;
 using System.Windows;
 
-namespace Rubberduck.UI.Shell
+namespace Rubberduck.UI.Shell;
+
+public partial class ShellChildToolWindow : Window, IShellChildWindow
 {
-    public partial class ShellChildToolWindow : Window, IShellChildWindow
+    public ShellChildToolWindow(IDragablzWindowViewModel vm) : this()
     {
-        public ShellChildToolWindow(IDragablzWindowViewModel vm) : this()
-        {
-            DataContext = vm;
-        }
+        DataContext = vm;
+    }
 
-        public TabablzControl Tabs => ToolTabs;
+    public TabablzControl Tabs => ToolTabs;
 
-        public ShellChildToolWindow()
-        {
-            InitializeComponent();
-        }
+    public ShellChildToolWindow()
+    {
+        InitializeComponent();
     }
 }

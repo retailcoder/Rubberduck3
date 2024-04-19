@@ -3,6 +3,7 @@ using ICSharpCode.AvalonEdit.Folding;
 using ICSharpCode.AvalonEdit.Rendering;
 using Rubberduck.InternalApi.Model;
 using Rubberduck.UI.Command.Abstract;
+using Rubberduck.UI.Extensions;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Services.Abstract;
 using System;

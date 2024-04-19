@@ -88,6 +88,15 @@
         LoadErrorFileIcon="{StaticResource ErrorLogIcon16}"
         LoadErrorFolderIcon="{StaticResource SadFolderIcon16}"
     />
+    <converters:FileExtensionToIconConverter x:Key="FileExtensionIconConverter"
+                                             ClassModuleIcon="{StaticResource SharpClassIcon}"
+                                             StandardModuleIcon="{StaticResource SharpModuleIcon}"
+                                             FormModuleIcon="{StaticResource SharpFormIcon}"
+                                             DefaultSourceFileIcon="{StaticResource BlocksIcon}"
+                                             TextFileIcon="{StaticResource TextDocumentIcon}"
+                                             MarkdownFileIcon="{StaticResource MarkdownDocumentIcon}"
+                                             JsonFileIcon="{StaticResource SourceFileIcon}"
+                                             DefaultOtherFileIcon="{StaticResource DocumentIcon16}" />
 
     <SolidColorBrush x:Key="TextBox.MouseOver.Border" Color="{DynamicResource ThemeAccent1MediumColor}"/>
     <SolidColorBrush x:Key="TextBox.Focus.Border" Color="{DynamicResource ThemeAccent1DarkColor}"/>

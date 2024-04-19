@@ -13,16 +13,15 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Rubberduck.UI.Shared.Settings.Templates
+namespace Rubberduck.UI.Shared.Settings.Templates;
+
+/// <summary>
+/// Interaction logic for NumericSettingControl.xaml
+/// </summary>
+public partial class NumericSettingControl : UserControl
 {
-    /// <summary>
-    /// Interaction logic for NumericSettingControl.xaml
-    /// </summary>
-    public partial class NumericSettingControl : UserControl
+    public NumericSettingControl()
     {
-        public NumericSettingControl()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

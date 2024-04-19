@@ -4,107 +4,106 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace Rubberduck.UI.Behaviors
+namespace Rubberduck.UI.Behaviors;
+
+public class BindableSelectedItemBehavior : Behavior<TreeView>
 {
-    public class BindableSelectedItemBehavior : Behavior<TreeView>
+    public object SelectedItem
     {
-        public object SelectedItem
+        get => GetValue(SelectedItemProperty);
+        set => SetValue(SelectedItemProperty, value);
+    }
+
+    public static readonly DependencyProperty SelectedItemProperty =
+        DependencyProperty.Register("SelectedItem", typeof(object), typeof(BindableSelectedItemBehavior), new UIPropertyMetadata(null, OnSelectedItemChanged));
+
+    private static void OnSelectedItemChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (!(sender is BindableSelectedItemBehavior behavior) ||
+            !(behavior.AssociatedObject is TreeView tree))
         {
-            get => GetValue(SelectedItemProperty);
-            set => SetValue(SelectedItemProperty, value);
+            return;
         }
 
-        public static readonly DependencyProperty SelectedItemProperty =
-            DependencyProperty.Register("SelectedItem", typeof(object), typeof(BindableSelectedItemBehavior), new UIPropertyMetadata(null, OnSelectedItemChanged));
-
-        private static void OnSelectedItemChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        if (e.NewValue == null)
         {
-            if (!(sender is BindableSelectedItemBehavior behavior) ||
-                !(behavior.AssociatedObject is TreeView tree))
+            foreach (var item in tree.Items.OfType<TreeViewItem>())
+            {
+                item.SetValue(TreeViewItem.IsSelectedProperty, false);
+            }
+            return;
+        }
+
+        if (e.NewValue is TreeViewItem treeViewItem)
+        {
+            treeViewItem.SetValue(TreeViewItem.IsSelectedProperty, true);
+        }
+        else
+        {
+            var itemsHostProperty = tree.GetType().GetProperty("ItemsHost", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (itemsHostProperty == null)
             {
                 return;
             }
 
-            if (e.NewValue == null)
+            if (!(itemsHostProperty.GetValue(tree, null) is Panel itemsHost))
             {
-                foreach (var item in tree.Items.OfType<TreeViewItem>())
-                {
-                    item.SetValue(TreeViewItem.IsSelectedProperty, false);
-                }
                 return;
             }
-
-            if (e.NewValue is TreeViewItem treeViewItem)
-            {
-                treeViewItem.SetValue(TreeViewItem.IsSelectedProperty, true);
-            }
-            else
-            {
-                var itemsHostProperty = tree.GetType().GetProperty("ItemsHost", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (itemsHostProperty == null)
-                {
-                    return;
-                }
-
-                if (!(itemsHostProperty.GetValue(tree, null) is Panel itemsHost))
-                {
-                    return;
-                }
-                foreach (var item in itemsHost.Children.OfType<TreeViewItem>())
-                {
-                    if (WalkTreeViewItem(item, e.NewValue))
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-
-        public static bool WalkTreeViewItem(TreeViewItem treeViewItem, object selectedValue)
-        {
-            if (treeViewItem.DataContext == selectedValue)
-            {
-                treeViewItem.SetValue(TreeViewItem.IsSelectedProperty, true);
-                treeViewItem.Focus();
-                return true;
-            }
-
-            var itemsHostProperty = treeViewItem.GetType().GetProperty("ItemsHost", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            if (itemsHostProperty == null ||
-                !(itemsHostProperty.GetValue(treeViewItem, null) is Panel itemsHost))
-            {
-                return false;
-            }
-
             foreach (var item in itemsHost.Children.OfType<TreeViewItem>())
             {
-                if (WalkTreeViewItem(item, selectedValue))
+                if (WalkTreeViewItem(item, e.NewValue))
                 {
                     break;
                 }
             }
+        }
+    }
+
+    public static bool WalkTreeViewItem(TreeViewItem treeViewItem, object selectedValue)
+    {
+        if (treeViewItem.DataContext == selectedValue)
+        {
+            treeViewItem.SetValue(TreeViewItem.IsSelectedProperty, true);
+            treeViewItem.Focus();
+            return true;
+        }
+
+        var itemsHostProperty = treeViewItem.GetType().GetProperty("ItemsHost", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        if (itemsHostProperty == null ||
+            !(itemsHostProperty.GetValue(treeViewItem, null) is Panel itemsHost))
+        {
             return false;
         }
 
-        protected override void OnAttached()
+        foreach (var item in itemsHost.Children.OfType<TreeViewItem>())
         {
-            base.OnAttached();
-            AssociatedObject.SelectedItemChanged += OnTreeViewSelectedItemChanged;
-        }
-
-        protected override void OnDetaching()
-        {
-            base.OnDetaching();
-            if (AssociatedObject != null)
+            if (WalkTreeViewItem(item, selectedValue))
             {
-                AssociatedObject.SelectedItemChanged -= OnTreeViewSelectedItemChanged;
+                break;
             }
         }
+        return false;
+    }
 
-        private void OnTreeViewSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    protected override void OnAttached()
+    {
+        base.OnAttached();
+        AssociatedObject.SelectedItemChanged += OnTreeViewSelectedItemChanged;
+    }
+
+    protected override void OnDetaching()
+    {
+        base.OnDetaching();
+        if (AssociatedObject != null)
         {
-            SelectedItem = e.NewValue;
+            AssociatedObject.SelectedItemChanged -= OnTreeViewSelectedItemChanged;
         }
+    }
+
+    private void OnTreeViewSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+    {
+        SelectedItem = e.NewValue;
     }
 }

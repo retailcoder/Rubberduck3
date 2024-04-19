@@ -1,9 +1,8 @@
 ﻿using Dragablz;
 
-namespace Rubberduck.UI.Shell
+namespace Rubberduck.UI.Shell;
+
+public interface IShellChildWindow
 {
-    public interface IShellChildWindow
-    {
-        TabablzControl Tabs { get; }
-    }
+    TabablzControl Tabs { get; }
 }

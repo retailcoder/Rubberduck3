@@ -1,15 +1,14 @@
 ﻿using System.Windows.Controls;
 
-namespace Rubberduck.UI.Shell
+namespace Rubberduck.UI.Shell;
+
+/// <summary>
+/// Interaction logic for BusyIndicator.xaml
+/// </summary>
+public partial class BusyIndicator : UserControl
 {
-    /// <summary>
-    /// Interaction logic for BusyIndicator.xaml
-    /// </summary>
-    public partial class BusyIndicator : UserControl
+    public BusyIndicator()
     {
-        public BusyIndicator()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

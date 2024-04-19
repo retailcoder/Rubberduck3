@@ -1,15 +1,14 @@
 ﻿using System.Windows.Controls;
 
-namespace Rubberduck.UI.Shell
+namespace Rubberduck.UI.Shell;
+
+/// <summary>
+/// Interaction logic for DuckyBackground.xaml
+/// </summary>
+public partial class DuckyBackgroundControl : UserControl
 {
-    /// <summary>
-    /// Interaction logic for DuckyBackground.xaml
-    /// </summary>
-    public partial class DuckyBackgroundControl : UserControl
+    public DuckyBackgroundControl()
     {
-        public DuckyBackgroundControl()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

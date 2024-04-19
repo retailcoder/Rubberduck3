@@ -1,9 +1,8 @@
-﻿namespace Rubberduck.UI.Shell.StatusBar
+﻿namespace Rubberduck.UI.Shell.StatusBar;
+
+public enum ServerConnectionState
 {
-    public enum ServerConnectionState
-    {
-        Disconnected,
-        Connecting,
-        Connected
-    }
+    Disconnected,
+    Connecting,
+    Connected
 }

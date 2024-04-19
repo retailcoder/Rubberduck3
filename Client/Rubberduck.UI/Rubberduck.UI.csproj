@@ -241,11 +241,14 @@
     <None Remove="Resources\FugueIcons\document-block.png" />
     <None Remove="Resources\FugueIcons\document-code.png" />
     <None Remove="Resources\FugueIcons\document-excel.png" />
+    <None Remove="Resources\FugueIcons\document-globe.png" />
     <None Remove="Resources\FugueIcons\document-node.png" />
     <None Remove="Resources\FugueIcons\document-office.png" />
     <None Remove="Resources\FugueIcons\document-powerpoint.png" />
     <None Remove="Resources\FugueIcons\document-rename.png" />
     <None Remove="Resources\FugueIcons\document-search-result.png" />
+    <None Remove="Resources\FugueIcons\document-smiley-sad.png" />
+    <None Remove="Resources\FugueIcons\document-text.png" />
     <None Remove="Resources\FugueIcons\document-word.png" />
     <None Remove="Resources\FugueIcons\document.png" />
     <None Remove="Resources\FugueIcons\drive--exclamation.png" />
@@ -516,11 +519,14 @@
     <Resource Include="Resources\FugueIcons\document-block.png" />
     <Resource Include="Resources\FugueIcons\document-code.png" />
     <Resource Include="Resources\FugueIcons\document-excel.png" />
+    <Resource Include="Resources\FugueIcons\document-globe.png" />
     <Resource Include="Resources\FugueIcons\document-node.png" />
     <Resource Include="Resources\FugueIcons\document-office.png" />
     <Resource Include="Resources\FugueIcons\document-powerpoint.png" />
     <Resource Include="Resources\FugueIcons\document-rename.png" />
     <Resource Include="Resources\FugueIcons\document-search-result.png" />
+    <Resource Include="Resources\FugueIcons\document-smiley-sad.png" />
+    <Resource Include="Resources\FugueIcons\document-text.png" />
     <Resource Include="Resources\FugueIcons\document-word.png" />
     <Resource Include="Resources\FugueIcons\document.png" />
     <Resource Include="Resources\FugueIcons\drive--exclamation.png" />
@@ -547,7 +553,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Compile Update="Shell\About\AboutWindow.xaml.cs">
+    <Compile Update="Shared\About\AboutWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Shared\Message\MessageWindow.xaml.cs">
@@ -577,5 +583,11 @@
     <Compile Update="Shell\Splash\SplashWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Shell\Tools\CodeExplorer\" />
+    <Folder Include="Shell\Tools\ObjectBrowser\" />
+    <Folder Include="Shell\Tools\PropertiesGrid\" />
   </ItemGroup>
 </Project>
