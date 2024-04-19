@@ -1,17 +1,18 @@
 ﻿<UserControl x:Class="Rubberduck.UI.Shell.Tools.WorkspaceExplorer.WorkspaceExplorerControl"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-        xmlns:b="clr-namespace:Rubberduck.UI.Behaviors"
-        xmlns:xb="http://schemas.microsoft.com/xaml/behaviors"
-        xmlns:shell="clr-namespace:Rubberduck.UI.Shell" 
-        xmlns:cmd="clr-namespace:Rubberduck.UI.Command.StaticRouted" 
-        xmlns:local="clr-namespace:Rubberduck.UI.Shell.Tools.WorkspaceExplorer" xmlns:converters="clr-namespace:Rubberduck.UI.Converters"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:b="clr-namespace:Rubberduck.UI.Behaviors"
+             xmlns:xb="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:shell="clr-namespace:Rubberduck.UI.Shell" 
+             xmlns:cmd="clr-namespace:Rubberduck.UI.Command.StaticRouted" 
+             xmlns:local="clr-namespace:Rubberduck.UI.Shell.Tools.WorkspaceExplorer" 
+             xmlns:converters="clr-namespace:Rubberduck.UI.Converters"
+             mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=local:IWorkspaceExplorerViewModel, IsDesignTimeCreatable=False}"
-        mc:Ignorable="d" 
-        x:Name="WorkspaceExplorerRoot"
-        d:DesignHeight="450" d:DesignWidth="400">
+             x:Name="WorkspaceExplorerRoot"
+             d:DesignHeight="450" d:DesignWidth="400">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

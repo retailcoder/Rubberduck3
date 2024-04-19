@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace Rubberduck.UI.ParameterInfo;
+namespace Rubberduck.UI.Shell.ParameterInfo;
 
 /// <summary>
 /// Interaction logic for ParameterInfoToolTip.xaml

@@ -7,9 +7,9 @@
              xmlns:viewmodels="clr-namespace:Rubberduck.UI.Shared.Settings" 
              xmlns:shell="clr-namespace:Rubberduck.UI.Shell"
              xmlns:b="clr-namespace:Rubberduck.UI.Behaviors" 
-             d:DataContext="{d:DesignInstance Type=viewmodels:TimeSpanSettingViewModel}"
              MinWidth="214"
              mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=viewmodels:TimeSpanSettingViewModel}"
              d:DesignWidth="500"
              d:Background="{DynamicResource ThemeBackgroundColorBrush}">
     <UserControl.Resources>

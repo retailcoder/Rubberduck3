@@ -1,7 +1,6 @@
-﻿using Rubberduck.UI.Shared.About;
-using System.Windows;
+﻿using System.Windows;
 
-namespace Rubberduck.UI.Shell.About;
+namespace Rubberduck.UI.Shared.About;
 
 /// <summary>
 /// Interaction logic for AboutWindow.xaml

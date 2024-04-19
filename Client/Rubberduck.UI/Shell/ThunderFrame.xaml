@@ -42,21 +42,6 @@
                                             <GradientStop Offset="1" Color="{DynamicResource ThemeBackgroundDarkColor}" />
                                         </LinearGradientBrush>
                                     </Border.Background>
-                                    <!--<Border.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="Undock" Command="{Binding UndockToolTabCommand}" CommandParameter="{Binding}" />
-                                            <MenuItem Header="Auto hide" 
-                                                      IsCheckable="True"
-                                                      IsChecked="{Binding IsPinned, Converter={StaticResource InverseBoolConverter}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                      Visibility="{TemplateBinding local:ThunderFrame.ShowPinButton, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                            <Separator />
-                                            <MenuItem Header="Close tab" 
-                                                      Command="{Binding CloseToolWindowCommand}" CommandParameter="{Binding}" />
-                                            <MenuItem Header="Settings" 
-                                                      Command="{Binding ShowSettingsCommand}" CommandParameter="{Binding ShowSettingsCommandParameter}" 
-                                                      Visibility="{Binding ShowGearButton, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                        </ContextMenu>
-                                    </Border.ContextMenu>-->
                                 </Border>
 
                                 <DockPanel Grid.Row="0"

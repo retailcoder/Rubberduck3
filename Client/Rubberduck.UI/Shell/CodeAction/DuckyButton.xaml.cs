@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls.Primitives;
 
-namespace Rubberduck.UI.CodeAction;
+namespace Rubberduck.UI.Shell.CodeAction;
 
 /// <summary>
 /// Interaction logic for DuckyButton.xaml

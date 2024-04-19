@@ -6,8 +6,8 @@
              xmlns:local="clr-namespace:Rubberduck.UI.Shell.Document"
              xmlns:shell="clr-namespace:Rubberduck.UI.Shell" 
              xmlns:vm="clr-namespace:Rubberduck.UI.Windows" 
-             d:DataContext="{d:DesignInstance Type=local:IDocumentTabViewModel, IsDesignTimeCreatable=False}"
              mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=local:IDocumentTabViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="350" d:DesignWidth="600">
     <UserControl.Resources>
         <ResourceDictionary>

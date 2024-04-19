@@ -2,7 +2,6 @@
 using Rubberduck.InternalApi.Services;
 using Rubberduck.InternalApi.Settings;
 using Rubberduck.UI.Services.Abstract;
-using Rubberduck.UI.Shell.About;
 
 namespace Rubberduck.UI.Shared.About;
 

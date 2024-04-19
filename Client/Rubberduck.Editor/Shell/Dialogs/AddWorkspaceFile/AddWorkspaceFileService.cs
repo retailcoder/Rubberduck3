@@ -2,7 +2,6 @@
 using Rubberduck.InternalApi.Services;
 using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model;
-using Rubberduck.UI.AddFile;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Shared.Message;
 using Rubberduck.UI.Shell;
@@ -13,14 +12,14 @@ namespace Rubberduck.Editor.Shell.Dialogs.AddWorkspaceFile;
 
 public interface IAddWorkspaceFileService : IDialogService<IAddFileWindowViewModel> { }
 
-public class AddWorkspaceFileService : DialogService<AddFileWindow, IAddFileWindowViewModel>, IAddWorkspaceFileService
+public class AddWorkspaceFileService : DialogService<AddWorkspaceFileWindow, IAddFileWindowViewModel>, IAddWorkspaceFileService
 {
     private readonly UIServiceHelper _service;
     private readonly IWindowChromeViewModel _chrome;
 
     public AddWorkspaceFileService(UIServiceHelper service, IWindowChromeViewModel chrome,
         ILogger logger, 
-        IWindowFactory<AddFileWindow, IAddFileWindowViewModel> factory, 
+        IWindowFactory<AddWorkspaceFileWindow, IAddFileWindowViewModel> factory, 
         RubberduckSettingsProvider settings, 
         MessageActionsProvider actionsProvider, 
         PerformanceRecordAggregator performance) 

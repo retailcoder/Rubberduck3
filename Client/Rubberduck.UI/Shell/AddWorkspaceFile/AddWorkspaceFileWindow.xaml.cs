@@ -13,19 +13,19 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Rubberduck.UI.Shell.AddWorkspaceFile;
 
-namespace Rubberduck.UI.AddFile;
+namespace Rubberduck.UI.Shell.AddWorkspaceFile;
 
 /// <summary>
 /// Interaction logic for AddFileWindow.xaml
 /// </summary>
-public partial class AddFileWindow : Window
+public partial class AddWorkspaceFileWindow : Window
 {
-    public AddFileWindow()
+    public AddWorkspaceFileWindow()
     {
         InitializeComponent();
     }
 
-    public AddFileWindow(IAddFileWindowViewModel viewModel) : this()
+    public AddWorkspaceFileWindow(IAddFileWindowViewModel viewModel) : this()
     {
         DataContext = viewModel;
     }
