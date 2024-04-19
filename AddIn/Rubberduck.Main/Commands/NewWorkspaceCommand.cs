@@ -1,20 +1,19 @@
-﻿using Rubberduck.InternalApi.Model.Workspace;
+﻿using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.Parsing._v3;
 using Rubberduck.UI.Command;
 using Rubberduck.UI.Services;
+using Rubberduck.UI.Shared.NewProject;
 using Rubberduck.Unmanaged;
 using Rubberduck.Unmanaged.Abstract;
-using Rubberduck.VBEditor.UI.OfficeMenus;
 using Rubberduck.VBEditor.Extensions;
+using Rubberduck.VBEditor.UI.OfficeMenus;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Linq;
 using Reference = Rubberduck.InternalApi.Model.Workspace.Reference;
-using Rubberduck.InternalApi.Extensions;
-using Rubberduck.ServerPlatform;
-using Rubberduck.UI.Shared.NewProject;
 
 namespace Rubberduck.Main.Commands.NewWorkspace
 {

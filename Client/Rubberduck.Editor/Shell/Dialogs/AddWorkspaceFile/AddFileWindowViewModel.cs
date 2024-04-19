@@ -2,8 +2,6 @@
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.Resources;
 using Rubberduck.UI.Services;
-using Rubberduck.UI.Services.NewProject;
-using Rubberduck.UI.Shared.NewProject;
 using Rubberduck.UI.Shell;
 using Rubberduck.UI.Shell.AddWorkspaceFile;
 using Rubberduck.UI.Windows;
