@@ -1,6 +1,5 @@
 ﻿using Rubberduck.InternalApi.Extensions;
 using Rubberduck.UI;
-using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
 using System.Collections.Generic;
@@ -200,7 +199,6 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         public void AddChildNode(IWorkspaceTreeNode childNode)
         {
             _children.Add(childNode);
-            
         }
 
         private bool _isFiltered;

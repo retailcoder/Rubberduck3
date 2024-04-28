@@ -1,6 +1,8 @@
-﻿using Rubberduck.UI.Shell.AddWorkspaceFile;
+﻿using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
+using Rubberduck.UI.Shell.AddWorkspaceFile;
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Media;
 
 namespace Rubberduck.UI.Converters;
@@ -19,23 +21,31 @@ public class FileExtensionToIconConverter : ImageSourceConverter
 
     public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
+        var isSourceFile = false;
+        string extension = null;
         if (value is IFileTemplate template)
         {
-            return template.FileExtension.Replace(".", "") switch
-            {
-                "bas" => StandardModuleIcon,
-                "cls" => ClassModuleIcon,
-                "frm" => FormModuleIcon,
-                // TODO add the VB6 file types here
-
-                "txt" => TextFileIcon,
-                "md" => MarkdownFileIcon,
-                "json" => JsonFileIcon,
-
-                _ => template.IsSourceFile ? DefaultSourceFileIcon : DefaultOtherFileIcon
-            };
+            extension = template.FileExtension.Replace(".", "");
+            isSourceFile = template.IsSourceFile;
+        }
+        else if (value is string ext)
+        {
+            extension = ext.Replace(".", "");
+            isSourceFile = SupportedLanguage.VB6.FileTypes.Select(e => e.Replace("*.", "")).Contains(extension);
         }
 
-        throw new InvalidOperationException();
+        return extension switch
+        {
+            "bas" => StandardModuleIcon,
+            "cls" => ClassModuleIcon,
+            "frm" => FormModuleIcon,
+            // TODO add the VB6 file types here
+
+            "txt" => TextFileIcon,
+            "md" => MarkdownFileIcon,
+            "json" => JsonFileIcon,
+
+            _ => isSourceFile ? DefaultSourceFileIcon : DefaultOtherFileIcon
+        };
     }
 }

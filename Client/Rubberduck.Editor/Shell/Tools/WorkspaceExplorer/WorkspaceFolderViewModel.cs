@@ -24,8 +24,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         public override IEnumerable<object> ContextMenuItems => IsInProject
             ? new object[]
                 {
-                    new MenuItem { Command = WorkspaceExplorerCommands.CreateFileCommand, CommandParameter = Uri },
-                    new MenuItem { Command = WorkspaceExplorerCommands.CreateFolderCommand, CommandParameter = Uri },
+                    new MenuItem { Command = WorkspaceExplorerCommands.CreateFileCommand, CommandParameter = this },
+                    new MenuItem { Command = WorkspaceExplorerCommands.CreateFolderCommand, CommandParameter = this },
                     new Separator(),
                     new MenuItem { Command = WorkspaceExplorerCommands.ExpandFolderCommand, CommandParameter = this },
                     new MenuItem { Command = WorkspaceExplorerCommands.CollapseFolderCommand, CommandParameter = this },

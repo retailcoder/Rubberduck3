@@ -137,7 +137,7 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
         {
             TextDocument = new OptionalVersionedTextDocumentIdentifier
             {
-                Uri = DocumentState.Uri.AbsoluteLocation,
+                Uri = DocumentState.Uri.RelativeUriString!,
                 Version = DocumentState.Version, // ...so that the server-side latest matches local version
             },
             ContentChanges = new Container<TextDocumentContentChangeEvent>(
@@ -167,7 +167,7 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
             Identifier = "RDE",
             TextDocument = new TextDocumentIdentifier
             {
-                Uri = _uri.AbsoluteLocation,
+                Uri = _uri.RelativeUriString!,
             }
         };
 
@@ -191,7 +191,7 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
         {
             TextDocument = new TextDocumentIdentifier
             {
-                Uri = _uri.AbsoluteLocation,
+                Uri = _uri.RelativeUriString!,
             }
         };
 

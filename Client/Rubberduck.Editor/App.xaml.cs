@@ -13,7 +13,9 @@ using Rubberduck.Editor.RPC.EditorServer.Handlers.Lifecycle;
 using Rubberduck.Editor.RPC.EditorServer.Handlers.Workspace;
 using Rubberduck.Editor.RPC.LanguageServerClient;
 using Rubberduck.Editor.RPC.LanguageServerClient.Handlers;
+using Rubberduck.Editor.Services;
 using Rubberduck.Editor.Shell;
+using Rubberduck.Editor.Shell.Dialogs.AddWorkspaceFile;
 using Rubberduck.Editor.Shell.Document;
 using Rubberduck.Editor.Shell.Splash;
 using Rubberduck.Editor.Shell.StatusBar;
@@ -43,6 +45,7 @@ using Rubberduck.UI.Shared.NewProject;
 using Rubberduck.UI.Shared.Settings;
 using Rubberduck.UI.Shared.Settings.Abstract;
 using Rubberduck.UI.Shell;
+using Rubberduck.UI.Shell.AddWorkspaceFile;
 using Rubberduck.UI.Shell.Document;
 using Rubberduck.UI.Shell.Splash;
 using Rubberduck.UI.Shell.StatusBar;
@@ -335,6 +338,7 @@ namespace Rubberduck.Editor
             services.AddSingleton<ShowMessageHandler>();
             services.AddSingleton<ShowMessageRequestHandler>();
 
+            services.AddSingleton<IFileSystemServices, FileSystemServices>();
             services.AddSingleton<ITemplatesService, TemplatesService>();
             services.AddSingleton<IWorkspaceFolderService, WorkspaceFolderService>();
             services.AddSingleton<IProjectFileService, ProjectFileService>();
@@ -383,6 +387,10 @@ namespace Rubberduck.Editor
             services.AddSingleton<CloseToolWindowCommand>();
             services.AddSingleton<OpenLogFileCommand>();
             services.AddSingleton<ShowRubberduckSettingsCommand>();
+            services.AddSingleton<AddWorkspaceFileCommand>();
+            services.AddSingleton<IAddWorkspaceFileService, AddWorkspaceFileService>();
+            services.AddSingleton<IWindowFactory<AddWorkspaceFileWindow, IAddFileWindowViewModel>, AddWorkspaceFileWindowFactory>();
+            services.AddSingleton<CreateFolderCommand>();
 
             services.AddSingleton<IDocumentStatusViewModel, ActiveDocumentStatusViewModel>();
         }

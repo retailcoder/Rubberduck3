@@ -93,16 +93,21 @@ public class DeleteUriCommand : CommandBase
                     vm.RemoveWorkspaceUri(folderUri);
                 }
                 _projectFile.WriteFile(vm.Model);
-            }
 
-            var request = new DidDeleteFileParams
-            {
-                Files = new Container<FileDelete>(new FileDelete { Uri = uri })
-            };
-            _languageClient.Value.DidDeleteFile(request);
+                NotifyLanguageServer(uri);
+            }
         }
 
         return Task.CompletedTask;
+    }
+
+    private void NotifyLanguageServer(Uri uri)
+    {
+        var request = new DidDeleteFileParams
+        {
+            Files = new Container<FileDelete>(new FileDelete { Uri = uri })
+        };
+        _languageClient.Value.Workspace.DidDeleteFile(request);
     }
 
     private bool DeleteUri(WorkspaceFileUri uri, string name)

@@ -21,6 +21,9 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         public ICommand IncludeUriCommand { get; init; }
         public ICommand ExcludeUriCommand { get; init; }
 
+        public ICommand AddWorkspaceFileCommand { get; init; }
+        public ICommand CreateFolderCommand { get; init; }
+
         public WorkspaceExplorerCommandHandlers(
             NewProjectCommand newProjectCommand,
             OpenProjectCommand openProjectCommand,
@@ -31,7 +34,9 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             SynchronizeWorkspaceCommand synchronizeWorkspaceCommand,
             OpenUriInWindowsExplorerCommand openUriInWindowsExplorerCommand,
             IncludeInProjectCommand includeUriCommand,
-            ExcludeFromProjectCommand excludeUriCommand)
+            ExcludeFromProjectCommand excludeUriCommand,
+            AddWorkspaceFileCommand addWorkspaceFileCommand,
+            CreateFolderCommand addFolderCommand)
         {
             NewProjectCommand = newProjectCommand;
             OpenProjectCommand = openProjectCommand;
@@ -43,6 +48,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             OpenUriInWindowsExplorerCommand = openUriInWindowsExplorerCommand;
             IncludeUriCommand = includeUriCommand;
             ExcludeUriCommand = excludeUriCommand;
+            AddWorkspaceFileCommand = addWorkspaceFileCommand;
+            CreateFolderCommand = addFolderCommand;
         }
 
         public override IEnumerable<CommandBinding> CreateCommandBindings() =>

@@ -17,12 +17,13 @@ public interface IFileTemplate
     IEnumerable<string> Categories { get; }
     string DefaultFileName { get; }
     string FileExtension { get; }
+    string ContentUri { get; }
     bool IsSourceFile { get; }
 }
 
 public interface IAddFileWindowViewModel : IDialogWindowViewModel
 {
-    WorkspaceFolderUri ParentFolderUri { get; }
+    WorkspaceFolderUri ParentFolderUri { get; set; }
 
     /// <summary>
     /// The name of the file to be added, without an extension.

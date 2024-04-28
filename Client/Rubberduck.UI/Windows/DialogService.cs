@@ -33,6 +33,9 @@ public abstract class DialogService<TView, TViewModel> : ServiceBase, IDialogSer
         viewModel = CreateViewModel(Settings, actions)
             ?? throw new ArgumentNullException(nameof(viewModel), $"CreateViewModel returned null.");
 
+        ConfigureModel?.Invoke(viewModel);
+        ConfigureModel = null;
+
         var view = _factory.Create(viewModel);
         var vm = viewModel;
         
@@ -59,6 +62,8 @@ public abstract class DialogService<TView, TViewModel> : ServiceBase, IDialogSer
 
         return result;
     }
+
+    public virtual Action<TViewModel>? ConfigureModel { get; set; }
 
     protected virtual void OnDialogAccept(TViewModel model)
     {

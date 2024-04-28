@@ -6,6 +6,7 @@ using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model.LanguageClient;
 using Rubberduck.UI.Services.Abstract;
 using Rubberduck.UI.Shared.Message;
+using Rubberduck.UI.Shell.AddWorkspaceFile;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
@@ -31,7 +32,7 @@ public class TemplatesService : ServiceBase, ITemplatesService
     {
         TryRunAction(() =>
         {
-            var templatePath = _fileSystem.Path.Combine(Settings.GeneralSettings.TemplatesLocation.LocalPath, name);
+            var templatePath = _fileSystem.Path.Combine(Settings.GeneralSettings.ProjectTemplatesLocation.LocalPath, name);
             _fileSystem.Directory.Delete(templatePath, true);
             LogInformation("Deleted project template.", $"Template: {name}");
         });
@@ -43,10 +44,10 @@ public class TemplatesService : ServiceBase, ITemplatesService
         {
             var name = template.Name;
 
-            var templateRoot = CreateTemplateRoot(name);
+            var templateRoot = CreateProjectTemplateRoot(name);
             CreateProjectFile(template.ProjectFile, templateRoot);
 
-            var sourceRoot = CreateTemplateSourceFolder(templateRoot, template.ProjectFile.VBProject.Folders);
+            var sourceRoot = CreateProjectTemplateSourceFolder(templateRoot, template.ProjectFile.VBProject.Folders);
 
             var (files, bytes) = CopyProjectFiles(template.ProjectFile, sourceRoot);
             if (bytes == 0 && files != 0)
@@ -117,9 +118,9 @@ public class TemplatesService : ServiceBase, ITemplatesService
         }
     }
 
-    private string CreateTemplateRoot(string name)
+    private string CreateProjectTemplateRoot(string name)
     {
-        var path = _fileSystem.Path.Combine(Settings.GeneralSettings.TemplatesLocation.LocalPath, name);
+        var path = _fileSystem.Path.Combine(Settings.GeneralSettings.ProjectTemplatesLocation.LocalPath, name);
 
         if (!TryRunAction(() =>
         {
@@ -133,7 +134,7 @@ public class TemplatesService : ServiceBase, ITemplatesService
             }
 
             _fileSystem.Directory.CreateDirectory(path);
-            LogTrace($"Created template root folder.", $"Path: {path}");
+            LogTrace($"Created project template root folder.", $"Path: {path}");
         }, out var exception))
         {
             if (exception is not null)
@@ -145,7 +146,7 @@ public class TemplatesService : ServiceBase, ITemplatesService
         return path;
     }
 
-    private string CreateTemplateSourceFolder(string root, IEnumerable<string> folders)
+    private string CreateProjectTemplateSourceFolder(string root, IEnumerable<string> folders)
     {
         var path = _fileSystem.Path.Combine(root, ProjectTemplate.TemplateSourceFolderName);
         if (!TryRunAction(() =>
@@ -184,16 +185,17 @@ public class TemplatesService : ServiceBase, ITemplatesService
 
     public FileTemplates GetFileTemplates()
     {
-        var path = _fileSystem.Path.Combine(Settings.GeneralSettings.TemplatesLocation.LocalPath, "files.json");
+        var path = _fileSystem.Path.Combine(Settings.GeneralSettings.TemplatesRootLocation.LocalPath, "files.json");
         var json = _fileSystem.File.ReadAllText(path);
-        return JsonSerializer.Deserialize<FileTemplates>(json) ?? throw new InvalidOperationException("Could not deserialize file templates metadata.");
+        var result = JsonSerializer.Deserialize<FileTemplates>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? throw new InvalidOperationException("Could not deserialize file templates metadata.");
+        return result;
     }
 
     public IEnumerable<ProjectTemplate> GetProjectTemplates()
     {
         yield return ProjectTemplate.Default;
 
-        foreach (var templateFolder in _fileSystem.Directory.GetDirectories(Settings.GeneralSettings.TemplatesLocation.LocalPath))
+        foreach (var templateFolder in _fileSystem.Directory.GetDirectories(Settings.GeneralSettings.ProjectTemplatesLocation.LocalPath))
         {
             var name = _fileSystem.Path.GetFileName(templateFolder)!;
             var templateSourceFolder = _fileSystem.Path.Combine(templateFolder, ProjectTemplate.TemplateSourceFolderName);
@@ -221,7 +223,7 @@ public class TemplatesService : ServiceBase, ITemplatesService
         var result = template;
         if (!TryRunAction(() =>
         {
-            var root = Settings.GeneralSettings.TemplatesLocation.LocalPath;
+            var root = Settings.GeneralSettings.ProjectTemplatesLocation.LocalPath;
             var projectPath = _fileSystem.Path.Combine(root, template.Name, ProjectFile.FileName);
             var content = _fileSystem.File.ReadAllText(projectPath);
 
@@ -243,6 +245,35 @@ public class TemplatesService : ServiceBase, ITemplatesService
         }))
         {
             LogWarning("Resolution failed: could not load the specified project template.", $"Template name: '{template.Name}'");
+        }
+
+        return result;
+    }
+
+    public FileTemplate Resolve(IFileTemplate template, string name)
+    {
+        FileTemplate result = default!;
+
+        if (!TryRunAction(() =>
+        {
+            var root = Settings.GeneralSettings.FileTemplatesLocation.LocalPath;
+            var path = _fileSystem.Path.Combine(root, template.ContentUri);
+            var content = _fileSystem.File.ReadAllText(path);
+
+            var resolved = content.Replace(FileTemplate.NameContentMarker, name);
+            result = new FileTemplate
+            {
+                Name = name,
+                TextContent = resolved,
+                Categories = template.Categories.ToArray(),
+                ContentUri = template.ContentUri,
+                DefaultFileName = template.DefaultFileName,
+                Description = template.Description,
+                FileExtension = template.FileExtension
+            };
+        }))
+        {
+            LogWarning("Resolution failed: could not load the specified file template.", $"Template name: '{template.Name}'\nUri: '{template.ContentUri}'");
         }
 
         return result;

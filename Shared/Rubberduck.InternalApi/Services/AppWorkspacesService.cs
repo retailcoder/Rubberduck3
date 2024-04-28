@@ -45,6 +45,11 @@ namespace Rubberduck.InternalApi.Services
         public IFileSystem FileSystem => _fileSystem;
 
         public IEnumerable<ProjectFile> ProjectFiles => _projectFiles;
+        public void UpdateProjectFile(ProjectFile projectFile)
+        {
+            _projectFiles.RemoveWhere(file => file.Uri == projectFile.Uri);
+            _projectFiles.Add(projectFile);
+        }
 
         public async Task<bool> OpenProjectWorkspaceAsync(Uri uri)
         {

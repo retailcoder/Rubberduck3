@@ -3,39 +3,43 @@
     "fileTypes" : [
         {
             "name": "Standard Module",
+            "description": "A standard procedural Visual Basic module, with 'Option Explicit' specified.",
+            "categories": ["VBA", "VB6"],
             "defaultFileName": "Module",
             "fileExtension": ".bas",
-            "content": "Attribute VB_Name = \"%NAME%\"\r\nOption Explicit\r\n"
+            "contentUri": "/Module.bas"
         },
         {
             "name": "Class Module",
+            "description": "A Visual Basic class module with 'Option Explicit' specified.",
+            "categories": ["VBA", "VB6"],
             "defaultFileName": "Class",
             "fileExtension": ".cls",
-            "content": "VERSION 1.0 CLASS\r\nBEGIN\r\n  MultiUse = -1  'True\r\nEND\r\nAttribute VB_Name = \"%NAME%\"\r\nAttribute VB_GlobalNameSpace = False\r\nAttribute VB_Creatable = False\r\nAttribute VB_PredeclaredId = False\r\nAttribute VB_Exposed = False\r\nOption Explicit\r\n"
+            "contentUri": "/Class.cls"
         },
         {
             "name": "UserForm",
+            "description": "A Visual Basic form class module with 'Option Explicit' specified.",
+            "categories": ["VBA"],
             "defaultFileName": "UserForm",
             "fileExtension": ".frm",
-            "content": "VERSION 5.00\r\nBegin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} %NAME% \r\n  Caption         =   \"%NAME%\"\r\n  ClientHeight    =   %CLIENTHEIGHT%\r\n  ClientLeft      =   %CLIENTLEFT%\r\n  ClientTop       =   %CLIENTTOP%\r\n  ClientWidth     =   %CLIENTWIDTH%\r\n  OleObjectBlob   =   \"%NAME%.frx\":0000\r\n  StartUpPosition =   1  'CenterOwner\r\nEnd\r\nAttribute VB_Name = \"%NAME%\"\r\nAttribute VB_GlobalNameSpace = False\r\nAttribute VB_Creatable = False\r\nAttribute VB_PredeclaredId = True\r\nAttribute VB_Exposed = False\r\nOption Explicit\r\n"
+            "contentUri": "/Userform.frm"
         },
         {
             "name": "Text File",
+            "description": "A simple text document.",
+            "categories": ["Other"],
             "defaultFileName": "TextFile",
             "fileExtension": ".txt",
-            "content": "\r\n"
+            "contentUri": "/TextFile.txt"
         },
         {
             "name": "Markdown Document",
+            "description": "A formatted text document.",
+            "categories": ["Other"],
             "defaultFileName": "Document",
             "fileExtension": ".md",
-            "content": "# %NAME%\r\n\r\n"
-        },
-        {
-            "name": "JSON File",
-            "defaultFileName": "JsonFile",
-            "fileExtension": ".json",
-            "content": "{\r\n}\r\n"
+            "contentUri": "/Document.md"
         }
     ]
 }

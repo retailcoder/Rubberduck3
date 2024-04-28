@@ -1,4 +1,5 @@
-﻿using Rubberduck.InternalApi.Settings;
+﻿using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model.LanguageClient;
 using System;
 using System.Collections;
@@ -41,7 +42,13 @@ public record class GeneralSettings : TypedSettingGroup, IDefaultSettingsProvide
     [JsonIgnore]
     public string[] DisabledMessageKeys => GetSetting<DisabledMessageKeysSetting>()?.TypedValue ?? DisabledMessageKeysSetting.DefaultSettingValue;
     [JsonIgnore]
-    public Uri TemplatesLocation => GetSetting<TemplatesLocationSetting>()?.TypedValue ?? TemplatesLocationSetting.DefaultSettingValue;
+    public Uri TemplatesRootLocation => GetSetting<TemplatesLocationSetting>()?.TypedValue ?? TemplatesLocationSetting.DefaultSettingValue;
+
+    [JsonIgnore]
+    public Uri FileTemplatesLocation => new(System.IO.Path.Combine(TemplatesRootLocation.LocalPath, "Files"));
+
+    [JsonIgnore]
+    public Uri ProjectTemplatesLocation => new(System.IO.Path.Combine(TemplatesRootLocation.LocalPath, "Projects"));
 
     public static GeneralSettings Default { get; } = new GeneralSettings() { Value = DefaultSettings, DefaultValue = DefaultSettings };
     GeneralSettings IDefaultSettingsProvider<GeneralSettings>.Default => Default;

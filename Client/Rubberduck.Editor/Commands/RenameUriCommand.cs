@@ -3,87 +3,30 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Rubberduck.Editor.Shell.Tools.WorkspaceExplorer;
 using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Model.Workspace;
+using Rubberduck.InternalApi.Services;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
-using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Rubberduck.Editor.Commands;
 
-public class AddFileCommand : CommandBase
-{
-    public AddFileCommand(UIServiceHelper service) : base(service)
-    {
-    }
-
-    protected override Task OnExecuteAsync(object? parameter)
-    {
-        if (parameter is IWorkspaceFolderViewModel parent)
-        {
-            
-        }
-
-        return Task.CompletedTask;
-    }
-}
-
-public class AddFolderCommand : CommandBase
-{
-    public AddFolderCommand(UIServiceHelper service) : base(service)
-    {
-    }
-
-    protected override Task OnExecuteAsync(object? parameter)
-    {
-        if (parameter is IWorkspaceFolderViewModel parent)
-        {
-            var parentPath = parent.Uri.AbsoluteLocation.LocalPath;
-            var name = GetUniqueNewFolderName(parentPath);
-            var path = Path.Combine(parentPath, name);
-            var uri = new WorkspaceFolderUri(path, parent.Uri.WorkspaceRoot);
-            var relative = uri.RelativeUriString!;
-
-            var model = new Folder { RelativeUri = relative };
-            
-            var vm = WorkspaceFolderViewModel.FromModel(model, parent.Uri.WorkspaceRoot);
-            parent.AddChildNode(vm);
-
-            // ok cool, but that's just the UI.
-
-
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private static readonly string DefaultNewFolderName = "NewFolder";
-
-    private string GetUniqueNewFolderName(string parent)
-    {
-        var name = DefaultNewFolderName;
-        var suffix = 1;
-
-        while (Directory.Exists(Path.Combine(parent, name)))
-        {
-            name = DefaultNewFolderName + suffix;
-            suffix++;
-        }
-
-        return name;
-    }
-}
-
 public class RenameUriCommand : CommandBase
 {
     private readonly Lazy<ILanguageClient> _lsp;
+    private readonly IProjectFileService _projectFileService;
+    private readonly IAppWorkspacesService _workspaceServices;
 
-    public RenameUriCommand(UIServiceHelper service, Func<ILanguageClient> lsp) 
+    public RenameUriCommand(UIServiceHelper service,
+        IProjectFileService projectFileService, IAppWorkspacesService workspaceService,
+        Func<ILanguageClient> lsp) 
         : base(service)
     {
         _lsp = new Lazy<ILanguageClient>(lsp);
+        _projectFileService = projectFileService;
+        _workspaceServices = workspaceService;
     }
 
     protected override Task OnExecuteAsync(object? parameter)
@@ -98,7 +41,7 @@ public class RenameUriCommand : CommandBase
                 var oldUri = fileNode.Uri;
                 fileNode.FileName = newName; // implementation updates the URI
                 
-                UpdateProjectFile();
+                UpdateProjectFile(fileNode, oldUri);
                 NotifyLanguageServer(oldUri, fileNode.Uri);
             }
         }
@@ -117,7 +60,7 @@ public class RenameUriCommand : CommandBase
                     UpdateNodePath(childNode, oldUri, (WorkspaceFolderUri)folderNode.Uri);
                 }
 
-                UpdateProjectFile();
+                UpdateProjectFile(folderNode, oldUri);
                 NotifyLanguageServer(oldUri, folderNode.Uri);
             }
         }
@@ -149,9 +92,52 @@ public class RenameUriCommand : CommandBase
         }
     }
 
-    private void UpdateProjectFile()
+    private void UpdateProjectFile(IWorkspaceTreeNode model, WorkspaceUri oldUri)
     {
+        var project = _workspaceServices.ProjectFiles.Single(e => e.Uri == model.Uri.WorkspaceRoot);
 
+        if (model is IWorkspaceFolderViewModel)
+        {
+            project = project with
+            {
+                VBProject = project.VBProject with
+                {
+                    Folders = project.VBProject.Folders.Except([oldUri.RelativeUriString!]).Append(model.Uri.RelativeUriString!).ToArray()
+                }
+            };
+        }
+        else if (model is IWorkspaceSourceFileViewModel)
+        {
+            var module = project.VBProject.Modules.Single(e => e.RelativeUri == oldUri.RelativeUriString);
+            project = project with
+            {
+                VBProject = project.VBProject with
+                {
+                    Modules = project.VBProject.Modules.Except([module]).Append(module with 
+                    { 
+                        // TODO also set the Name if we're also renaming the associated symbols (prompt/confirm)
+                        RelativeUri = model.Uri.RelativeUriString! 
+                    }).ToArray()
+                }
+            };
+        }
+        else if (model is IWorkspaceFileViewModel)
+        {
+            var file = project.VBProject.OtherFiles.Single(e => e.RelativeUri == oldUri.RelativeUriString);
+            project = project with
+            {
+                VBProject = project.VBProject with
+                {
+                    OtherFiles = project.VBProject.OtherFiles.Except([file]).Append(file with
+                    {
+                        RelativeUri = model.Uri.RelativeUriString!
+                    }).ToArray()
+                }
+            };
+        }
+
+        _projectFileService.WriteFile(project);
+        _workspaceServices.UpdateProjectFile(project);
     }
 
     private void NotifyLanguageServer(Uri oldUri, Uri newUri)

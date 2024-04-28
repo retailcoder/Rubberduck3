@@ -1,7 +1,6 @@
 ﻿using Rubberduck.Editor.Commands;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
-using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model.Editor.Tools;
@@ -12,7 +11,6 @@ using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Services.Abstract;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -89,8 +87,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 new CommandBinding(WorkspaceExplorerCommands.OpenFileCommand, openDocumentCommand.ExecutedRouted(), openDocumentCommand.CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.IncludeFileCommand, ((CommandBase)_handlers.IncludeUriCommand).ExecutedRouted(), ((CommandBase)_handlers.IncludeUriCommand).CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.ExcludeFileCommand, ((CommandBase)_handlers.ExcludeUriCommand).ExecutedRouted(), ((CommandBase)_handlers.ExcludeUriCommand).CanExecuteRouted()),
-                new CommandBinding(WorkspaceExplorerCommands.CreateFileCommand),
-                new CommandBinding(WorkspaceExplorerCommands.CreateFolderCommand),
+                new CommandBinding(WorkspaceExplorerCommands.CreateFileCommand, ((CommandBase)_handlers.AddWorkspaceFileCommand).ExecutedRouted(), ((CommandBase)_handlers.AddWorkspaceFileCommand).CanExecuteRouted()),
+                new CommandBinding(WorkspaceExplorerCommands.CreateFolderCommand, ((CommandBase)_handlers.CreateFolderCommand).ExecutedRouted(), ((CommandBase)_handlers.CreateFolderCommand).CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.DeleteUriCommand, ((CommandBase)_handlers.DeleteUriCommand).ExecutedRouted(), ((CommandBase)_handlers.DeleteUriCommand).CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.RenameUriCommand, prepareRenameUriCommand.ExecutedRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.ExpandFolderCommand, expandFolderCommand.ExecutedRouted(), expandFolderCommand.CanExecuteRouted()),

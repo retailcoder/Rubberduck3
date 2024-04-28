@@ -77,7 +77,7 @@ public class NewProjectCommand : CommandBase
 
                 if (model.SelectedProjectTemplate is not null)
                 {
-                    var templatesRoot = _fileSystem.DirectoryInfo.New(Service.Settings.GeneralSettings.TemplatesLocation.LocalPath).FullName;
+                    var templatesRoot = _fileSystem.DirectoryInfo.New(Service.Settings.GeneralSettings.ProjectTemplatesLocation.LocalPath).FullName;
                     var templateSrcRoot = _fileSystem.Path.Combine(templatesRoot, model.SelectedProjectTemplate.Name, ProjectTemplate.TemplateSourceFolderName);
 
                     _workspaceFolderService.CopyTemplateFiles(model.SelectedProjectTemplate.ProjectFile, templateSrcRoot);

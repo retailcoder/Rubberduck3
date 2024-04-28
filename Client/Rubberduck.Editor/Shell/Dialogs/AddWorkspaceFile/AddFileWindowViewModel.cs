@@ -1,7 +1,9 @@
 ﻿using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.Resources;
+using Rubberduck.UI.Command.SharedHandlers;
 using Rubberduck.UI.Services;
+using Rubberduck.UI.Services.Abstract;
 using Rubberduck.UI.Shell;
 using Rubberduck.UI.Shell.AddWorkspaceFile;
 using Rubberduck.UI.Windows;
@@ -16,11 +18,13 @@ namespace Rubberduck.Editor.Shell.Dialogs.AddWorkspaceFile;
 
 public class AddFileWindowViewModel : DialogWindowViewModel, IAddFileWindowViewModel
 {
-    private readonly IFileSystem _fileSystem;
+    private readonly ITemplatesService _templatesService;
 
-    public AddFileWindowViewModel(UIServiceHelper service, IWindowChromeViewModel chrome)
-        : base(service, Resx.ResourceManager.GetLocalizedString("AddFile_Title"), [], chrome)
+    public AddFileWindowViewModel(UIServiceHelper service, IWindowChromeViewModel chrome, MessageActionCommand[] actions, ITemplatesService templatesService)
+        : base(service, Resx.ResourceManager.GetLocalizedString("AddFile_Title"), actions, chrome)
     {
+        _templatesService = templatesService;
+        Templates = templatesService.GetFileTemplates().FileTypes.Select(e => new FileTemplateViewModel(e)).ToArray();
     }
 
     private string _name;
@@ -37,8 +41,8 @@ public class AddFileWindowViewModel : DialogWindowViewModel, IAddFileWindowViewM
         }
     }
 
-    public WorkspaceFolderUri ParentFolderUri { get; init; }
-    public WorkspaceFileUri WorkspaceFileUri => new(_fileSystem.Path.Combine(ParentFolderUri.RelativeUriString!, $"{Name}{SelectedTemplate?.FileExtension}"), ParentFolderUri.WorkspaceRoot);
+    public WorkspaceFolderUri ParentFolderUri { get; set; }
+    public WorkspaceFileUri WorkspaceFileUri => new(System.IO.Path.Combine(ParentFolderUri.RelativeUriString!, $"{Name}{SelectedTemplate?.FileExtension}"), ParentFolderUri.WorkspaceRoot);
 
     private ICollectionView _templatesView;
     public ICollectionView TemplatesView
@@ -66,7 +70,7 @@ public class AddFileWindowViewModel : DialogWindowViewModel, IAddFileWindowViewM
                 OnPropertyChanged();
 
                 TemplatesView = CollectionViewSource.GetDefaultView(value);
-                TemplatesView.Filter = (item) => string.IsNullOrWhiteSpace(_selection) || item is IFileTemplate e && e.Categories.Contains(_selection);
+                TemplatesView.Filter = (item) => string.IsNullOrWhiteSpace(_selection) || _selection == "Other" || item is IFileTemplate e && e.Categories.Any(c => c.Equals(_selection, System.StringComparison.InvariantCultureIgnoreCase));
             }
         }
     }
@@ -82,14 +86,11 @@ public class AddFileWindowViewModel : DialogWindowViewModel, IAddFileWindowViewM
                 _selectedTemplate = value;
                 OnPropertyChanged();
 
-                if (string.IsNullOrWhiteSpace(_name))
-                {
-                    Name = value.DefaultFileName;
-                }
+                Name = $"{value.DefaultFileName}1";
             }
         }
     }
-    public IEnumerable<string> Categories { get; init; } = [SupportedLanguage.VBA.Id, SupportedLanguage.VB6.Id, "Other"];
+    public IEnumerable<string> Categories { get; init; } = [SupportedLanguage.VBA.Id.ToUpper(), SupportedLanguage.VB6.Id.ToUpper(), "Other"];
     private string _selection;
     public string Selection
     {

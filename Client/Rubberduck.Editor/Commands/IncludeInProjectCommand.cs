@@ -31,7 +31,7 @@ public class IncludeInProjectCommand : CommandBase
             project = _workspaces.ProjectFiles.SingleOrDefault(e => e.Uri == fileUri.WorkspaceRoot);
             if (project != null)
             {
-                var file = InternalApi.Model.Workspace.File.FromWorkspaceUri(fileUri);
+                var file = File.FromWorkspaceUri(fileUri);
                 file.IsLoadError = !System.IO.File.Exists(fileUri.AbsoluteLocation.LocalPath);
                 if (file.HasSourceFileExtension(SupportedLanguage.VBA) || file.HasSourceFileExtension(SupportedLanguage.VB6))
                 {

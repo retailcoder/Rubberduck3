@@ -1,4 +1,6 @@
-﻿namespace Rubberduck.InternalApi.Model.Workspace;
+﻿using System.Text.Json.Serialization;
+
+namespace Rubberduck.InternalApi.Model.Workspace;
 
 public record class ProjectTemplate
 {
@@ -15,17 +17,20 @@ public record class ProjectTemplate
 public record class FileTemplates
 {
     public string Rubberduck { get; init; } = ProjectFile.RubberduckVersion;
-    public FileTemplate[] Templates { get; init; } = [];
+    public FileTemplate[] FileTypes { get; init; } = [];
 }
 
 public record class FileTemplate
 {
-    public string Key { get; init; } = "StdModule";
-    public string[] Categories { get; init; } = ["VBA","VB6"];
-    public bool IsSourceFile => Key.Contains("Module");
+    public static readonly string NameContentMarker = "{%NAME%}";
 
-    public string DefaultFileName { get; init; } = "file";
-    public string FileExtension { get; init; } = "vba";
+    public string Name { get; init; }
+    public string Description { get; init; }
+    public string[] Categories { get; init; }
+    public string DefaultFileName { get; init; }
+    public string FileExtension { get; init; }
+    public string ContentUri { get; init; }
 
-    public string Content { get; init; } = string.Empty;
+    [JsonIgnore]
+    public string TextContent { get; init; }
 }

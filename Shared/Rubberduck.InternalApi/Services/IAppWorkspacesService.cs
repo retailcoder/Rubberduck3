@@ -29,6 +29,7 @@ namespace Rubberduck.InternalApi.Services
         /// Gets the project file for all loaded workspaces.
         /// </summary>
         IEnumerable<ProjectFile> ProjectFiles { get; }
+        void UpdateProjectFile(ProjectFile projectFile);
 
         Task<bool> OpenProjectWorkspaceAsync(Uri uri);
 

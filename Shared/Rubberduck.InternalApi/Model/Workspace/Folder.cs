@@ -16,7 +16,7 @@ public record class Folder
     /// The name of the folder.
     /// </summary>
     [JsonIgnore]
-    public string Name => RelativeUri.Split('/').Last();
+    public string Name => RelativeUri.Replace('/', '\\').Split('\\').Last();
 
     /// <summary>
     /// The location of the module in the workspace, relative to the source root.

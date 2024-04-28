@@ -91,7 +91,7 @@ public abstract class WorkspaceUri : Uri
         var stdSlashRelativeUriString = relativeUriString.Replace("\\", "/");
 
         // absolute -> relative
-        if (stdSlashRelativeUriString.ToLowerInvariant().StartsWith(stdSlashRoot.LocalPath.ToLowerInvariant()))
+        if (stdSlashRelativeUriString.ToLowerInvariant().StartsWith(stdSlashRoot.AbsolutePath.ToLowerInvariant()))
         {
             var marker = $"/{WorkspaceUri.SourceRootName}";
             var sane = stdSlashRelativeUriString;
