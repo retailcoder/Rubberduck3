@@ -20,13 +20,15 @@ public class ExcludeFromProjectCommand : CommandBase
         _projectFile = projectFile;
     }
 
-    protected override Task OnExecuteAsync(object? parameter)
+    protected override async Task OnExecuteAsync(object? parameter)
     {
         ProjectFile? project = default;
         WorkspaceUri? uri = default;
 
         if (parameter is WorkspaceFileUri fileUri)
         {
+            // FIXME wrong abstraction levels here
+
             project = _workspaces.ProjectFiles.SingleOrDefault(e => e.Uri == fileUri.WorkspaceRoot);
             if (project != null)
             {
@@ -50,7 +52,7 @@ public class ExcludeFromProjectCommand : CommandBase
                 if (workspace != null)
                 {
                     workspace.DeleteWorkspaceUri(fileUri);
-                    _projectFile.WriteFile(project);
+                    await _projectFile.WriteFileAsync(project);
                 }
             }
         }
@@ -71,12 +73,10 @@ public class ExcludeFromProjectCommand : CommandBase
                 if (workspace != null)
                 {
                     workspace.DeleteWorkspaceUri(folderUri);
-                    _projectFile.WriteFile(project);
+                    await _projectFile.WriteFileAsync(project);
                 }
             }
         }
-
-        return Task.CompletedTask;
     }
 }
 

@@ -1,13 +1,21 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace Rubberduck.InternalApi.Model.Workspace;
 
+/// <summary>
+/// Determines the VB dialect and editor tooling available.
+/// </summary>
 public enum ProjectType
 {
+    /// <summary>
+    /// RD3 project synchronizes with a host document.
+    /// </summary>
     VBA,
+    /// <summary>
+    /// RD3 project synchronizes a .vbp project file.
+    /// </summary>
     VB6,
 }
 

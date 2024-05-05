@@ -23,6 +23,8 @@ public class ConcurrentContentStore<TContent>
     protected ConcurrentDictionary<WorkspaceUri, TContent> Store = new();
     public event EventHandler<WorkspaceFileUriEventArgs> DocumentStateChanged = delegate { };
 
+    public void Unload() => Store.Clear();
+
     public void AddOrUpdate(WorkspaceFileUri uri, TContent content)
     {
         Store.AddOrUpdate(uri, content, (key, value) => content);
@@ -68,12 +70,16 @@ public class ConcurrentContentStore<TContent>
             ? content : throw new UnknownUriException(uri);
     }
 
-    public bool TryGetDocument(WorkspaceUri documentUri, out TContent? content)
+    public bool TryGetDocument(WorkspaceUri documentUri, out TContent content)
     {
         var uri = new WorkspaceFileUri(Uri.UnescapeDataString(documentUri.AbsoluteLocation.AbsolutePath), documentUri.WorkspaceRoot);
-        var result = Store.TryGetValue(uri, out content);
+        if (Store.TryGetValue(uri, out content!))
+        {
+            return true;
+        }
 
-        return result;
+        content = default!;
+        return false;
     }
 }
 

@@ -77,7 +77,7 @@ public abstract class CommandBase : ICommand
         _service.LogDebug($"Executing command: {Name}");
         _service.TryRunAction(() =>
         {
-            _ = OnExecuteAsync(parameter);
+            OnExecuteAsync(parameter).ConfigureAwait(false).GetAwaiter().GetResult();
         }, $"{Name}.Execute");
     }
 
@@ -89,9 +89,7 @@ public abstract class CommandBase : ICommand
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    public CanExecuteRoutedEventHandler CanExecuteRouted() =>
-        (sender, e) => e.CanExecute = CanExecute(e.Parameter);
+    public CanExecuteRoutedEventHandler CanExecuteRouted() => (sender, e) => e.CanExecute = CanExecute(e.Parameter);
 
-    public ExecutedRoutedEventHandler ExecutedRouted() =>
-        (sender, e) => Execute(e.Parameter);
+    public ExecutedRoutedEventHandler ExecutedRouted() => (sender, e) => Execute(e.Parameter);
 }

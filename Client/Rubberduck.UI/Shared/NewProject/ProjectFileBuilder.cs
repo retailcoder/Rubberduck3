@@ -32,7 +32,7 @@ public class ProjectFileBuilder
 
     public ProjectFile Build() => new()
     {
-        Rubberduck = ProjectFile.RubberduckVersion,
+        Rubberduck = ProjectFile.RubberduckVersion.ToString(2),
         Uri = _uri ?? DefaultUri,
         VBProject = new()
         {

@@ -6,6 +6,30 @@ using System.Collections.Immutable;
 
 namespace Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 
+public enum WorkspaceFileState
+{
+    /// <summary>
+    /// File belongs to an open workspace but was not loaded, or was manually unloaded.
+    /// </summary>
+    Unloaded,
+    /// <summary>
+    /// File belongs to an open workspace and is correctly loaded, but not opened in the editor.
+    /// </summary>
+    Loaded,
+    /// <summary>
+    /// File belongs to an open workspace but could not be found in the workspace folder.
+    /// </summary>
+    Missing,
+    /// <summary>
+    /// File belongs to an open workspace and exists in the workspace folder, but could not be loaded.
+    /// </summary>
+    LoadError,
+    /// <summary>
+    /// File belongs to an open workspace and is currently opened in the editor.
+    /// </summary>
+    Opened,
+}
+
 public record class CodeDocumentState : DocumentState
 {
     public CodeDocumentState(CodeDocumentState original) 
@@ -15,10 +39,11 @@ public record class CodeDocumentState : DocumentState
         Foldings = original.Foldings;
         Diagnostics = original.Diagnostics;
         Symbol = original.Symbol;
+        Status = original.Status;
     }
 
-    public CodeDocumentState(WorkspaceFileUri uri, SupportedLanguage language, string text, int version = 1, bool isOpened = false) 
-        : base(uri, text, version, isOpened)
+    public CodeDocumentState(WorkspaceFileUri uri, SupportedLanguage language, string text, WorkspaceFileState status = WorkspaceFileState.Unloaded, int version = 1)
+        : base(uri, text, status, version)
     {
         Language = language;
     }
@@ -36,10 +61,8 @@ public record class CodeDocumentState : DocumentState
 
 public record class DocumentState
 {
-    public static DocumentState MissingFile(WorkspaceFileUri uri) => 
-        new(uri, string.Empty, -1, isOpened: false) { IsMissing = true };
-    public static DocumentState LoadError(WorkspaceFileUri uri) =>
-        new(uri, string.Empty, -1, isOpened: false) { IsLoadError = true };
+    public static DocumentState MissingFile(WorkspaceFileUri uri) => new(uri, string.Empty, WorkspaceFileState.Missing, -1);
+    public static DocumentState LoadError(WorkspaceFileUri uri) => new(uri, string.Empty, WorkspaceFileState.LoadError, -1);
 
     public DocumentState(DocumentState original)
     {
@@ -47,15 +70,15 @@ public record class DocumentState
         Uri = original.Uri;
         Text = original.Text;
         Version = original.Version;
-        IsOpened = original.IsOpened;
+        Status = original.Status;
     }
 
-    public DocumentState(WorkspaceFileUri uri, string text, int version = 1, bool isOpened = false)
+    public DocumentState(WorkspaceFileUri uri, string text, WorkspaceFileState status = WorkspaceFileState.Unloaded, int version = 1)
     {
         Uri = uri;
         Text = text;
         Version = version;
-        IsOpened = isOpened;
+        Status = status;
 
         Id = new TextDocumentIdentifier(uri.AbsoluteLocation);
     }
@@ -73,9 +96,8 @@ public record class DocumentState
 
     public string Text { get; init; }
     public int Version { get; init; }
-    public bool IsMissing { get; init; }
-    public bool IsLoadError { get; init; }
-    public bool IsOpened { get; init; }
+
+    public WorkspaceFileState Status { get; init; }
 
     public bool IsModified => Version != 1;
 
@@ -88,9 +110,9 @@ public record class DocumentState
     /// </summary>
     public DocumentState WithText(string text) => this with { Text = text, Version = Version + 1 };
     /// <summary>
-    /// Gets a copy of this record with the <c>IsOpened</c> property as specified.
+    /// Gets a copy of this record with the <c>Status</c> property as specified.
     /// </summary>
-    public DocumentState WithOpened(bool opened = true) => this with { IsOpened = opened };
+    public DocumentState WithStatus(WorkspaceFileState status) => this with { Status = status };
 
 
     /// <summary>

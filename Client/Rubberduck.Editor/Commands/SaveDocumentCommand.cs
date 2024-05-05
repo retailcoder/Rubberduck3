@@ -1,6 +1,8 @@
-﻿using Rubberduck.InternalApi.Services;
+﻿using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.Services;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Services;
+using System;
 using System.Threading.Tasks;
 
 namespace Rubberduck.Editor.Commands
@@ -18,8 +20,10 @@ namespace Rubberduck.Editor.Commands
 
         protected async override Task OnExecuteAsync(object? parameter)
         {
-            // TODO once there's a document state manager, grab the ActiveDocument here
-            //_workspace.SaveWorkspaceFileAsync(uri);
+            if (parameter is WorkspaceFileUri uri)
+            {
+                await _workspace.SaveWorkspaceFileAsync(uri);
+            }
         }
     }
 }

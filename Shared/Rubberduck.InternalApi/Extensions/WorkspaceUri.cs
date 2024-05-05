@@ -68,6 +68,8 @@ public abstract class WorkspaceUri : Uri
     private readonly Uri _root;
     private readonly Uri _srcRoot;
 
+    public static WorkspaceUri ForRoot(Uri uri) => new WorkspaceFolderUri(null, uri);
+
     private static string SanitizedRelativeUriString(string? relativeUriString, Uri workspaceRoot)
     {
         // null -> root level

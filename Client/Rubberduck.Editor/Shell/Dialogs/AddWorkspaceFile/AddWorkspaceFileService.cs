@@ -96,8 +96,8 @@ public class AddWorkspaceFileService : DialogService<AddWorkspaceFileWindow, IAd
             };
         }
 
-        _projectFileService.WriteFile(project);
-        _workspaceServices.UpdateProjectFile(project);
+        _projectFileService.WriteFileAsync(project);
+        _workspaceServices.UpdateProjectFileAsync(project);
     }
 
     private void NotifyLanguageServer(Uri uri)

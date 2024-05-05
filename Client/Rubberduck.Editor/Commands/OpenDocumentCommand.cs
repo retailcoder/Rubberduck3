@@ -113,7 +113,7 @@ namespace Rubberduck.Editor.Commands
                         throw new InvalidOperationException("document state was unexpectedly null.");
                     }
 
-                    file = file with { IsOpened = true };
+                    file = file.WithStatus(WorkspaceFileState.Opened);
                     NotifyLanguageServer(file);
 
                     document.ContentControl = view;

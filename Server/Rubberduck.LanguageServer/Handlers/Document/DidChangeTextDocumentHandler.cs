@@ -3,6 +3,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.Parsing._v3.Pipeline;
 using Rubberduck.ServerPlatform;
@@ -48,7 +49,7 @@ namespace Rubberduck.LanguageServer.Handlers.Document
 
             if (workspace.TryGetWorkspaceFile(uri, out var document) && document is not null)
             {
-                if (document.IsOpened)
+                if (document.Status == WorkspaceFileState.Opened)
                 {
                     if (version > document.Version)
                     {

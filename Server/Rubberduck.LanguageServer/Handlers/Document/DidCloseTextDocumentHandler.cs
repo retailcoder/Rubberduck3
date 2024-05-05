@@ -3,6 +3,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.ServerPlatform;
 using System.Threading;
@@ -30,10 +31,10 @@ namespace Rubberduck.LanguageServer.Handlers.Document
 
             if (workspace.TryGetWorkspaceFile(uri, out var document) && document is not null)
             {
-                if (document.IsOpened)
+                if (document.Status == WorkspaceFileState.Opened)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    workspace.LoadDocumentState(document with { IsOpened = false });
+                    workspace.LoadDocumentState(document.WithStatus(WorkspaceFileState.Loaded));
 
                     _service.LogInformation($"DidCloseTextDocument: Updated content for document '{uri}'.");
                 }

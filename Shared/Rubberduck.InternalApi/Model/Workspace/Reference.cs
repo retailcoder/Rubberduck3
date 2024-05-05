@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
+using System;
+using System.Text.Json.Serialization;
 
 namespace Rubberduck.InternalApi.Model.Workspace;
 
@@ -25,4 +27,7 @@ public record class Reference
     public string? TypeLibInfoUri { get; set; }
 
     public bool IsUnremovable { get; set; }
+
+    [JsonIgnore]
+    public WorkspaceFileState Status { get; set; }
 }

@@ -92,7 +92,7 @@ public class DeleteUriCommand : CommandBase
                 {
                     vm.RemoveWorkspaceUri(folderUri);
                 }
-                _projectFile.WriteFile(vm.Model);
+                _projectFile.WriteFileAsync(vm.Model);
 
                 NotifyLanguageServer(uri);
             }

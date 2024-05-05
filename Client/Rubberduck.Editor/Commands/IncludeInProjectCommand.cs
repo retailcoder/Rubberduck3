@@ -46,7 +46,7 @@ public class IncludeInProjectCommand : CommandBase
                 var workspace = _workspaces.Workspaces.Workspaces.SingleOrDefault(e => e.WorkspaceRoot?.SourceRoot.LocalPath == fileUri.SourceRoot.LocalPath);
                 if (workspace != null)
                 {
-                    _projectFile.WriteFile(project);
+                    _projectFile.WriteFileAsync(project);
                 }
             }
         }
@@ -63,7 +63,7 @@ public class IncludeInProjectCommand : CommandBase
                 var workspace = _workspaces.Workspaces.Workspaces.SingleOrDefault(e => e.WorkspaceRoot?.SourceRoot.LocalPath == folderUri.SourceRoot.LocalPath);
                 if (workspace != null)
                 {
-                    _projectFile.WriteFile(project);
+                    _projectFile.WriteFileAsync(project);
                 }
             }
         }

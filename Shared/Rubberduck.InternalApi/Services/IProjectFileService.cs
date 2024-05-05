@@ -1,11 +1,12 @@
 ﻿using Rubberduck.InternalApi.Model.Workspace;
 using System;
+using System.Threading.Tasks;
 
 namespace Rubberduck.InternalApi.Services;
 
 
 public interface IProjectFileService
 {
-    void WriteFile(ProjectFile model);
-    ProjectFile ReadFile(Uri root);
+    Task WriteFileAsync(ProjectFile model);
+    Task<ProjectFile> ReadFileAsync(Uri root);
 }

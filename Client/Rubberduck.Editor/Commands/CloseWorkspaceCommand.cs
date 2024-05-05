@@ -18,7 +18,7 @@ namespace Rubberduck.Editor.Commands
 
         protected async override Task OnExecuteAsync(object? parameter)
         {
-            _workspace.CloseWorkspace();
+            await _workspace.CloseWorkspaceAsync();
         }
     }
 }

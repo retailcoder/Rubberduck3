@@ -8,7 +8,7 @@ public record class ProjectTemplate
 
     public static ProjectTemplate Default { get; } = new();
 
-    public string Rubberduck { get; init; } = ProjectFile.RubberduckVersion;
+    public string Rubberduck { get; init; } = ProjectFile.RubberduckVersion.ToString(2);
     public string Name { get; init; } = "EmptyProject";
 
     public ProjectFile ProjectFile { get; init; } = new();
@@ -16,7 +16,7 @@ public record class ProjectTemplate
 
 public record class FileTemplates
 {
-    public string Rubberduck { get; init; } = ProjectFile.RubberduckVersion;
+    public string Rubberduck { get; init; } = ProjectFile.RubberduckVersion.ToString(2);
     public FileTemplate[] FileTypes { get; init; } = [];
 }
 

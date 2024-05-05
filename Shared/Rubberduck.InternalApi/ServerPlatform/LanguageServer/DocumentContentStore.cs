@@ -6,6 +6,6 @@ public class DocumentContentStore : ConcurrentContentStore<DocumentState>
 {
     public IOrderedEnumerable<DocumentState> Enumerate()
     {
-        return Store.Values.OrderByDescending(e => e.IsOpened);
+        return Store.Values.OrderByDescending(e => e.Status == WorkspaceFileState.Opened);
     }
 }

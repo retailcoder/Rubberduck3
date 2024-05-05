@@ -18,8 +18,8 @@ public record class DocumentParserState : CodeDocumentState
         SyntaxTree = original.SyntaxTree;
     }
 
-    public DocumentParserState(WorkspaceFileUri uri, SupportedLanguage language, string text, int version = 1, bool isOpened = false) 
-        : base(uri, language, text, version, isOpened)
+    public DocumentParserState(WorkspaceFileUri uri, SupportedLanguage language, string text, WorkspaceFileState state, int version = 1)
+        : base(uri, language, text, state, version)
     {
     }
 

@@ -39,11 +39,12 @@ public class CreateFolderCommand : CommandBase
         _lsp = new Lazy<ILanguageClient>(lsp);
     }
 
-    protected override Task OnExecuteAsync(object? parameter)
+    protected override async Task OnExecuteAsync(object? parameter)
     {
         if (parameter is IWorkspaceFolderViewModel parent)
         {
             WorkspaceFolderUri? uri = default;
+            Folder? model = default;
 
             if (Service.TryRunAction(() =>
             {
@@ -53,27 +54,27 @@ public class CreateFolderCommand : CommandBase
                 uri = new WorkspaceFolderUri(path, parent.Uri.WorkspaceRoot);
 
                 var relative = uri.RelativeUriString!;
-                var model = new Folder { RelativeUri = relative };
-
-                var vm = WorkspaceFolderViewModel.FromModel(model, parent.Uri.WorkspaceRoot);
-                //parent.AddChildNode(vm);
+                model = new Folder { RelativeUri = relative };
 
             }, $"{nameof(CreateFolderCommand)} (UI)") && uri != default)
             {
                 if (Service.TryRunAction(() => _fileSystemServices.CreateFolder(uri), out var exception, $"{nameof(CreateFolderCommand)} (IO)"))
                 {
-                    UpdateProjectFile(uri);
+                    await UpdateProjectFileAsync(uri);
                     NotifyLanguageServer(uri);
+
+                    if (model != default)
+                    {
+                        var vm = WorkspaceFolderViewModel.FromModel(model, parent.Uri.WorkspaceRoot);
+                        parent.AddChildNode(vm);
+                    }
                 }
                 else if (exception != null)
                 {
                     _messages.ShowError($"{nameof(CreateFolderCommand)}_Error", exception);
-                    Service.LogException(exception);
                 }
             }
         }
-        
-        return Task.CompletedTask;
     }
 
     private string GetUniqueNewFolderName(string parent)
@@ -90,7 +91,7 @@ public class CreateFolderCommand : CommandBase
         return name;
     }
 
-    private void UpdateProjectFile(WorkspaceFolderUri uri)
+    private async Task UpdateProjectFileAsync(WorkspaceFolderUri uri)
     {
         var project = _workspaceService.ProjectFiles.Single(e => e.Uri == uri.WorkspaceRoot);
 
@@ -101,8 +102,8 @@ public class CreateFolderCommand : CommandBase
                 Folders = project.VBProject.Folders.Append(uri.RelativeUriString!).ToArray()
             }
         };
-        _projectFileService.WriteFile(project);
-        _workspaceService.UpdateProjectFile(project);
+        
+        await Task.WhenAll(_projectFileService.WriteFileAsync(project), _workspaceService.UpdateProjectFileAsync(project));
     }
 
     private void NotifyLanguageServer(Uri uri) 

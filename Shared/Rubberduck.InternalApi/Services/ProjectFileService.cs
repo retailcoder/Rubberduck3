@@ -4,6 +4,7 @@ using Rubberduck.InternalApi.Settings;
 using System;
 using System.IO.Abstractions;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Rubberduck.InternalApi.Services;
 
@@ -18,20 +19,24 @@ public class ProjectFileService : ServiceBase, IProjectFileService
         _fileSystem = fileSystem;
     }
 
-    public void WriteFile(ProjectFile model)
+    public async Task WriteFileAsync(ProjectFile model)
     {
         var path = _fileSystem.Path.Combine(model.Uri.LocalPath, ProjectFile.FileName);
-        var content = JsonSerializer.Serialize(model);
+        
+        using var stream = _fileSystem.FileStream.New(path, System.IO.FileMode.OpenOrCreate);
 
-        _fileSystem.File.WriteAllText(path, content);
+        await JsonSerializer.SerializeAsync(stream, model);
     }
 
-    public ProjectFile ReadFile(Uri root)
+    public async Task<ProjectFile> ReadFileAsync(Uri root)
     {
         var path = _fileSystem.Path.Combine(root.LocalPath, ProjectFile.FileName);
-        var content = _fileSystem.File.ReadAllText(path);
-        var projectFile = JsonSerializer.Deserialize<ProjectFile>(content) ?? throw new InvalidOperationException();
 
-        return projectFile.WithUri(root);
+        using var stream = _fileSystem.FileStream.New(path, System.IO.FileMode.Open);
+
+        var project = await JsonSerializer.DeserializeAsync<ProjectFile>(stream) 
+            ?? throw new InvalidOperationException($"ProjectFile could not be deserialized from '{root}'.");
+
+        return project.WithUri(root);
     }
 }

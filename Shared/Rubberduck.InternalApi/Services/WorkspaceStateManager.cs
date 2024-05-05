@@ -15,8 +15,6 @@ namespace Rubberduck.InternalApi.Services;
 
 public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
 {
-    public event EventHandler<WorkspaceFileUriEventArgs> WorkspaceFileStateChanged = delegate { };
-
     private class ProjectStateManager : ServiceBase, IWorkspaceState
     {
         private readonly HashSet<Reference> _references = [];
@@ -48,6 +46,9 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
 
         public WorkspaceUri? WorkspaceRoot { get; set; }
         public string ProjectName { get; set; } = "Project1";
+
+        private bool _isLoaded = true;
+        public bool IsLoaded => _isLoaded;
 
         public IEnumerable<Folder> Folders => _folders;
         public void AddFolder(Folder folder) => _folders.Add(folder);
@@ -124,15 +125,6 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
             return true;
         }
 
-        public void UnloadAllFiles()
-        {
-            var files = _store.Enumerate().ToArray();
-            foreach (var file in files)
-            {
-                _store.TryRemove(file.Uri);
-            }
-        }
-
         public bool TryGetWorkspaceFile(WorkspaceFileUri uri, out DocumentState? state) => _store.TryGetDocument(uri, out state);
         public bool TryGetSourceFile(WorkspaceFileUri uri, out CodeDocumentState? state)
         {
@@ -150,27 +142,34 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
             return result;
         }
 
-        public bool CloseWorkspaceFile(WorkspaceFileUri uri, out DocumentState? state)
+        public bool CloseWorkspaceFile(WorkspaceFileUri uri, out DocumentState state)
         {
             if (_store.TryGetDocument(uri, out state))
             {
-                if (state!.IsOpened)
+                if (state.Status == WorkspaceFileState.Opened)
                 {
-                    state = state with { IsOpened = false };
+                    state = state.WithStatus(WorkspaceFileState.Loaded);
                     _store.AddOrUpdate(uri, state);
                     return true;
                 }
             }
 
-            state = default;
+            state = default!;
             return false;
         }
 
-        public bool RenameWorkspaceFile(WorkspaceFileUri oldUri, WorkspaceFileUri newUri)
+        public bool RenameWorkspaceFile(WorkspaceFileUri oldUri, WorkspaceFileUri newUri, bool external = false)
         {
+            if (external)
+            {
+                // an external process has renamed the file.
+                // TODO prompt the user to let them know about the renamed file and
+                // determine whether to rename the workspace files (or keep the renamed file around as a ghost file).
+            }
+
             if (_store.TryGetDocument(newUri, out _))
             {
-                // new URI already exists... TODO check for a name collision
+                // new URI already exists
                 return false;
             }
 
@@ -182,14 +181,21 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
             return false;
         }
 
-        public bool UnloadWorkspaceFile(WorkspaceFileUri uri)
+        public void Unload(WorkspaceFileUri uri)
         {
             if (_store.TryGetDocument(uri, out _))
             {
-                return _store.TryRemove(uri);
+                _store.TryRemove(uri);
             }
+        }
 
-            return false;
+        public void Unload()
+        {
+            _folders.Clear();
+            _references.Clear();
+            _store.Unload();
+
+            _isLoaded = false;
         }
 
         public bool SaveWorkspaceFile(WorkspaceFileUri uri)
@@ -202,21 +208,73 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
             return false;
         }
 
-        public void DeleteWorkspaceUri(WorkspaceFileUri uri)
+        public void DeleteWorkspaceUri(WorkspaceFileUri uri, bool external = false)
         {
-            _store.TryRemove(uri);
+            if (external)
+            {
+                // since an external process deleted the file,
+                // we don't know that the user wants to remove it from the workspace yet,
+                // which is why we only set the document state here.
+                if (_store.TryGetDocument(uri, out var state))
+                {
+                    _store.AddOrUpdate(uri, state.WithStatus(WorkspaceFileState.Missing));
+                }
+
+                // else: do nothing. caller may not know whether uri is for a file or a folder.
+            }
+            else
+            {
+                _store.TryRemove(uri);
+            }
         }
 
-        public void DeleteWorkspaceUri(WorkspaceFolderUri uri)
+        public void DeleteWorkspaceUri(WorkspaceFolderUri uri, bool external = false)
         {
-            var folder = _folders.SingleOrDefault(e => e.GetWorkspaceUri(uri.WorkspaceRoot) == uri);
-            if (folder != null)
+            if (external)
             {
-                _folders.Remove(folder);
+                // an external process deleted the folder.
+                // if there's a workspace folder at this uri, we should mark it as deleted somehow
+                // and mark any workspace file under it as deleted, too.
+                foreach (var document in _store.Enumerate())
+                {
+                    if (document.Uri.RelativeUriString!.StartsWith(uri.RelativeUriString!))
+                    {
+                        _store.AddOrUpdate(document.Uri, document.WithStatus(WorkspaceFileState.Missing));
+                    }
+                }
+
+                // just in case project is referencing a library that's under a workspace folder...
+                foreach (var reference in _references)
+                {
+                    if (reference.Uri?.StartsWith(uri.AbsoluteLocation.LocalPath) ?? false)
+                    {
+                        reference.Status = WorkspaceFileState.Missing;
+                    }
+                }
+            }
+            else
+            {
+                // first we remove it from the separate workspace folders collection.
+                var folder = _folders.SingleOrDefault(e => e.GetWorkspaceUri(uri.WorkspaceRoot) == uri);
+                if (folder != null)
+                {
+                    
+                    _folders.Remove(folder);
+                }
+
+                // next we remove any workspace file under the removed folder.
+                foreach (var document in _store.Enumerate())
+                {
+                    if (document.Uri.RelativeUriString!.StartsWith(uri.RelativeUriString!))
+                    {
+                        _store.TryRemove(document.Uri);
+                    }
+                }
             }
         }
     }
 
+    public event EventHandler<WorkspaceFileUriEventArgs> WorkspaceFileStateChanged = delegate { };
     private readonly DocumentContentStore _store;
 
     public WorkspaceStateManager(ILogger<WorkspaceStateManager> logger, RubberduckSettingsProvider settings, PerformanceRecordAggregator performance,
@@ -224,12 +282,7 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
         : base(logger, settings, performance)
     {
         _store = store;
-        _store.DocumentStateChanged += WorkspaceFileStateChanged.Invoke;
-    }
-
-    private void OnWorkspaceDocumentStateChanged(object? sender, WorkspaceFileUriEventArgs e)
-    {
-        throw new NotImplementedException();
+        _store.DocumentStateChanged += WorkspaceFileStateChanged;
     }
 
     private readonly Dictionary<Uri, IWorkspaceState> _workspaces = [];
@@ -237,14 +290,13 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
     {
         if (_workspaces.Count == 0)
         {
-            throw new InvalidOperationException("Workspace data is empty.");
+            throw new InvalidOperationException("No workspace is currently loaded.");
         }
 
         if (workspaceRoot is WorkspaceUri workspaceUri)
         {
             workspaceRoot = workspaceUri.WorkspaceRoot;
         }
-
 
         if (!_workspaces.TryGetValue(workspaceRoot, out var value))
         {
@@ -256,25 +308,45 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
     }
 
     public IEnumerable<IWorkspaceState> Workspaces => _workspaces.Values;
+    
     public IWorkspaceState? ActiveWorkspace { get; set; }
 
-    public IWorkspaceState AddWorkspace(Uri workspaceRoot)
+    public IWorkspaceState AddWorkspace(Uri root)
     {
         var state = new ProjectStateManager(Logger, SettingsProvider, Performance, _store)
         {
-            WorkspaceRoot = new WorkspaceFolderUri(null, workspaceRoot)
+            WorkspaceRoot = WorkspaceUri.ForRoot(root)
         };
-        _workspaces[workspaceRoot] = state;
+        _workspaces[root] = state;
         ActiveWorkspace = state;
         return state;
+    }
+
+    public void Unload()
+    {
+        TryRunAction(() =>
+        {
+            _store.Unload();
+            foreach (var uri in _workspaces.Keys)
+            {
+                Unload(uri);
+            }
+            _workspaces.Clear();
+        });
     }
 
     public void Unload(Uri workspaceRoot)
     {
         if (_workspaces.TryGetValue(workspaceRoot, out var state))
         {
-            state.UnloadAllFiles();
+            state.Unload();
             _workspaces.Remove(workspaceRoot);
+
+            LogInformation($"Unloaded workspace: '{workspaceRoot}'");
+        }
+        else
+        {
+            LogWarning($"Could not find a worskpace with root uri '{workspaceRoot}'");
         }
     }
 }

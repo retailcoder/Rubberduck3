@@ -42,51 +42,46 @@ public class NewProjectCommand : CommandBase
     {
         Uri? workspaceRootUri = null;
 
-        if (Service.TryRunAction(() =>
+        if (_dialog.ShowDialog(out var model))
         {
-            if (_dialog.ShowDialog(out var model))
+            // TODO actually validate the model, it's too late here.
+            if (Service.Settings.LanguageClientSettings.WorkspaceSettings.RequireDefaultWorkspaceRootHost)
             {
-                // TODO actually validate the model, it's too late here.
-                if (Service.Settings.LanguageClientSettings.WorkspaceSettings.RequireDefaultWorkspaceRootHost)
+                if (model.WorkspaceLocation != Service.Settings.LanguageClientSettings.WorkspaceSettings.DefaultWorkspaceRoot.LocalPath)
                 {
-                    if (model.WorkspaceLocation != Service.Settings.LanguageClientSettings.WorkspaceSettings.DefaultWorkspaceRoot.LocalPath)
-                    {
-                        Service.LogWarning("Cannot create workspace. Project workspace location is required to be under the default workspace root as per current configuration.");
-                        throw new InvalidOperationException(); // throwing here because this should have been validated already.
-                    }
+                    Service.LogWarning("Cannot create workspace. Project workspace location is required to be under the default workspace root as per current configuration.");
+                    throw new InvalidOperationException(); // throwing here because this should have been validated already.
                 }
-
-                workspaceRootUri = new Uri(_fileSystem.Path.Combine(model.WorkspaceLocation, model.ProjectName));
-                var projectFile = CreateProjectFileModel(model);
-
-                var workspaceSrcRoot = _fileSystem.Path.Combine(workspaceRootUri.LocalPath, WorkspaceUri.SourceRootName);
-                _workspaceFolderService.CreateWorkspaceFolders(projectFile);
-                _projectFileService.WriteFile(projectFile);
-
-                if (_workspaceModulesService is not null)
-                {
-                    // command is executed from the VBE add-in;
-                    // we're migrating an existing project to RD3 so we need to create the files now:
-                    _workspaceModulesService.ExportWorkspaceModules(workspaceRootUri, projectFile.VBProject.Modules);
-                }
-                else
-                {
-                    // command is executed from the Rubberduck Editor;
-                    // no need to write the workspace files changes need to be saved.
-                }
-
-                if (model.SelectedProjectTemplate is not null)
-                {
-                    var templatesRoot = _fileSystem.DirectoryInfo.New(Service.Settings.GeneralSettings.ProjectTemplatesLocation.LocalPath).FullName;
-                    var templateSrcRoot = _fileSystem.Path.Combine(templatesRoot, model.SelectedProjectTemplate.Name, ProjectTemplate.TemplateSourceFolderName);
-
-                    _workspaceFolderService.CopyTemplateFiles(model.SelectedProjectTemplate.ProjectFile, templateSrcRoot);
-                }
-
-                Service.LogInformation("Workspace was successfully created.", $"Workspace root: {workspaceRootUri}");
             }
-        }, nameof(NewProjectCommand)) && _workspace != null && workspaceRootUri != null)
-        {
+
+            workspaceRootUri = new Uri(_fileSystem.Path.Combine(model.WorkspaceLocation, model.ProjectName));
+            var projectFile = CreateProjectFileModel(model);
+
+            var workspaceSrcRoot = _fileSystem.Path.Combine(workspaceRootUri.LocalPath, WorkspaceUri.SourceRootName);
+            _workspaceFolderService.CreateWorkspaceFolders(projectFile);
+            await _projectFileService.WriteFileAsync(projectFile);
+
+            if (_workspaceModulesService is not null)
+            {
+                // command is executed from the VBE add-in;
+                // we're migrating an existing project to RD3 so we need to create the files now:
+                _workspaceModulesService.ExportWorkspaceModules(workspaceRootUri, projectFile.VBProject.Modules);
+            }
+            else
+            {
+                // command is executed from the Rubberduck Editor;
+                // no need to write the workspace files changes need to be saved.
+            }
+
+            if (model.SelectedProjectTemplate is not null)
+            {
+                var templatesRoot = _fileSystem.DirectoryInfo.New(Service.Settings.GeneralSettings.ProjectTemplatesLocation.LocalPath).FullName;
+                var templateSrcRoot = _fileSystem.Path.Combine(templatesRoot, model.SelectedProjectTemplate.Name, ProjectTemplate.TemplateSourceFolderName);
+
+                _workspaceFolderService.CopyTemplateFiles(model.SelectedProjectTemplate.ProjectFile, templateSrcRoot);
+            }
+
+            Service.LogInformation("Workspace was successfully created.", $"Workspace root: {workspaceRootUri}");
             await _workspace.OpenProjectWorkspaceAsync(workspaceRootUri);
         }
     }

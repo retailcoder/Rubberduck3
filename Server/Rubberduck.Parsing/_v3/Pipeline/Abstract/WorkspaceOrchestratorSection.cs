@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.InternalApi.Settings;
 using Rubberduck.Parsing._v3.Pipeline.Services;
@@ -43,7 +44,7 @@ public abstract class WorkspaceOrchestratorSection : DataflowPipelineSection<Wor
         RunTransformBlock(PrioritizeFilesBlock, state, e =>
         {
             var result = e.WorkspaceFiles
-                .OrderByDescending(file => file.IsOpened) // opened files go first
+                .OrderByDescending(file => file.Status == WorkspaceFileState.Opened) // opened files go first
                 .Select(file => file.Uri)
                 .ToArray();
 

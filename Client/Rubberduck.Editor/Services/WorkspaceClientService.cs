@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,16 +18,10 @@ namespace Rubberduck.UI.Services
 {
     public class DocumentClientService : ServiceBase
     {
-        private readonly LanguageClientApp _lspClientApp;
-
-        public DocumentClientService(ILogger logger, RubberduckSettingsProvider settingsProvider, PerformanceRecordAggregator performance, 
-            LanguageClientApp lspClientApp) 
+        public DocumentClientService(ILogger logger, RubberduckSettingsProvider settingsProvider, PerformanceRecordAggregator performance) 
             : base(logger, settingsProvider, performance)
         {
-            _lspClientApp = lspClientApp;
         }
-
-
     }
 
     public class WorkspaceClientService : AppWorkspacesService
@@ -61,7 +56,7 @@ namespace Rubberduck.UI.Services
             }
             else
             {
-                OnWorkspaceOpened(uri);
+                await OnWorkspaceOpenedAsync(uri).ConfigureAwait(false);
             }
         }
 
@@ -120,6 +115,9 @@ namespace Rubberduck.UI.Services
 
         private void OnWatcherRenamed(object sender, RenamedEventArgs e)
         {
+            // TODO prompt user about how to handle this.
+            // ~> the file/folder URI must be updated regardless, but do we want to also rename any associated symbols?
+
             var state = Workspaces.ActiveWorkspace;
             if (state != null && state.WorkspaceRoot != null)
             {
@@ -130,12 +128,14 @@ namespace Rubberduck.UI.Services
 
                     if (state != null && state.TryGetWorkspaceFile(oldUri, out var workspaceFile) && workspaceFile is not null)
                     {
-                        if (!state.RenameWorkspaceFile(oldUri, newUri))
+                        if (!state.RenameWorkspaceFile(oldUri, newUri, external: true))
                         {
-                            // houston, we have a problem. name collision? validate and notify, unload conflicted file?
+                            // we have a problem here. name collision? validate and notify, unload conflicted file?
                             LogWarning("Rename failed.", $"OldUri: {oldUri.AbsoluteLocation}; NewUri: {newUri.AbsoluteLocation}");
                         }
                     }
+
+                    // TODO handle renamed folder
 
                     var request = new DidChangeWatchedFilesParams
                     {
@@ -153,7 +153,7 @@ namespace Rubberduck.UI.Services
                     };
 
                     // NOTE: this is different than the DidRenameFiles mechanism.
-                    LogTrace("Sending DidChangeWatchedFiles LSP notification...", $"Renamed: {oldUri.AbsoluteLocation} -> {newUri.AbsoluteLocation}");
+                    LogTrace("Sending DidChangeWatchedFiles LSP notification...", $"Renamed (deleted+created): {oldUri.AbsoluteLocation} -> {newUri.AbsoluteLocation}");
                     _app.LanguageClient?.Workspace.DidChangeWatchedFiles(request);
                 });
             }
@@ -161,11 +161,19 @@ namespace Rubberduck.UI.Services
 
         private void OnWatcherDeleted(object sender, FileSystemEventArgs e)
         {
+            // TODO prompt user about how to handle this.
+            // ~> should the folder/document be removed from the workspace/project?
+
             var state = Workspaces.ActiveWorkspace;
             if (state != null && state.WorkspaceRoot != null)
             {
+                // files/folders are treated the same...
                 var uri = new WorkspaceFileUri(e.FullPath[(state.WorkspaceRoot.LocalPath + $"\\{WorkspaceUri.SourceRootName}").Length..], state.WorkspaceRoot);
-                state.UnloadWorkspaceFile(uri);
+                var folderUri = new WorkspaceFolderUri(e.FullPath[(state.WorkspaceRoot.LocalPath + $"\\{WorkspaceUri.SourceRootName}").Length..], state.WorkspaceRoot);
+
+                // ...so we try to delete both.
+                state.DeleteWorkspaceUri(uri, external: true);
+                state.DeleteWorkspaceUri(folderUri, external: true);
 
                 var request = new DidChangeWatchedFilesParams
                 {
@@ -185,12 +193,13 @@ namespace Rubberduck.UI.Services
 
         private void OnWatcherChanged(object sender, FileSystemEventArgs e)
         {
+            // TODO prompt user about how to handle this.
+            // ~> should the document be reloaded from disk?
+
             var state = Workspaces.ActiveWorkspace;
             if (state != null && state.WorkspaceRoot != null)
             {
                 var uri = new WorkspaceFileUri(e.FullPath[(state.WorkspaceRoot.LocalPath + $"\\{WorkspaceUri.SourceRootName}").Length..], state.WorkspaceRoot);
-                state.UnloadWorkspaceFile(uri);
-
                 var request = new DidChangeWatchedFilesParams
                 {
                     Changes = new Container<FileEvent>(
@@ -209,6 +218,9 @@ namespace Rubberduck.UI.Services
 
         private void OnWatcherCreated(object sender, FileSystemEventArgs e)
         {
+            // TODO prompt user about how to handle this.
+            // ~> should the new file be included in the workspace/project?
+
             var state = Workspaces.ActiveWorkspace;
             if (state != null && state.WorkspaceRoot != null)
             {
@@ -242,18 +254,18 @@ namespace Rubberduck.UI.Services
             }
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            foreach (var watcher in _watchers.Values)
-            {
-                watcher.Error -= OnWatcherError;
-                watcher.Created -= OnWatcherCreated;
-                watcher.Changed -= OnWatcherChanged;
-                watcher.Deleted -= OnWatcherDeleted;
-                watcher.Renamed -= OnWatcherRenamed;
-                watcher.Dispose();
-            }
-            _watchers.Clear();
-        }
+        //protected override void Dispose(bool disposing)
+        //{
+        //    foreach (var watcher in _watchers.Values)
+        //    {
+        //        watcher.Error -= OnWatcherError;
+        //        watcher.Created -= OnWatcherCreated;
+        //        watcher.Changed -= OnWatcherChanged;
+        //        watcher.Deleted -= OnWatcherDeleted;
+        //        watcher.Renamed -= OnWatcherRenamed;
+        //        watcher.Dispose();
+        //    }
+        //    _watchers.Clear();
+        //}
     }
 }
