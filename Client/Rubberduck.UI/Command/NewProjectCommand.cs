@@ -1,50 +1,45 @@
-﻿using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Model.Workspace;
+﻿using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
+using Rubberduck.InternalApi.Settings.Model.General;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Shared.NewProject;
 using System;
-using System.IO.Abstractions;
 using System.Threading.Tasks;
 
 namespace Rubberduck.UI.Command;
 
 public class NewProjectCommand : CommandBase
 {
-    private readonly IFileSystem _fileSystem;
     private readonly INewProjectDialogService _dialog;
 
-    private readonly IProjectFileService _projectFileService;
     private readonly IAppWorkspacesService? _workspace; // null if invoked from add-in
-    private readonly IWorkspaceFolderService _workspaceFolderService;
     private readonly IWorkspaceSyncService? _workspaceModulesService; // null if invoked from add-in
+
+    private readonly IWorkspaceIOServices _ioServices;
 
     public NewProjectCommand(UIServiceHelper service,
         INewProjectDialogService dialogService,
         IAppWorkspacesService? workspace,
-        IFileSystem fileSystem,
-        IWorkspaceFolderService workspaceFolderService,
-        IProjectFileService projectFileService,
-        IWorkspaceSyncService? workspaceModulesService)
+        IWorkspaceSyncService? workspaceModulesService,
+        IWorkspaceIOServices ioServices)
         : base(service)
     {
         _dialog = dialogService;
 
-        _fileSystem = fileSystem;
-        _workspaceFolderService = workspaceFolderService;
         _workspace = workspace;
-        _projectFileService = projectFileService;
         _workspaceModulesService = workspaceModulesService;
+
+        _ioServices = ioServices;
     }
 
     protected async override Task OnExecuteAsync(object? parameter)
     {
-        Uri? workspaceRootUri = null;
-
         if (_dialog.ShowDialog(out var model))
         {
-            // TODO actually validate the model, it's too late here.
+            // TODO actually validate the model in the view; it's too late to fix here.
+
             if (Service.Settings.LanguageClientSettings.WorkspaceSettings.RequireDefaultWorkspaceRootHost)
             {
                 if (model.WorkspaceLocation != Service.Settings.LanguageClientSettings.WorkspaceSettings.DefaultWorkspaceRoot.LocalPath)
@@ -54,12 +49,11 @@ public class NewProjectCommand : CommandBase
                 }
             }
 
-            workspaceRootUri = new Uri(_fileSystem.Path.Combine(model.WorkspaceLocation, model.ProjectName));
+            var workspaceRootUri = _ioServices.Path.GetWorkspaceRootUri(model.WorkspaceLocation, model.ProjectName);
             var projectFile = CreateProjectFileModel(model);
 
-            var workspaceSrcRoot = _fileSystem.Path.Combine(workspaceRootUri.LocalPath, WorkspaceUri.SourceRootName);
-            _workspaceFolderService.CreateWorkspaceFolders(projectFile);
-            await _projectFileService.WriteFileAsync(projectFile);
+            await _ioServices.WorkspaceFolder.CreateAsync(projectFile);
+            await _ioServices.ProjectFile.WriteAsync(projectFile);
 
             if (_workspaceModulesService is not null)
             {
@@ -75,20 +69,18 @@ public class NewProjectCommand : CommandBase
 
             if (model.SelectedProjectTemplate is not null)
             {
-                var templatesRoot = _fileSystem.DirectoryInfo.New(Service.Settings.GeneralSettings.ProjectTemplatesLocation.LocalPath).FullName;
-                var templateSrcRoot = _fileSystem.Path.Combine(templatesRoot, model.SelectedProjectTemplate.Name, ProjectTemplate.TemplateSourceFolderName);
-
-                _workspaceFolderService.CopyTemplateFiles(model.SelectedProjectTemplate.ProjectFile, templateSrcRoot);
+                var setting = Service.Settings.GeneralSettings.GetSetting<TemplatesLocationSetting>() ?? TemplatesLocationSetting.Default;
+                await _ioServices.WorkspaceFolder.CreateAsync(model.SelectedProjectTemplate, setting);
             }
 
             Service.LogInformation("Workspace was successfully created.", $"Workspace root: {workspaceRootUri}");
-            await _workspace.OpenProjectWorkspaceAsync(workspaceRootUri);
+            await (_workspace?.OpenProjectWorkspaceAsync(workspaceRootUri) ?? Task.CompletedTask);
         }
     }
 
     private ProjectFile CreateProjectFileModel(NewProjectWindowViewModel model)
     {
-        var builder = new ProjectFileBuilder(_fileSystem, Service.SettingsProvider);
+        var builder = new ProjectFileBuilder(_ioServices, Service.SettingsProvider);
 
         if (model.SelectedProjectTemplate is not null)
         {
@@ -98,7 +90,7 @@ public class NewProjectCommand : CommandBase
         {
             if (_workspaceModulesService is not null)
             {
-                var workspaceRoot = new Uri(_fileSystem.Path.Combine(model.WorkspaceLocation, model.ProjectName));
+                var workspaceRoot = new Uri(_ioServices.Path.Combine(model.WorkspaceLocation, model.ProjectName));
                 var modules = _workspaceModulesService.GetWorkspaceModules(workspaceRoot, model.ScanFolderAnnotations);
                 foreach (var module in modules)
                 {

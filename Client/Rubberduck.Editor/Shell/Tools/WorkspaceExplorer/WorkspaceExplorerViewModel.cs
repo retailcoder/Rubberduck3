@@ -2,6 +2,7 @@
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model.Editor.Tools;
 using Rubberduck.UI;
@@ -25,11 +26,13 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
     public class WorkspaceExplorerViewModel : ToolWindowViewModelBase, IWorkspaceExplorerViewModel, ICommandBindingProvider
     {
         private readonly IAppWorkspacesService _service;
+        private readonly IWorkspaceIOServices _ioServices;
         private readonly WorkspaceExplorerCommandHandlers _handlers;
         private readonly RenameUriCommand _renameUriCommand;
 
         public WorkspaceExplorerViewModel(RubberduckSettingsProvider settingsProvider,
             IAppWorkspacesService service, 
+            IWorkspaceIOServices ioServices,
             WorkspaceExplorerCommandHandlers handlers,
             ShowRubberduckSettingsCommand showSettingsCommand, 
             CloseToolWindowCommand closeToolwindowCommand,
@@ -40,10 +43,12 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             Title = "Workspace Explorer"; // TODO localize
 
             _service = service;
+            _ioServices = ioServices;
+
             _handlers = handlers;
             _renameUriCommand = renameUriCommand;
 
-            Workspaces = new(service.ProjectFiles.Select(workspace => WorkspaceViewModel.FromModel(workspace, _service)));
+            Workspaces = new(service.ProjectFiles.Select(workspace => WorkspaceViewModel.FromModel(workspace, ioServices)));
             OpenDocumentCommand = openDocumentCommand;
             
             _dispatcher = Application.Current.Dispatcher;
@@ -55,7 +60,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
             IsPinned = !settingsProvider.Settings.EditorSettings.ToolsSettings.WorkspaceExplorerSettings.AutoHide;
 
-            var expandFolderCommand = new DelegateCommand(UIServiceHelper.Instance, 
+            var expandFolderCommand = new DelegateCommand(UIServiceHelper.Instance!, 
                 parameter =>
                 {
                     if (parameter is IWorkspaceFolderViewModel folder) 
@@ -63,7 +68,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                         folder.IsExpanded = true;
                     }
                 }, parameter => parameter is IWorkspaceFolderViewModel folder && !folder.IsExpanded);
-            var collapseFolderCommand = new DelegateCommand(UIServiceHelper.Instance,
+            var collapseFolderCommand = new DelegateCommand(UIServiceHelper.Instance!,
                 parameter =>
                 {
                     if (parameter is IWorkspaceFolderViewModel folder)
@@ -72,10 +77,10 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                     }
                 }, parameter => parameter is IWorkspaceFolderViewModel folder && folder.IsExpanded);
 
-            var prepareRenameUriCommand = new DelegateCommand(UIServiceHelper.Instance,
+            var prepareRenameUriCommand = new DelegateCommand(UIServiceHelper.Instance!,
                 parameter =>
                 {
-                    var node = this.Workspaces.Select(e => e.FindChildNode((WorkspaceUri)parameter)).SingleOrDefault();
+                    var node = this.Workspaces.Select(e => e.FindChildNode((WorkspaceUri)parameter!)).SingleOrDefault();
                     if (node != null)
                     {
                         node.IsEditingName = true;
@@ -198,7 +203,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
 
         public void Load(ProjectFile project)
         {
-            var workspace = WorkspaceViewModel.FromModel(project, _service);
+            var workspace = WorkspaceViewModel.FromModel(project, _ioServices);
             _dispatcher.Invoke(() =>
             {
                 Workspaces.Add(workspace);

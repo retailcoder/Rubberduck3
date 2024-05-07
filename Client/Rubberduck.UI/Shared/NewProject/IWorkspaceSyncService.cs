@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 namespace Rubberduck.UI.Shared.NewProject;
 
+/// <summary>
+/// A service that is intended to run in-process from the VBIDE add-in to perform various workspace synchronization tasks.
+/// </summary>
 public interface IWorkspaceSyncService
 {
     /// <summary>

@@ -5,13 +5,12 @@ using Rubberduck.Editor;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.InternalApi.Settings;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Rubberduck.UI.Services
@@ -29,8 +28,8 @@ namespace Rubberduck.UI.Services
         private readonly LanguageClientApp _app;
         private readonly Dictionary<Uri, IFileSystemWatcher> _watchers = [];
 
-        public WorkspaceClientService(ILogger<AppWorkspacesService> logger, RubberduckSettingsProvider settingsProvider, IAppWorkspacesStateManager state, IFileSystem fileSystem, PerformanceRecordAggregator performance, IProjectFileService projectFile, LanguageClientApp app) 
-            : base(logger, settingsProvider, state, fileSystem, performance, projectFile)
+        public WorkspaceClientService(ILogger<AppWorkspacesService> logger, RubberduckSettingsProvider settingsProvider, PerformanceRecordAggregator performance, IWorkspaceIOServices ioServices, IAppWorkspacesStateManager workspaces, LanguageClientApp app) 
+            : base(logger, settingsProvider, performance, ioServices, workspaces)
         {
             _app = app;
         }
@@ -103,7 +102,7 @@ namespace Rubberduck.UI.Services
 
         private IFileSystemWatcher ConfigureWatcher(string path)
         {
-            var watcher = FileSystem.FileSystemWatcher.New(path);
+            var watcher = IOServices.CreateWatcherFor(path);
             watcher.IncludeSubdirectories = true;
             watcher.Error += OnWatcherError;
             watcher.Created += OnWatcherCreated;

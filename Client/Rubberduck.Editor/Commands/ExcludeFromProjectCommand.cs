@@ -1,6 +1,7 @@
 ﻿using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Services;
 using System.Linq;
@@ -52,7 +53,7 @@ public class ExcludeFromProjectCommand : CommandBase
                 if (workspace != null)
                 {
                     workspace.DeleteWorkspaceUri(fileUri);
-                    await _projectFile.WriteFileAsync(project);
+                    await _projectFile.WriteAsync(project);
                 }
             }
         }
@@ -73,7 +74,7 @@ public class ExcludeFromProjectCommand : CommandBase
                 if (workspace != null)
                 {
                     workspace.DeleteWorkspaceUri(folderUri);
-                    await _projectFile.WriteFileAsync(project);
+                    await _projectFile.WriteAsync(project);
                 }
             }
         }

@@ -57,12 +57,13 @@ namespace Rubberduck.Editor.Commands
             {
                 if (workspace.WorkspaceRoot != null && workspace.TryGetWorkspaceFile(uri, out var file) && file != null)
                 {
-                    //&& !file.IsMissing && !file.IsLoadError
-
                     UserControl view;
                     IDocumentTabViewModel document;
 
-                    if (file is DocumentState state)
+                    var canOpenFile = file.Status != WorkspaceFileState.Missing 
+                                   && file.Status != WorkspaceFileState.LoadError;
+
+                    if (canOpenFile && file is DocumentState state)
                     {
                         if (state is CodeDocumentState codeDocumentState)
                         {
@@ -122,6 +123,8 @@ namespace Rubberduck.Editor.Commands
                 }
                 else
                 {
+                    // TODO prompt to open in text editor
+
                    // throw new FileNotFoundException($"File '{uri}' is present in the workspace folder, but not included in this workspace. Include it in the project?");
                 }
             }

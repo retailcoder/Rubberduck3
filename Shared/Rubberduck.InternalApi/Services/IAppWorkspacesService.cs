@@ -28,8 +28,7 @@ public interface IAppWorkspacesService
     /// </summary>
     event EventHandler<WorkspaceServiceEventArgs> WorkspaceClosed;
 
-    IFileSystem FileSystem { get; } // should be an implementation detail...
-    IAppWorkspacesStateManager Workspaces { get; } // should be an implementation detail...
+    IAppWorkspacesStateManager Workspaces { get; } // should be an implementation detail?
 
     /// <summary>
     /// Gets the project file model for all loaded workspaces.
@@ -44,28 +43,28 @@ public interface IAppWorkspacesService
     Task UpdateProjectFileAsync(ProjectFile projectFile);
 
     /// <summary>
-    /// Opens the project file from the specified folder location.
+    /// Opens the project file from the specified folder location, then notifies listeners.
     /// </summary>
     Task<bool> OpenProjectWorkspaceAsync(Uri uri);
 
     /// <summary>
-    /// Overwrites a file in a workspace.
+    /// Overwrites a file in a workspace and resets its document version.
     /// </summary>
     /// <param name="uri">The file location relative to the workspace source root.</param>
-    Task<bool> SaveWorkspaceFileAsync(WorkspaceFileUri uri);
+    Task SaveWorkspaceFileAsync(WorkspaceFileUri uri);
     /// <summary>
-    /// Saves a copy of a workspace file at a specified absolute location.
+    /// Saves a copy of a workspace file at a specified absolute location (does not reset its document version).
     /// </summary>
     /// <remarks>
     /// If the specified <c>path</c> is under the workspace source root, the copy should be added to the workspace.
     /// </remarks>
     /// <param name="uri">The original file location relative to the worspace source root.</param>
     /// <param name="path">The absolute location where the workspace file is to be copied to.</param>
-    Task<bool> SaveWorkspaceFileAsAsync(WorkspaceFileUri uri, string path);
+    Task SaveWorkspaceFileAsAsync(WorkspaceFileUri uri, string path);
     /// <summary>
     /// Overwrites all modified files in the currently active workspace.
     /// </summary>
-    Task<bool> SaveAllAsync();
+    Task SaveAllAsync();
 
     /// <summary>
     /// Closes the active workspace.

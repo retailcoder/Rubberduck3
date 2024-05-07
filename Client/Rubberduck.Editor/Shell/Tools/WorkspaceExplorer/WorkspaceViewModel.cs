@@ -1,6 +1,6 @@
 ﻿using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
-using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.UI;
 using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
@@ -19,13 +19,13 @@ public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceV
 {
     public event EventHandler<CancelEventArgs> NameEditCompleted = delegate { };
 
-    public static WorkspaceViewModel FromModel(ProjectFile model, IAppWorkspacesService service)
+    public static WorkspaceViewModel FromModel(ProjectFile model, IWorkspaceIOServices ioServices)
     {
-        var vm = new WorkspaceViewModel(model, service)
+        var vm = new WorkspaceViewModel(model, ioServices)
         {
             Name = model.VBProject.Name,
             DisplayName = model.VBProject.Name,
-            Uri = new WorkspaceFolderUri(null, new Uri(service.FileSystem.Path.Combine(model.Uri.LocalPath, WorkspaceUri.SourceRootName + "\\"))),
+            Uri = new WorkspaceFolderUri(null, new Uri(ioServices.Path.Combine(model.Uri.LocalPath, WorkspaceUri.SourceRootName + "\\"))),
             //IsFileSystemWatcherEnabled = service.IsFileSystemWatcherEnabled(model.Uri),
             IsExpanded = true
         };
@@ -42,7 +42,7 @@ public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceV
 
         foreach (var folder in rootFolders)
         {
-            AddFolderContent(service, folder, projectFilesByFolder, projectFolders);
+            AddFolderContent(ioServices, folder, projectFilesByFolder, projectFolders);
             vm.AddChildNode(folder);
         }
 
@@ -50,21 +50,21 @@ public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceV
         if (projectFilesByFolder.TryGetValue(srcRoot.AbsoluteLocation.LocalPath, out var rootFolderFiles))
         {
             var rootFilePaths = rootFolderFiles.OrderBy(e => e.Name).Select(e => e.Uri.LocalPath).ToHashSet();
-            AddFolderFileNodes(service, vm, rootFolderFiles, rootFilePaths);
+            AddFolderFileNodes(ioServices, vm, rootFolderFiles, rootFilePaths);
 
             projectFilesByFolder.Remove(srcRoot.AbsoluteLocation.LocalPath);
         }
 
         foreach (var key in projectFilesByFolder.Keys)
         {
-            var folder = CreateWorkspaceFolderNode(service, projectFilesByFolder[key], new WorkspaceFolderUri(key, model.Uri));
+            var folder = CreateWorkspaceFolderNode(ioServices, projectFilesByFolder[key], new WorkspaceFolderUri(key, model.Uri));
             vm.AddChildNode(folder);
         }
 
         return vm;
     }
 
-    private static void AddFolderContent(IAppWorkspacesService service, WorkspaceFolderViewModel folder, IDictionary<string, IEnumerable<WorkspaceTreeNodeViewModel>> projectFilesByFolder, IEnumerable<WorkspaceFolderViewModel> projectFolders)
+    private static void AddFolderContent(IWorkspaceIOServices ioServices, WorkspaceFolderViewModel folder, IDictionary<string, IEnumerable<WorkspaceTreeNodeViewModel>> projectFilesByFolder, IEnumerable<WorkspaceFolderViewModel> projectFolders)
     {
         var workspaceFolderUri = (WorkspaceFolderUri)folder.Uri;
         var key = Path.TrimEndingDirectorySeparator(workspaceFolderUri.RelativeUriString ?? WorkspaceUri.SourceRootName);
@@ -72,7 +72,7 @@ public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceV
         var localPath = ((WorkspaceFolderUri)folder.Uri).AbsoluteLocation.LocalPath;
         foreach (var subFolder in projectFolders.Where(e => localPath == new System.IO.DirectoryInfo(new WorkspaceFolderUri(e.Uri.OriginalString, workspaceFolderUri.WorkspaceRoot).AbsoluteLocation.LocalPath).Parent!.FullName))
         {
-            AddFolderContent(service, subFolder, projectFilesByFolder, projectFolders);
+            AddFolderContent(ioServices, subFolder, projectFilesByFolder, projectFolders);
             folder.AddChildNode(subFolder);
         }
 
@@ -86,10 +86,10 @@ public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceV
                 {
                     var ghostUri = new WorkspaceFolderUri(subFolder, workspaceFolderUri.WorkspaceRoot);
                     var node = new WorkspaceFolderViewModel { IsInProject = false, Uri = ghostUri, Name = ghostUri.FolderName };
-                    AddFolderContent(service, node, projectFilesByFolder, projectFolders);
+                    AddFolderContent(ioServices, node, projectFilesByFolder, projectFolders);
 
                     folder.AddChildNode(node);
-                    AddFolderFileNodes(service, node, [], []);
+                    AddFolderFileNodes(ioServices, node, [], []);
                 }
             }
         }
@@ -102,13 +102,13 @@ public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceV
         if (projectFilesByFolder.TryGetValue(key, out var projectFiles) && projectFiles is not null)
         {
             var projectFilePaths = projectFiles.Select(file => ((WorkspaceFileUri)file.Uri).AbsoluteLocation.LocalPath).ToHashSet();
-            AddFolderFileNodes(service, folder, projectFiles, projectFilePaths);
+            AddFolderFileNodes(ioServices, folder, projectFiles, projectFilePaths);
 
             projectFilesByFolder.Remove(key);
         }
     }
 
-    private static WorkspaceFolderViewModel CreateWorkspaceFolderNode(IAppWorkspacesService service, IEnumerable<IWorkspaceTreeNode> projectFiles, WorkspaceFolderUri uri)
+    private static WorkspaceFolderViewModel CreateWorkspaceFolderNode(IWorkspaceIOServices ioServices, IEnumerable<IWorkspaceTreeNode> projectFiles, WorkspaceFolderUri uri)
     {
         var folder = new WorkspaceFolderViewModel
         {
@@ -118,33 +118,33 @@ public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceV
         };
 
         var projectFilePaths = projectFiles.Select(file => file.Uri.AbsoluteLocation.LocalPath).ToHashSet();
-        AddFolderFileNodes(service, folder, projectFiles, projectFilePaths);
+        AddFolderFileNodes(ioServices, folder, projectFiles, projectFilePaths);
         return folder;
     }
 
-    private static void AddFolderFileNodes(IAppWorkspacesService service, IWorkspaceTreeNode folder, IEnumerable<IWorkspaceTreeNode> projectFiles, HashSet<string> projectFilePaths)
+    private static void AddFolderFileNodes(IWorkspaceIOServices ioServices, IWorkspaceTreeNode folder, IEnumerable<IWorkspaceTreeNode> projectFiles, HashSet<string> projectFilePaths)
     {
-        var workspaceFiles = GetWorkspaceFilesNotInProject(service, folder, projectFilePaths);
+        var workspaceFiles = GetWorkspaceFilesNotInProject(ioServices, folder, projectFilePaths);
         foreach (var file in projectFiles.Concat(workspaceFiles))
         {
             folder.AddChildNode(file);
         }
     }
 
-    private static IEnumerable<WorkspaceFileViewModel> GetWorkspaceFilesNotInProject(IAppWorkspacesService service, IWorkspaceTreeNode folder, HashSet<string> projectFilePaths)
+    private static IEnumerable<WorkspaceFileViewModel> GetWorkspaceFilesNotInProject(IWorkspaceIOServices ioServices, IWorkspaceTreeNode folder, HashSet<string> projectFilePaths)
     {
         var workspaceRoot = ((WorkspaceFolderUri)folder.Uri).WorkspaceRoot;
-        var results = service.FileSystem.Directory.GetFiles(((WorkspaceFolderUri)folder.Uri).AbsoluteLocation.LocalPath).Except(projectFilePaths)
-                    .Select(file => new WorkspaceFileViewModel
+        var allFiles = ioServices.WorkspaceFolder.GetFiles((WorkspaceFolderUri)folder.Uri);
+        
+        var results = allFiles.Except(projectFilePaths).Select(file => new WorkspaceFileViewModel
                     {
                         Uri = new WorkspaceFileUri(file.Replace($"\\{WorkspaceUri.SourceRootName}", string.Empty)[workspaceRoot.LocalPath.Length..], workspaceRoot),
-                        Name = service.FileSystem.Path.GetFileNameWithoutExtension(file),
+                        Name = ioServices.Path.GetFileNameWithoutExtension(file),
                         IsInProject = false // file exists in a project folder but is not included in the project
                     });
         return results;
     }
 
-    private readonly IAppWorkspacesService _workspaces;
     public ICollectionView ItemsViewSource { get; }
 
     public virtual IEnumerable<object> ContextMenuItems => new object[]
@@ -160,9 +160,12 @@ public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceV
                 new MenuItem { Command = FileCommands.CloseProjectWorkspaceCommand, CommandParameter = Uri },
             };
 
-    public WorkspaceViewModel(ProjectFile model, IAppWorkspacesService workspaces)
+    private readonly IWorkspaceIOServices _ioServices;
+
+    public WorkspaceViewModel(ProjectFile model, IWorkspaceIOServices ioServices)
     {
-        _workspaces = workspaces;
+        _ioServices = ioServices;
+
         ItemsViewSource = CollectionViewSource.GetDefaultView(_children);
         ItemsViewSource.Filter = o => ((IWorkspaceTreeNode)o).IsVisible && (ShowAllFiles || ((IWorkspaceTreeNode)o).IsInProject);
 
@@ -181,6 +184,7 @@ public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceV
             if (_isFileSystemWatcherEnabled != value)
             {
                 _isFileSystemWatcherEnabled = value;
+                // TODO affect actual watcher
                 OnPropertyChanged();
             }
         }

@@ -15,4 +15,6 @@ public record class TemplatesLocationSetting : UriRubberduckSetting
         DefaultValue = DefaultSettingValue;
         Tags = SettingTags.Advanced | SettingTags.ReadOnlyRecommended;
     }
+
+    public static TemplatesLocationSetting Default { get; } = new() { Value = DefaultSettingValue, DefaultValue = DefaultSettingValue };
 }

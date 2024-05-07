@@ -1,5 +1,6 @@
 ﻿using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.InternalApi.Settings;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace Rubberduck.UI.Shared.NewProject;
 
 public class ProjectFileBuilder
 {
-    private readonly IFileSystem _fileSystem;
+    private readonly IWorkspaceIOServices _ioServices;
     private readonly RubberduckSettingsProvider _settings;
 
     private Uri? _uri = default;
@@ -21,13 +22,13 @@ public class ProjectFileBuilder
     private readonly HashSet<Reference> _references = [];
     private readonly HashSet<string> _folders = [];
 
-    public ProjectFileBuilder(IFileSystem fileSystem, RubberduckSettingsProvider settings)
+    public ProjectFileBuilder(IWorkspaceIOServices ioServices, RubberduckSettingsProvider settings)
     {
         _settings = settings;
-        _fileSystem = fileSystem;
+        _ioServices = ioServices;
     }
 
-    private Uri DefaultUri => new(_fileSystem.Path.Combine(
+    private Uri DefaultUri => new(_ioServices.Path.Combine(
         _settings.Settings.LanguageClientSettings.WorkspaceSettings.DefaultWorkspaceRoot.LocalPath, _name));
 
     public ProjectFile Build() => new()
@@ -46,7 +47,7 @@ public class ProjectFileBuilder
 
     public ProjectFileBuilder WithModel(INewProjectWindowViewModel viewModel)
     {
-        _uri = new Uri(_fileSystem.Path.Combine(viewModel.WorkspaceLocation, viewModel.ProjectName));
+        _uri = new Uri(_ioServices.Path.Combine(viewModel.WorkspaceLocation, viewModel.ProjectName));
         _name = viewModel.ProjectName;
 
         if (viewModel.SelectedProjectTemplate?.ProjectFile != null)
@@ -86,7 +87,7 @@ public class ProjectFileBuilder
 
     public ProjectFileBuilder WithModule(string uri, DocClassType? supertype = null)
     {
-        var name = _fileSystem.Path.GetFileNameWithoutExtension(uri);
+        var name = _ioServices.Path.GetFileNameWithoutExtension(uri);
         _modules.TryAdd(name, new()
         {
             Name = name,

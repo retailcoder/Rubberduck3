@@ -35,7 +35,7 @@ public interface IWorkspaceState
     /// Resets the document version in the internal document store.
     /// </summary>
     /// <param name="uri">The workspace uri of the document to save.</param>
-    bool SaveWorkspaceFile(WorkspaceFileUri uri);
+    bool ResetDocumentVersion(WorkspaceFileUri uri);
     /// <summary>
     /// Attempts to retrieve the specified file.
     /// </summary>

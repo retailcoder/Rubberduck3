@@ -4,13 +4,12 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Rubberduck.Editor.Shell.Tools.WorkspaceExplorer;
 using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Shared.Message;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Resx = Rubberduck.Resources.v3.RubberduckMessages;
@@ -20,19 +19,17 @@ namespace Rubberduck.Editor.Commands;
 public class DeleteUriCommand : CommandBase
 {
     private readonly IMessageService _messages;
-    private readonly IAppWorkspacesService _workspaces;
-    private readonly IProjectFileService _projectFile;
+    private readonly IWorkspaceIOServices _ioServices;
 
     private readonly Lazy<IWorkspaceExplorerViewModel> _workspaceExplorer;
     private readonly Lazy<ILanguageClient> _languageClient;
 
-    public DeleteUriCommand(UIServiceHelper service, IMessageService messages,
-        IAppWorkspacesService workspaces, IProjectFileService projectFile, Func<IWorkspaceExplorerViewModel> workspaceExplorer, Func<ILanguageClient> lsp) 
+    public DeleteUriCommand(UIServiceHelper service, IMessageService messages, IWorkspaceIOServices ioServices,
+        Func<IWorkspaceExplorerViewModel> workspaceExplorer, Func<ILanguageClient> lsp) 
         : base(service)
     {
         _messages = messages;
-        _workspaces = workspaces;
-        _projectFile = projectFile;
+        _ioServices = ioServices;
         
         _workspaceExplorer = new Lazy<IWorkspaceExplorerViewModel>(workspaceExplorer);
         _languageClient = new Lazy<ILanguageClient>(lsp);
@@ -44,17 +41,17 @@ public class DeleteUriCommand : CommandBase
     {
         if (parameter is WorkspaceFolderViewModel folderVM)
         {
-            return Directory.Exists(folderVM.Uri.AbsoluteLocation.LocalPath);
+            return _ioServices.Path.FolderExists(folderVM.Uri.AbsoluteLocation.LocalPath);
         }
         else if (parameter is WorkspaceFileViewModel fileVM)
         {
-            return File.Exists(fileVM.Uri.AbsoluteLocation.LocalPath);
+            return _ioServices.Path.FileExists(fileVM.Uri.AbsoluteLocation.LocalPath);
         }
 
         return false;
     }
 
-    protected override Task OnExecuteAsync(object? parameter)
+    protected override async Task OnExecuteAsync(object? parameter)
     {
         WorkspaceUri? uri;
         bool wasDeleted;
@@ -63,14 +60,14 @@ public class DeleteUriCommand : CommandBase
         {
             var name = fileVM.FileName;
             uri = fileVM.Uri;
-            wasDeleted = DeleteUri((WorkspaceFileUri)fileVM.Uri, name);
+            wasDeleted = await DeleteUriAsync((WorkspaceFileUri)fileVM.Uri, name);
             fileVM.IsDeleted = true;
         }
         else if (parameter is WorkspaceFolderViewModel folderVM)
         {
             var name = folderVM.Name;
             uri = folderVM.Uri;
-            wasDeleted = DeleteUri((WorkspaceFolderUri)uri, name);
+            wasDeleted = await DeleteUriAsync((WorkspaceFolderUri)uri, name);
             folderVM.IsDeleted = true;
         }
         else
@@ -80,7 +77,6 @@ public class DeleteUriCommand : CommandBase
 
         if (wasDeleted && uri is WorkspaceUri)
         {
-            var workspace = _workspaces.Workspaces.GetWorkspace(uri.WorkspaceRoot);
             var vm = _workspaceExplorer.Value.Workspaces.OfType<WorkspaceViewModel>().SingleOrDefault(e => e.Uri.AbsoluteLocation.LocalPath == uri.WorkspaceRoot.LocalPath);
             if (vm != null)
             {
@@ -92,13 +88,11 @@ public class DeleteUriCommand : CommandBase
                 {
                     vm.RemoveWorkspaceUri(folderUri);
                 }
-                _projectFile.WriteFileAsync(vm.Model);
 
+                await _ioServices.ProjectFile.WriteAsync(vm.Model);
                 NotifyLanguageServer(uri);
             }
         }
-
-        return Task.CompletedTask;
     }
 
     private void NotifyLanguageServer(Uri uri)
@@ -110,7 +104,7 @@ public class DeleteUriCommand : CommandBase
         _languageClient.Value.Workspace.DidDeleteFile(request);
     }
 
-    private bool DeleteUri(WorkspaceFileUri uri, string name)
+    private async Task<bool> DeleteUriAsync(WorkspaceFileUri uri, string name)
     {
         var wasDeleted = false;
         try
@@ -126,7 +120,7 @@ public class DeleteUriCommand : CommandBase
             };
             if (_messages.ShowMessageRequest(model).MessageAction == MessageAction.AcceptConfirmAction)
             {
-                _workspaces.FileSystem.File.Delete(uri.AbsoluteLocation.LocalPath);
+                await _ioServices.WorkspaceFile.DeleteAsync(uri);
                 wasDeleted = true;
             }
         }
@@ -140,7 +134,7 @@ public class DeleteUriCommand : CommandBase
         return wasDeleted;
     }
 
-    private bool DeleteUri(WorkspaceFolderUri uri, string name)
+    private async Task<bool> DeleteUriAsync(WorkspaceFolderUri uri, string name)
     {
         var wasDeleted = false;
         try
@@ -156,7 +150,7 @@ public class DeleteUriCommand : CommandBase
             };
             if (_messages.ShowMessageRequest(model).MessageAction == MessageAction.AcceptConfirmAction)
             {
-                _workspaces.FileSystem.Directory.Delete(uri.AbsoluteLocation.LocalPath, true);
+                await _ioServices.WorkspaceFolder.DeleteAsync(uri);
                 wasDeleted = true;
             }
         }

@@ -5,6 +5,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Rubberduck.Editor.Services;
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model;
 using Rubberduck.UI.Services;
@@ -96,7 +97,7 @@ public class AddWorkspaceFileService : DialogService<AddWorkspaceFileWindow, IAd
             };
         }
 
-        _projectFileService.WriteFileAsync(project);
+        _projectFileService.WriteAsync(project);
         _workspaceServices.UpdateProjectFileAsync(project);
     }
 

@@ -198,7 +198,7 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
             _isLoaded = false;
         }
 
-        public bool SaveWorkspaceFile(WorkspaceFileUri uri)
+        public bool ResetDocumentVersion(WorkspaceFileUri uri)
         {
             if (_store.TryGetDocument(uri, out var file) && file != null)
             {

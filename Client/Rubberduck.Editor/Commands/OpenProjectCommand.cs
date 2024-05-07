@@ -1,11 +1,12 @@
 ﻿using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
+using Rubberduck.InternalApi.Settings.Model.LanguageClient;
 using Rubberduck.UI.Command;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Command.StaticRouted;
 using Rubberduck.UI.Services;
 using System;
-using System.IO.Abstractions;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,46 +14,50 @@ namespace Rubberduck.Editor.Commands
 {
     public class OpenProjectCommand : CommandBase
     {
-        private readonly IFileSystem _fileSystem;
         private readonly IAppWorkspacesService _workspaceService;
+        private readonly IWorkspaceIOServices _ioServices;
 
         public OpenProjectCommand(UIServiceHelper service,
-            IFileSystem fileSystem, IAppWorkspacesService workspace)
+            IAppWorkspacesService workspace, 
+            IWorkspaceIOServices ioServices)
             : base(service)
         {
-            _fileSystem = fileSystem;
             _workspaceService = workspace;
+            _ioServices = ioServices;
         }
 
         protected async override Task OnExecuteAsync(object? parameter)
         {
-            string? uri;
+            string? path;
             if (parameter is null)
             {
+                var setting = Service.Settings.LanguageClientSettings.WorkspaceSettings.GetSetting<DefaultWorkspaceRootSetting>();
+                var workspacesRoot = setting?.TypedValue ?? DefaultWorkspaceRootSetting.DefaultSettingValue;
+
                 var prompt = new BrowseFileModel
                 {
                     Title = "Open Project",
                     DefaultFileExtension = "rdproj",
                     Filter = "Rubberduck Project (.rdproj)|*.rdproj",
-                    RootUri = new Uri(_fileSystem.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Rubberduck", "Workspaces")),
+                    RootUri = workspacesRoot,
                 };
                 if (!DialogCommands.BrowseFileOpen(prompt))
                 {
                     return;
                 }
-                uri = _fileSystem.Path.GetDirectoryName(prompt.Selection);
+                path = _ioServices.Path.GetFileName(prompt.Selection);
             }
             else
             {
-                uri = parameter.ToString();
+                path = parameter.ToString();
             }
 
-            if (uri != null)
+            if (path != null)
             {
-                if (!_workspaceService.ProjectFiles.Any(project => project.Uri.LocalPath[..^(ProjectFile.FileName.Length + 1)] == uri))
+                if (!_workspaceService.ProjectFiles.Any(project => project.Uri.LocalPath[..^(ProjectFile.FileName.Length + 1)] == path))
                 {
-                    Service.LogInformation("Opening project workspace...", $"Workspace root: {uri}");
-                    await _workspaceService.OpenProjectWorkspaceAsync(new Uri(uri));
+                    Service.LogInformation("Opening project workspace...", $"Workspace root: {path}");
+                    await _workspaceService.OpenProjectWorkspaceAsync(new Uri(path));
                 }
             }
         }

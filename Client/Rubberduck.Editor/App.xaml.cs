@@ -26,6 +26,8 @@ using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.ServerPlatform;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model;
 using Rubberduck.InternalApi.Settings.Model.Editor;

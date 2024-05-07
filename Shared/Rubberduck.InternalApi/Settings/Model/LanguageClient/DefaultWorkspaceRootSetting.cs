@@ -9,9 +9,10 @@ namespace Rubberduck.InternalApi.Settings.Model.LanguageClient;
 /// </summary>
 public record class DefaultWorkspaceRootSetting : UriRubberduckSetting
 {
-    private static readonly string LocalAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    // the default location should be a user-specific folder with read and write permissions
+    private static readonly string Location = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-    public static Uri DefaultSettingValue { get; } = new(Path.Combine(LocalAppData, "Rubberduck", "Workspaces"));
+    public static Uri DefaultSettingValue { get; } = new(Path.Combine(Location, "Rubberduck", "Workspaces"));
 
     public DefaultWorkspaceRootSetting()
     {

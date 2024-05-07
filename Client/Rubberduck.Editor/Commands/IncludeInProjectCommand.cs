@@ -2,6 +2,7 @@
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Services;
 using System.Linq;
@@ -46,7 +47,7 @@ public class IncludeInProjectCommand : CommandBase
                 var workspace = _workspaces.Workspaces.Workspaces.SingleOrDefault(e => e.WorkspaceRoot?.SourceRoot.LocalPath == fileUri.SourceRoot.LocalPath);
                 if (workspace != null)
                 {
-                    _projectFile.WriteFileAsync(project);
+                    _projectFile.WriteAsync(project);
                 }
             }
         }
@@ -63,7 +64,7 @@ public class IncludeInProjectCommand : CommandBase
                 var workspace = _workspaces.Workspaces.Workspaces.SingleOrDefault(e => e.WorkspaceRoot?.SourceRoot.LocalPath == folderUri.SourceRoot.LocalPath);
                 if (workspace != null)
                 {
-                    _projectFile.WriteFileAsync(project);
+                    _projectFile.WriteAsync(project);
                 }
             }
         }

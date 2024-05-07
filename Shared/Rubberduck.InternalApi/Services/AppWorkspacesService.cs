@@ -2,74 +2,73 @@
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.InternalApi.Settings;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Abstractions;
 using System.Linq;
-using System.Reflection;
-using System.Security.Policy;
 using System.Threading.Tasks;
-using System.Windows.Shapes;
 
 namespace Rubberduck.InternalApi.Services;
 
 public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
 {
     private readonly IAppWorkspacesStateManager _workspaces;
-    private readonly HashSet<ProjectFile> _projectFiles = [];
+    private readonly IWorkspaceIOServices _ioServices;
 
-    private readonly IFileSystem _fileSystem;
-    private readonly IProjectFileService _projectFileService;
+    private readonly HashSet<ProjectFile> _projectFiles = [];
 
     public event EventHandler<WorkspaceServiceEventArgs> WorkspaceOpened = delegate { };
     public event EventHandler<WorkspaceServiceEventArgs> WorkspaceClosed = delegate { };
 
-    public AppWorkspacesService(ILogger<AppWorkspacesService> logger, RubberduckSettingsProvider settingsProvider,
-        IAppWorkspacesStateManager workspaces, IFileSystem fileSystem, PerformanceRecordAggregator performance,
-        IProjectFileService projectFileService)
+    public AppWorkspacesService(ILogger<AppWorkspacesService> logger, RubberduckSettingsProvider settingsProvider, PerformanceRecordAggregator performance,
+        IWorkspaceIOServices ioServices,IAppWorkspacesStateManager workspaces)
         : base(logger, settingsProvider, performance)
     {
         _workspaces = workspaces;
-        _fileSystem = fileSystem;
-        _projectFileService = projectFileService;
+        _ioServices = ioServices;
     }
 
+    protected IWorkspaceIOServices IOServices => _ioServices;
     public IAppWorkspacesStateManager Workspaces => _workspaces;
 
+    /// <summary>
+    /// For a LSP client, starts the LSP server at the specified workspace URI.
+    /// </summary>
+    /// <remarks>
+    /// For a LSP server, raises <c>WorkspaceOpened</c>, which should trigger processing.
+    /// </remarks>
     public async virtual Task OnWorkspaceOpenedAsync(Uri uri) => await Task.Run(() => OnWorkspaceOpened(uri));
     protected void OnWorkspaceOpened(Uri uri) => WorkspaceOpened?.Invoke(this, new(uri));
 
     public void OnWorkspaceClosed(Uri uri) => WorkspaceClosed(this, new(uri));
 
-    public IFileSystem FileSystem => _fileSystem;
-
     public IEnumerable<ProjectFile> ProjectFiles => _projectFiles;
 
-    public async Task UpdateProjectFileAsync(ProjectFile projectFile) => await _projectFileService.WriteFileAsync(projectFile);
+    public async Task UpdateProjectFileAsync(ProjectFile projectFile) => await _ioServices.ProjectFile.WriteAsync(projectFile);
 
     public async Task<bool> OpenProjectWorkspaceAsync(Uri uri)
     {
         var success = await TryRunActionAsync(async () =>
             {
-                if (!ValidateProjectFilePath(uri))
+                if (!_ioServices.Path.FileExists(_ioServices.Path.Combine(uri.LocalPath, ProjectFile.FileName)))
                 {
                     throw new FileNotFoundException("No project file ('.rdproj') was found under the specified workspace URI.");
                 }
-                if (!ValidateProjectSourcePath(uri))
+                if (!_ioServices.Path.FolderExists(_ioServices.Path.Combine(uri.LocalPath, WorkspaceUri.SourceRootName)))
                 {
                     throw new DirectoryNotFoundException("Project source root folder ('.src') was not found under the secified workspace URI.");
                 }
 
-                var projectFile = await _projectFileService.ReadFileAsync(uri);
+                var projectFile = await _ioServices.ProjectFile.ReadAsync(uri);
                 if (!projectFile.ValidateVersion())
                 {
                     throw new NotSupportedException("This project was created with a version of Rubberduck greater than the one currently running.");
                 }
 
                 var workspace = _workspaces.AddWorkspace(uri);
-                workspace.ProjectName = _fileSystem.Path.GetFileName(uri.LocalPath);
+                workspace.ProjectName = _ioServices.Path.GetFileName(uri);
 
                 foreach (var reference in projectFile.VBProject.References)
                 {
@@ -85,75 +84,51 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
         return IsReady = IsReady || success;
     }
 
-    private bool ValidateProjectFilePath(Uri uri)
-    {
-        var root = uri.LocalPath;
-        var projectFilePath = _fileSystem.Path.Combine(root, ProjectFile.FileName);
-
-        return _fileSystem.File.Exists(projectFilePath);
-    }
-
-    private bool ValidateProjectSourcePath(Uri uri)
-    {
-        var root = uri.LocalPath;
-        var sourceRoot = _fileSystem.Path.Combine(root, WorkspaceUri.SourceRootName);
-
-        return _fileSystem.Directory.Exists(sourceRoot);
-    }
-
     /// <summary>
     /// <c>true</c> when there's at least one workspace opened.
     /// </summary>
     public bool IsReady { get; private set; }
 
-    public async Task<bool> SaveWorkspaceFileAsync(WorkspaceFileUri uri)
+    public async Task SaveWorkspaceFileAsync(WorkspaceFileUri uri)
     {
         var workspace = _workspaces.ActiveWorkspace;
         if (workspace?.WorkspaceRoot != null && workspace.TryGetWorkspaceFile(uri, out var file) && file != null)
         {
-            var path = _fileSystem.Path.Combine(workspace.WorkspaceRoot.LocalPath, WorkspaceUri.SourceRootName, file.Uri.LocalPath);
-            await _fileSystem.File.WriteAllTextAsync(path, file.Text);
-
-            workspace.SaveWorkspaceFile(uri);
-            return true;
+            await _ioServices.WorkspaceFile.WriteAsync(file);
+            workspace.ResetDocumentVersion(uri);
         }
-
-        return false;
     }
 
-    public async Task<bool> SaveWorkspaceFileAsAsync(WorkspaceFileUri uri, string path)
+    public Task SaveWorkspaceFileAsAsync(WorkspaceFileUri uri, string path)
     {
         var workspace = _workspaces.ActiveWorkspace;
         if (workspace?.WorkspaceRoot != null && workspace.TryGetWorkspaceFile(uri, out var file) && file != null)
         {
             // note: saves a copy but only keeps the original URI in the workspace
-            await _fileSystem.File.WriteAllTextAsync(path, file.Text);
-            return true;
+            return _ioServices.WorkspaceFile.SaveCopyAsync(file, new Uri(path));
         }
 
-        return false;
+        return Task.CompletedTask;
     }
 
-    public async Task<bool> SaveAllAsync()
+    public Task SaveAllAsync()
     {
-        var tasks = new List<Task>();
+        var asyncIO = new List<Task>();
         var workspace = _workspaces.ActiveWorkspace;
         if (workspace?.WorkspaceRoot != null)
         {
-            var srcRoot = _fileSystem.Path.Combine(workspace.WorkspaceRoot.AbsoluteLocation.LocalPath, WorkspaceUri.SourceRootName);
+            var srcRoot = _ioServices.Path.Combine(workspace.WorkspaceRoot.AbsoluteLocation.LocalPath, WorkspaceUri.SourceRootName);
             foreach (var file in workspace.WorkspaceFiles.Where(e => e.IsModified).ToArray())
             {
-                var path = _fileSystem.Path.Combine(srcRoot, file.Uri.ToString());
-                tasks.Add(_fileSystem.File.WriteAllTextAsync(path, file.Text));
-
-                if (!workspace.SaveWorkspaceFile(file.Uri))
+                asyncIO.Add(_ioServices.WorkspaceFile.WriteAsync(file));
+                if (!workspace.ResetDocumentVersion(file.Uri))
                 {
-                    LogWarning("Could not reset document version.", file.Uri.ToString());
+                    LogWarning("Could not reset document version.", $"{file.Uri} (v{file.Version})");
                 }
             }
         }
 
-        return await Task.WhenAll(tasks).ContinueWith(t => !t.IsFaulted, TaskScheduler.Current);
+        return Task.WhenAll(asyncIO);
     }
 
     private async Task LoadWorkspaceFilesAsync(Uri workspaceRoot, ProjectFile projectFile)
@@ -208,28 +183,28 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
     {
         var path = uri.AbsoluteLocation.LocalPath;
 
-        if (!_fileSystem.File.Exists(path))
+        if (!_ioServices.Path.FileExists(path))
         {
             LogWarning($"File '{uri}' does not exist in this workspace and will have no content and status 'Missing'.");
-            return (WorkspaceFileState.Missing, string.Empty, -1);
+            return (WorkspaceFileState.Missing, string.Empty, DocumentState.InvalidVersion);
         }
 
         try
-        { 
-            var content = await _fileSystem.File.ReadAllTextAsync(path).ConfigureAwait(false);
+        {
+            var content = await _ioServices.WorkspaceFile.ReadAsync(uri);
 
             var status = open 
                 ? WorkspaceFileState.Opened 
                 : WorkspaceFileState.Loaded;
 
             LogInformation($"File '{uri}' was loaded successfully. Status is '{status}'.");
-            return (status, content, 1);
+            return (status, content, DocumentState.InitialVersion);
         }
         catch (Exception exception)
         {
             LogException(exception);
             LogWarning($"File '{uri}' could not be loaded and will have no content and status 'LoadError'.");
-            return (WorkspaceFileState.LoadError, string.Empty, -1);
+            return (WorkspaceFileState.LoadError, string.Empty, DocumentState.InvalidVersion);
         }
     }
 

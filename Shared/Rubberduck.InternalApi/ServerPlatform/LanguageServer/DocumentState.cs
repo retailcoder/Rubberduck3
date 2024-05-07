@@ -61,6 +61,9 @@ public record class CodeDocumentState : DocumentState
 
 public record class DocumentState
 {
+    public static int InitialVersion { get; } = 1;
+    public static int InvalidVersion { get; } = -1;
+
     public static DocumentState MissingFile(WorkspaceFileUri uri) => new(uri, string.Empty, WorkspaceFileState.Missing, -1);
     public static DocumentState LoadError(WorkspaceFileUri uri) => new(uri, string.Empty, WorkspaceFileState.LoadError, -1);
 

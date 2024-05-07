@@ -6,6 +6,7 @@ using Rubberduck.Editor.Shell.Tools.WorkspaceExplorer;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Shared.Message;
@@ -27,14 +28,19 @@ public class CreateFolderCommand : CommandBase
     private readonly IMessageService _messages;
     private readonly Lazy<ILanguageClient> _lsp;
 
-    public CreateFolderCommand(UIServiceHelper service, IMessageService messages, IFileSystemServices fileSystemServices,
+    private readonly IWorkspaceIOServices _ioServices;
+
+    public CreateFolderCommand(UIServiceHelper service, IMessageService messages, IWorkspaceIOServices ioServices, IFileSystemServices fileSystemServices,
         IProjectFileService projectFileService, IAppWorkspacesService workspaceService, Func<ILanguageClient> lsp) 
         : base(service)
     {
+        _ioServices = ioServices;
         _fileSystemServices = fileSystemServices;
-        _messages = messages;
         _projectFileService = projectFileService;
+
+        _messages = messages;
         _workspaceService = workspaceService;
+
 
         _lsp = new Lazy<ILanguageClient>(lsp);
     }
@@ -103,7 +109,7 @@ public class CreateFolderCommand : CommandBase
             }
         };
         
-        await Task.WhenAll(_projectFileService.WriteFileAsync(project), _workspaceService.UpdateProjectFileAsync(project));
+        await Task.WhenAll(_projectFileService.WriteAsync(project), _workspaceService.UpdateProjectFileAsync(project));
     }
 
     private void NotifyLanguageServer(Uri uri) 

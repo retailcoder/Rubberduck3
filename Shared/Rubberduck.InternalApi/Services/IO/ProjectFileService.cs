@@ -1,12 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
 using Rubberduck.InternalApi.Model.Workspace;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.InternalApi.Settings;
 using System;
 using System.IO.Abstractions;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Rubberduck.InternalApi.Services;
+using FileMode = System.IO.FileMode;
+
+namespace Rubberduck.InternalApi.Services.IO;
 
 public class ProjectFileService : ServiceBase, IProjectFileService
 {
@@ -19,22 +22,22 @@ public class ProjectFileService : ServiceBase, IProjectFileService
         _fileSystem = fileSystem;
     }
 
-    public async Task WriteFileAsync(ProjectFile model)
+    public async Task WriteAsync(ProjectFile model)
     {
         var path = _fileSystem.Path.Combine(model.Uri.LocalPath, ProjectFile.FileName);
-        
-        using var stream = _fileSystem.FileStream.New(path, System.IO.FileMode.OpenOrCreate);
+
+        using var stream = _fileSystem.FileStream.New(path, FileMode.Create);
 
         await JsonSerializer.SerializeAsync(stream, model);
     }
 
-    public async Task<ProjectFile> ReadFileAsync(Uri root)
+    public async Task<ProjectFile> ReadAsync(Uri root)
     {
         var path = _fileSystem.Path.Combine(root.LocalPath, ProjectFile.FileName);
 
-        using var stream = _fileSystem.FileStream.New(path, System.IO.FileMode.Open);
+        using var stream = _fileSystem.FileStream.New(path, FileMode.Open);
 
-        var project = await JsonSerializer.DeserializeAsync<ProjectFile>(stream) 
+        var project = await JsonSerializer.DeserializeAsync<ProjectFile>(stream)
             ?? throw new InvalidOperationException($"ProjectFile could not be deserialized from '{root}'.");
 
         return project.WithUri(root);

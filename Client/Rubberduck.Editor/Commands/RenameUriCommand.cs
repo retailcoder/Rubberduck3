@@ -4,6 +4,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Rubberduck.Editor.Shell.Tools.WorkspaceExplorer;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Services;
+using Rubberduck.InternalApi.Services.IO.Abstract;
 using Rubberduck.UI.Command.Abstract;
 using Rubberduck.UI.Services;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
@@ -136,7 +137,7 @@ public class RenameUriCommand : CommandBase
             };
         }
 
-        _projectFileService.WriteFileAsync(project);
+        _projectFileService.WriteAsync(project);
         _workspaceServices.UpdateProjectFileAsync(project);
     }
 
