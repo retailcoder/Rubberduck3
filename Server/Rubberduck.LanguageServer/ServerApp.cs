@@ -145,6 +145,11 @@ namespace Rubberduck.LanguageServer
             services.AddSingleton<IWorkDoneProgressStateService, WorkDoneProgressStateService>();
             services.AddSingleton<ISettingsChangedHandler<RubberduckSettings>>(provider => provider.GetRequiredService<RubberduckSettingsProvider>());
             services.AddSingleton<DidChangeConfigurationHandler>();
+
+            services.AddSingleton<IWorkspaceIOServices, WorkspaceIOServices>();
+            services.AddSingleton<IWorkspaceFileService, WorkspaceFileService>();
+            services.AddSingleton<IWorkspaceFolderService, WorkspaceFolderService>();
+            services.AddSingleton<IPathService, PathService>();
         }
 
         protected override void ConfigureHandlers(LanguageServerOptions options)

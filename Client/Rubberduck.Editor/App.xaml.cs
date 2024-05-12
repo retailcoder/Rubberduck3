@@ -395,6 +395,11 @@ namespace Rubberduck.Editor
             services.AddSingleton<CreateFolderCommand>();
 
             services.AddSingleton<IDocumentStatusViewModel, ActiveDocumentStatusViewModel>();
+
+            services.AddSingleton<IWorkspaceIOServices, WorkspaceIOServices>();
+            services.AddSingleton<IWorkspaceFileService, WorkspaceFileService>();
+            services.AddSingleton<IWorkspaceFolderService, WorkspaceFolderService>();
+            services.AddSingleton<IPathService, PathService>();
         }
 
         public void Dispose()

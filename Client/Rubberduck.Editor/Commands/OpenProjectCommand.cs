@@ -28,38 +28,72 @@ namespace Rubberduck.Editor.Commands
 
         protected async override Task OnExecuteAsync(object? parameter)
         {
-            string? path;
-            if (parameter is null)
+            var path = parameter?.ToString();
+            if (string.IsNullOrWhiteSpace(path))
             {
                 var setting = Service.Settings.LanguageClientSettings.WorkspaceSettings.GetSetting<DefaultWorkspaceRootSetting>();
-                var workspacesRoot = setting?.TypedValue ?? DefaultWorkspaceRootSetting.DefaultSettingValue;
-
-                var prompt = new BrowseFileModel
+                if (!TryBrowseWorkspaceLocation(setting, out path))
                 {
-                    Title = "Open Project",
-                    DefaultFileExtension = "rdproj",
-                    Filter = "Rubberduck Project (.rdproj)|*.rdproj",
-                    RootUri = workspacesRoot,
-                };
-                if (!DialogCommands.BrowseFileOpen(prompt))
-                {
+                    Service.LogInformation("Operation was cancelled by the user.");
                     return;
                 }
-                path = _ioServices.Path.GetFileName(prompt.Selection);
-            }
-            else
-            {
-                path = parameter.ToString();
             }
 
-            if (path != null)
+            if (!TryFindWorkspaceLocation(path, out var location))
             {
-                if (!_workspaceService.ProjectFiles.Any(project => project.Uri.LocalPath[..^(ProjectFile.FileName.Length + 1)] == path))
+                Service.LogWarning("Could not find workspace folder at the specified location.", $"Workspace root: {path}");
+                return;
+            }
+
+            if (_workspaceService.IsOpened(location))
+            {
+                Service.LogWarning("Workspace is already opened.", $"Workspace root: {location}");
+                return;
+            }
+
+            Service.LogInformation("Opening project workspace...", $"Workspace root: {location}");
+            await _workspaceService.OpenProjectWorkspaceAsync(location).ConfigureAwait(false);
+        }
+
+        private bool TryBrowseWorkspaceLocation(DefaultWorkspaceRootSetting? setting, out string path)
+        {
+            var workspacesRoot = setting?.TypedValue ?? DefaultWorkspaceRootSetting.DefaultSettingValue;
+            var model = new BrowseFileModel
+            {
+                Title = "Open Project",
+                DefaultFileExtension = "rdproj",
+                Filter = "Rubberduck Project (.rdproj)|*.rdproj",
+                RootUri = workspacesRoot,
+            };
+
+            if (DialogCommands.BrowseFileOpen(model))
+            {
+                var fullProjectFilePath = model.Selection;
+                if (fullProjectFilePath.EndsWith(ProjectFile.FileName))
                 {
-                    Service.LogInformation("Opening project workspace...", $"Workspace root: {path}");
-                    await _workspaceService.OpenProjectWorkspaceAsync(new Uri(path));
+                    path = fullProjectFilePath[..^(ProjectFile.FileName.Length + 1)];
+                    return true;
+                }
+                else
+                {
+                    Service.LogWarning($"Selection was not valid; a path to an existing {ProjectFile.FileName} file was expected.");
                 }
             }
+
+            path = default!;
+            return false;
+        }
+
+        private bool TryFindWorkspaceLocation(string? path, out Uri workspaceLocation)
+        {
+            if (!string.IsNullOrWhiteSpace(path) && _ioServices.Path.FileExists(_ioServices.Path.Combine(path, ProjectFile.FileName)))
+            {
+                workspaceLocation = new Uri(path);
+                return true;
+            }
+
+            workspaceLocation = default!;
+            return false;
         }
     }
 }

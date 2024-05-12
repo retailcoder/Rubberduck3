@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AsyncAwaitBestPractices;
+using Microsoft.Extensions.Logging;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
@@ -33,6 +34,8 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
     protected IWorkspaceIOServices IOServices => _ioServices;
     public IAppWorkspacesStateManager Workspaces => _workspaces;
 
+    public bool IsOpened(Uri root) => _projectFiles.Any(e => e.Uri == root);
+
     /// <summary>
     /// For a LSP client, starts the LSP server at the specified workspace URI.
     /// </summary>
@@ -40,8 +43,14 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
     /// For a LSP server, raises <c>WorkspaceOpened</c>, which should trigger processing.
     /// </remarks>
     public async virtual Task OnWorkspaceOpenedAsync(Uri uri) => await Task.Run(() => OnWorkspaceOpened(uri));
+    /// <summary>
+    /// Raises the <c>WorkspaceOpened</c> event.
+    /// </summary>
     protected void OnWorkspaceOpened(Uri uri) => WorkspaceOpened?.Invoke(this, new(uri));
 
+    /// <summary>
+    /// Raises the <c>WorkspaceClosed</c> event.
+    /// </summary>
     public void OnWorkspaceClosed(Uri uri) => WorkspaceClosed(this, new(uri));
 
     public IEnumerable<ProjectFile> ProjectFiles => _projectFiles;
@@ -50,38 +59,42 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
 
     public async Task<bool> OpenProjectWorkspaceAsync(Uri uri)
     {
-        var success = await TryRunActionAsync(async () =>
+        try
+        {
+            if (!_ioServices.Path.FileExists(_ioServices.Path.Combine(uri.LocalPath, ProjectFile.FileName)))
             {
-                if (!_ioServices.Path.FileExists(_ioServices.Path.Combine(uri.LocalPath, ProjectFile.FileName)))
-                {
-                    throw new FileNotFoundException("No project file ('.rdproj') was found under the specified workspace URI.");
-                }
-                if (!_ioServices.Path.FolderExists(_ioServices.Path.Combine(uri.LocalPath, WorkspaceUri.SourceRootName)))
-                {
-                    throw new DirectoryNotFoundException("Project source root folder ('.src') was not found under the secified workspace URI.");
-                }
+                throw new FileNotFoundException("No project file ('.rdproj') was found under the specified workspace URI.");
+            }
+            if (!_ioServices.Path.FolderExists(_ioServices.Path.Combine(uri.LocalPath, WorkspaceUri.SourceRootName)))
+            {
+                throw new DirectoryNotFoundException("Project source root folder ('.src') was not found under the secified workspace URI.");
+            }
 
-                var projectFile = await _ioServices.ProjectFile.ReadAsync(uri);
-                if (!projectFile.ValidateVersion())
-                {
-                    throw new NotSupportedException("This project was created with a version of Rubberduck greater than the one currently running.");
-                }
+            var projectFile = await _ioServices.ProjectFile.ReadAsync(uri).ConfigureAwait(false);
+            if (!projectFile.ValidateVersion())
+            {
+                throw new NotSupportedException("This project was created with a version of Rubberduck greater than the one currently running.");
+            }
 
-                var workspace = _workspaces.AddWorkspace(uri);
-                workspace.ProjectName = _ioServices.Path.GetFileName(uri);
+            var workspace = _workspaces.AddWorkspace(uri);
+            workspace.ProjectName = _ioServices.Path.GetFileName(uri);
 
-                foreach (var reference in projectFile.VBProject.References)
-                {
-                    workspace.AddReference(reference);
-                }
+            foreach (var reference in projectFile.VBProject.References)
+            {
+                workspace.AddReference(reference);
+            }
 
-                await LoadWorkspaceFilesAsync(uri, projectFile);
-                _projectFiles.Add(projectFile);
+            await LoadWorkspaceFilesAsync(uri, projectFile).ConfigureAwait(false);
+            _projectFiles.Add(projectFile);
 
-            });
-
-        await OnWorkspaceOpenedAsync(uri);
-        return IsReady = IsReady || success;
+            OnWorkspaceOpenedAsync(uri).SafeFireAndForget();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            LogException(exception);
+            return false;
+        }
     }
 
     /// <summary>
@@ -94,7 +107,7 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
         var workspace = _workspaces.ActiveWorkspace;
         if (workspace?.WorkspaceRoot != null && workspace.TryGetWorkspaceFile(uri, out var file) && file != null)
         {
-            await _ioServices.WorkspaceFile.WriteAsync(file);
+            await _ioServices.WorkspaceFile.WriteAsync(file).ConfigureAwait(false);
             workspace.ResetDocumentVersion(uri);
         }
     }
@@ -155,7 +168,7 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
 
     private async Task LoadWorkspaceFileAsync(IWorkspaceState workspace, WorkspaceFileUri uri, bool isSourceFile, ProjectType projectType, bool open = false)
     {
-        var (status, content, documentVersion) = await GetWorkspaceFileStateAsync(uri, open);
+        var (status, content, documentVersion) = await GetWorkspaceFileStateAsync(uri, open).ConfigureAwait(false);
 
         DocumentState info;
         if (isSourceFile)
@@ -191,7 +204,7 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
 
         try
         {
-            var content = await _ioServices.WorkspaceFile.ReadAsync(uri);
+            var content = await _ioServices.WorkspaceFile.ReadAsync(uri).ConfigureAwait(false);
 
             var status = open 
                 ? WorkspaceFileState.Opened 
@@ -210,7 +223,9 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
 
     public Task<bool> CloseWorkspaceAsync()
     {
-        var uri = _workspaces.ActiveWorkspace?.WorkspaceRoot ?? throw new InvalidOperationException("WorkspaceStateManager.WorkspaceRoot is unexpectedly null.");
+        var uri = _workspaces.ActiveWorkspace?.WorkspaceRoot 
+            ?? throw new InvalidOperationException("WorkspaceStateManager.WorkspaceRoot is unexpectedly null.");
+
         _workspaces.Unload(uri);
 
         OnWorkspaceClosed(uri);

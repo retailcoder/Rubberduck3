@@ -36,8 +36,7 @@ public class ProjectFileService : ServiceBase, IProjectFileService
         var path = _fileSystem.Path.Combine(root.LocalPath, ProjectFile.FileName);
 
         using var stream = _fileSystem.FileStream.New(path, FileMode.Open);
-
-        var project = await JsonSerializer.DeserializeAsync<ProjectFile>(stream)
+        var project = await JsonSerializer.DeserializeAsync<ProjectFile>(stream).ConfigureAwait(false)
             ?? throw new InvalidOperationException($"ProjectFile could not be deserialized from '{root}'.");
 
         return project.WithUri(root);

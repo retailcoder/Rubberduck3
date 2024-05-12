@@ -31,6 +31,10 @@ public interface IAppWorkspacesService
     IAppWorkspacesStateManager Workspaces { get; } // should be an implementation detail?
 
     /// <summary>
+    /// Gets an indicator that is <c>true</c> if the specified <c>uri</c> corresponds to a workspace root URI that is already held.
+    /// </summary>
+    bool IsOpened(Uri uri);
+    /// <summary>
     /// Gets the project file model for all loaded workspaces.
     /// </summary>
     IEnumerable<ProjectFile> ProjectFiles { get; }

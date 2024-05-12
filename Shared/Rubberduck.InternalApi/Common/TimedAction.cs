@@ -48,7 +48,7 @@ public static class TimedAction
         var sw = Stopwatch.StartNew();
         try
         {
-            await action.Invoke();
+            await action.Invoke().ConfigureAwait(false);
         }
         catch (Exception e)
         {

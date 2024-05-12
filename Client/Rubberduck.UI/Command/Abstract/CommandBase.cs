@@ -75,10 +75,7 @@ public abstract class CommandBase : ICommand
     public void Execute(object? parameter)
     {
         _service.LogDebug($"Executing command: {Name}");
-        _service.TryRunAction(() =>
-        {
-            OnExecuteAsync(parameter).ConfigureAwait(false).GetAwaiter().GetResult();
-        }, $"{Name}.Execute");
+        _service.TryRunAction(() => OnExecuteAsync(parameter).ConfigureAwait(false).GetAwaiter().GetResult(), $"{Name}.Execute");
     }
 
     public string ShortcutText { get; set; }

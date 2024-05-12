@@ -203,7 +203,7 @@ public abstract class ServiceBase
         try
         {
 
-            var (success, elapsed, exception) = await TimedAction.TryRunAsync(action);
+            var (success, elapsed, exception) = await TimedAction.TryRunAsync(action).ConfigureAwait(false);
             if (success)
             {
                 LogPerformanceIf(logPerformance, elapsed, name: name);
@@ -226,7 +226,7 @@ public abstract class ServiceBase
         var verbosity = TraceLevel;
         try
         {
-            var (success, result, elapsed, exception) = await TimedAction.TryRunAsync(action);
+            var (success, result, elapsed, exception) = await TimedAction.TryRunAsync(action).ConfigureAwait(false);
             if (success)
             {
                 LogPerformanceIf(logPerformance, elapsed, name: name);

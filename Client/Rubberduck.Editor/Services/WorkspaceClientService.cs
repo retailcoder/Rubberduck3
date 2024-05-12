@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AsyncAwaitBestPractices;
+using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Rubberduck.Editor;
@@ -38,12 +39,12 @@ namespace Rubberduck.UI.Services
         {
             if (_app.LanguageClient is null)
             {
-                var startup = Task.Run(() => _app.StartupAsync(Settings.LanguageServerSettings.StartupSettings, uri));
+                var startup = _app.StartupAsync(Settings.LanguageServerSettings.StartupSettings, uri);
                 await startup.ConfigureAwait(false);
 
                 if (startup.IsCompletedSuccessfully)
                 {
-                    await OnWorkspaceOpenedAsync(uri).ConfigureAwait(false);
+                    OnWorkspaceOpened(uri);
                 }
                 else
                 {
@@ -55,7 +56,7 @@ namespace Rubberduck.UI.Services
             }
             else
             {
-                await OnWorkspaceOpenedAsync(uri).ConfigureAwait(false);
+                OnWorkspaceOpened(uri);
             }
         }
 
