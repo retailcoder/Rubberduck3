@@ -49,7 +49,7 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
     /// </summary>
     private Timer IdleTimer { get; }
     private TimeSpan IdleDelay => UIServiceHelper.Instance!.Settings.EditorSettings.IdleTimerDuration;
-    private async void IdleTimerCallback(object? _)
+    private void IdleTimerCallback(object? _)
     {
         if (Status.IsWriting)
         {
@@ -57,11 +57,12 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
             DisableIdleTimer();
 
             NotifyDocumentChanged();
-            await Task.Delay(IdleDelay / 2); // arbitrary - we likely need a few dozen milliseconds, tops.
         }
 
-        await RequestDiagnosticsAsync();
-        await RequestFoldingsAsync();
+        Task.WhenAll(
+            RequestDiagnosticsAsync(), 
+            RequestFoldingsAsync()
+        ).SafeFireAndForget();
     }
 
     /// <summary>
@@ -131,7 +132,7 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
     {
         Status.ProgressMessage = "Processing changes...";
         // increment local version first...
-        DocumentState = _state with { Version = _state.Version + 1 };
+        DocumentState = _state with { Version = _state.Version + 1, Text = TextContent };
 
         var request = new DidChangeTextDocumentParams
         {
@@ -152,12 +153,10 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
         _service.LogDebug($"Notifying server of document changes.", $"DocumentId: {DocumentState.Id} Version: {DocumentState.Version}");
         LanguageClient.DidChangeTextDocument(request);
 
-        Task.Delay(1000).ContinueWith(async t =>
-        {
-            _service.LogDebug($"Requesting foldings and diagnostics...", $"DocumentId: {DocumentState.Id} Version: {DocumentState.Version}");
-            await RequestFoldingsAsync();
-            await RequestDiagnosticsAsync();
-        }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).SafeFireAndForget();
+        Task.Delay(2000).ContinueWith((e) => Task.WhenAll(
+            RequestDiagnosticsAsync(),
+            RequestFoldingsAsync()
+        ), TaskScheduler.Default).SafeFireAndForget();
     }
 
     private async Task RequestDiagnosticsAsync()
@@ -172,7 +171,7 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
         };
 
         _service.LogDebug($"Requesting document diagnostics.");
-        var report = await LanguageClient.RequestDocumentDiagnostic(request);
+        var report = await LanguageClient.RequestDocumentDiagnostic(request).AsTask().ConfigureAwait(false);
 
         if (report is IFullDocumentDiagnosticReport fullReport)
         {
@@ -196,7 +195,7 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
         };
 
         _service.LogDebug($"Requesting document folding ranges.");
-        var foldings = await LanguageClient.RequestFoldingRange(request);
+        var foldings = await LanguageClient.RequestFoldingRange(request).AsTask().ConfigureAwait(false);
         if (foldings is not null)
         {
             _service.LogDebug($"Received {foldings.Count()} document folding ranges.");

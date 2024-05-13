@@ -1,4 +1,5 @@
-﻿using OmniSharp.Extensions.LanguageServer.Protocol.Client;
+﻿using AsyncAwaitBestPractices;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using Rubberduck.Editor.Shell.Tools.WorkspaceExplorer;
@@ -17,20 +18,21 @@ namespace Rubberduck.Editor.Commands;
 public class RenameUriCommand : CommandBase
 {
     private readonly Lazy<ILanguageClient> _lsp;
-    private readonly IProjectFileService _projectFileService;
     private readonly IAppWorkspacesService _workspaceServices;
+    private readonly IWorkspaceIOServices _ioServices;
 
     public RenameUriCommand(UIServiceHelper service,
-        IProjectFileService projectFileService, IAppWorkspacesService workspaceService,
+        IWorkspaceIOServices ioServices,
+        IAppWorkspacesService workspaceService,
         Func<ILanguageClient> lsp) 
         : base(service)
     {
+        _ioServices = ioServices;
         _lsp = new Lazy<ILanguageClient>(lsp);
-        _projectFileService = projectFileService;
         _workspaceServices = workspaceService;
     }
 
-    protected override Task OnExecuteAsync(object? parameter)
+    protected async override Task OnExecuteAsync(object? parameter)
     {
         if (parameter is IWorkspaceFileViewModel fileNode)
         {
@@ -39,11 +41,17 @@ public class RenameUriCommand : CommandBase
 
             if (oldName != newName)
             {
-                var oldUri = fileNode.Uri;
+                var oldUri = (WorkspaceFileUri)fileNode.Uri;
                 fileNode.FileName = newName; // implementation updates the URI
                 
-                UpdateProjectFile(fileNode, oldUri);
-                NotifyLanguageServer(oldUri, fileNode.Uri);
+                await Task.WhenAll(
+                    UpdateProjectFileAsync(fileNode, oldUri),
+                    _ioServices.WorkspaceFile.RenameAsync(oldUri, (WorkspaceFileUri)fileNode.Uri)).ConfigureAwait(false);
+
+                if (fileNode.IsInProject)
+                {
+                    NotifyLanguageServer(oldUri, fileNode.Uri);
+                }
             }
         }
         else if (parameter is IWorkspaceFolderViewModel folderNode)
@@ -53,20 +61,26 @@ public class RenameUriCommand : CommandBase
 
             if (oldName != newName)
             {
-                var oldUri = folderNode.Uri;
+                var oldUri = new WorkspaceFolderUri(folderNode.Uri.RelativeUriString, folderNode.Uri.WorkspaceRoot);
                 folderNode.FileName = newName;
+
+                var newUri = new WorkspaceFolderUri(folderNode.Uri.RelativeUriString, folderNode.Uri.WorkspaceRoot);
 
                 foreach (var childNode in folderNode.Children)
                 {
-                    UpdateNodePath(childNode, oldUri, (WorkspaceFolderUri)folderNode.Uri);
+                    UpdateNodePath(childNode, oldUri, newUri);
                 }
 
-                UpdateProjectFile(folderNode, oldUri);
-                NotifyLanguageServer(oldUri, folderNode.Uri);
+                await Task.WhenAll(
+                    UpdateProjectFileAsync(folderNode, oldUri), 
+                    _ioServices.WorkspaceFolder.RenameAsync(oldUri, newUri)).ConfigureAwait(false);
+
+                if (folderNode.IsInProject)
+                {
+                    NotifyLanguageServer(oldUri, folderNode.Uri);
+                }
             }
         }
-
-        return Task.CompletedTask;
     }
 
     private void UpdateNodePath(IWorkspaceTreeNode node, WorkspaceUri oldUri, WorkspaceFolderUri folder)
@@ -93,8 +107,13 @@ public class RenameUriCommand : CommandBase
         }
     }
 
-    private void UpdateProjectFile(IWorkspaceTreeNode model, WorkspaceUri oldUri)
+    private async Task UpdateProjectFileAsync(IWorkspaceTreeNode model, WorkspaceUri oldUri)
     {
+        if (!model.IsInProject)
+        {
+            return;
+        }
+
         var project = _workspaceServices.ProjectFiles.Single(e => e.Uri == model.Uri.WorkspaceRoot);
 
         if (model is IWorkspaceFolderViewModel)
@@ -109,7 +128,7 @@ public class RenameUriCommand : CommandBase
         }
         else if (model is IWorkspaceSourceFileViewModel)
         {
-            var module = project.VBProject.Modules.Single(e => e.RelativeUri == oldUri.RelativeUriString);
+            var module = project.VBProject.Modules.Single(e => e.RelativeUri.Replace("\\", "/").Substring(1) == oldUri.RelativeUriString);
             project = project with
             {
                 VBProject = project.VBProject with
@@ -137,8 +156,7 @@ public class RenameUriCommand : CommandBase
             };
         }
 
-        _projectFileService.WriteAsync(project);
-        _workspaceServices.UpdateProjectFileAsync(project);
+        await _workspaceServices.UpdateProjectFileAsync(project).ConfigureAwait(false);
     }
 
     private void NotifyLanguageServer(Uri oldUri, Uri newUri)

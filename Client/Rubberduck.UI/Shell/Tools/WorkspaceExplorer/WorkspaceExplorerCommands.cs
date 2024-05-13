@@ -9,6 +9,8 @@ public static class WorkspaceExplorerCommands
     public static RoutedUICommand OpenFileCommand { get; }
         = new RoutedUICommand(Resx.WorkspaceExplorerCommands_OpenFileCommandText, nameof(OpenFileCommand), typeof(WorkspaceExplorerControl));
 
+    public static RoutedUICommand CancelRenameUriCommand { get; }
+        = new RoutedUICommand(Resx.WorkspaceExplorerCommands_CancelRenameUriCommandText, nameof(CancelRenameUriCommand), typeof(WorkspaceExplorerControl));
     public static RoutedUICommand RenameUriCommand { get; }
         = new RoutedUICommand(Resx.WorkspaceExplorerCommands_RenameUriCommandText, nameof(RenameUriCommand), typeof(WorkspaceExplorerControl));
 

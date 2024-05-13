@@ -177,6 +177,9 @@
   <data name="SettingCommands_ShowSettingsCommandText" xml:space="preserve">
     <value>Settings</value>
   </data>
+  <data name="WorkspaceExplorerCommands_CancelRenameUriCommandText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
   <data name="WorkspaceExplorerCommands_CollapseFolderCommandText" xml:space="preserve">
     <value>Collapse</value>
   </data>

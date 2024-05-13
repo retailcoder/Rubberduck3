@@ -18,7 +18,7 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
     private readonly IAppWorkspacesStateManager _workspaces;
     private readonly IWorkspaceIOServices _ioServices;
 
-    private readonly HashSet<ProjectFile> _projectFiles = [];
+    private readonly Dictionary<Uri, ProjectFile> _projectFiles = [];
 
     public event EventHandler<WorkspaceServiceEventArgs> WorkspaceOpened = delegate { };
     public event EventHandler<WorkspaceServiceEventArgs> WorkspaceClosed = delegate { };
@@ -34,7 +34,7 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
     protected IWorkspaceIOServices IOServices => _ioServices;
     public IAppWorkspacesStateManager Workspaces => _workspaces;
 
-    public bool IsOpened(Uri root) => _projectFiles.Any(e => e.Uri == root);
+    public bool IsOpened(Uri root) => _projectFiles.Keys.Contains(root);
 
     /// <summary>
     /// For a LSP client, starts the LSP server at the specified workspace URI.
@@ -53,9 +53,13 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
     /// </summary>
     public void OnWorkspaceClosed(Uri uri) => WorkspaceClosed(this, new(uri));
 
-    public IEnumerable<ProjectFile> ProjectFiles => _projectFiles;
+    public IEnumerable<ProjectFile> ProjectFiles => _projectFiles.Values;
 
-    public async Task UpdateProjectFileAsync(ProjectFile projectFile) => await _ioServices.ProjectFile.WriteAsync(projectFile);
+    public async Task UpdateProjectFileAsync(ProjectFile projectFile)
+    {
+        _projectFiles[projectFile.Uri] = projectFile;
+        await _ioServices.ProjectFile.WriteAsync(projectFile).ConfigureAwait(false);
+    }
 
     public async Task<bool> OpenProjectWorkspaceAsync(Uri uri)
     {
@@ -85,7 +89,7 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
             }
 
             await LoadWorkspaceFilesAsync(uri, projectFile).ConfigureAwait(false);
-            _projectFiles.Add(projectFile);
+            _projectFiles[projectFile.Uri] = projectFile;
 
             OnWorkspaceOpenedAsync(uri).SafeFireAndForget();
             return true;
@@ -93,6 +97,10 @@ public class AppWorkspacesService : ServiceBase, IAppWorkspacesService
         catch (Exception exception)
         {
             LogException(exception);
+
+            // discard: we only care that this uri isn't a key when we exit; whether it was or wasn't added/removed is irrelevant.
+            _ = _projectFiles.Remove(uri);
+
             return false;
         }
     }

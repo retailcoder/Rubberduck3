@@ -70,7 +70,7 @@ public static class TimedAction
         var sw = Stopwatch.StartNew();
         try
         {
-            result = await action.Invoke();
+            result = await action.Invoke().ConfigureAwait(false);
         }
         catch (Exception e)
         {

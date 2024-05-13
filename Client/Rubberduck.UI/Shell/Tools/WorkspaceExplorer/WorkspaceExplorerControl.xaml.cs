@@ -122,4 +122,29 @@ public partial class WorkspaceExplorerControl : UserControl
             }
         }
     }
+
+    private void RenameBoxLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (sender is TextBox box)
+        {
+            if (box.DataContext is IWorkspaceTreeNode vm)
+            {
+                vm.EditName = box.Text;
+            }
+        }
+    }
+
+    private void RenameBoxKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is TextBox box)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (box.DataContext is IWorkspaceTreeNode vm)
+                {
+                    vm.EditName = box.Text;
+                }
+            }
+        }
+    }
 }

@@ -241,6 +241,15 @@ namespace Rubberduck.Resources.v3 {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        public static string WorkspaceExplorerCommands_CancelRenameUriCommandText {
+            get {
+                return ResourceManager.GetString("WorkspaceExplorerCommands_CancelRenameUriCommandText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Collapse.
         /// </summary>
         public static string WorkspaceExplorerCommands_CollapseFolderCommandText {

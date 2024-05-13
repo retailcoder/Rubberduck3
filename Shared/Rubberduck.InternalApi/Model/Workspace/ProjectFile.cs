@@ -45,4 +45,6 @@ public record class ProjectFile
     public RubberduckProject VBProject { get; init; } = new();
 
     public ProjectFile WithUri(Uri uri) => this with { Uri = uri };
+
+    public override int GetHashCode() => Uri.GetHashCode();
 }

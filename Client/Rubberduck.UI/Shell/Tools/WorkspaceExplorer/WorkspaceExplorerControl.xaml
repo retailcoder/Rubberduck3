@@ -56,7 +56,11 @@
                             </MultiBinding>
                         </Image.Source>
                     </Image>
-                    <Label Content="{Binding DisplayName}" Style="{StaticResource NodeLabelStyle}" />
+                    <Label Content="{Binding DisplayName}" Style="{DynamicResource NodeLabelStyle}">
+                        <Label.Resources>
+                            <KeyBinding x:Key="RenameCommand" Key="F2" Command="{x:Static local:WorkspaceExplorerCommands.RenameUriCommand}" CommandParameter="{Binding}" />
+                        </Label.Resources>
+                    </Label>
                 </DockPanel>
             </HierarchicalDataTemplate>
             
@@ -69,7 +73,13 @@
                             </MultiBinding>
                         </Image.Source>
                     </Image>
-                    <TextBox Text="{Binding EditName, UpdateSourceTrigger=LostFocus}" Style="{StaticResource TreeNodeEditableLabel}" />
+                    <TextBox Text="{Binding EditName, UpdateSourceTrigger=Explicit}" Style="{DynamicResource TreeNodeEditableLabel}" 
+                             KeyDown="RenameBoxKeyDown"
+                             LostKeyboardFocus="RenameBoxLostKeyboardFocus">
+                        <TextBox.Resources>
+                            <KeyBinding x:Key="CancelRenameCommand" Key="Esc" Command="{x:Static local:WorkspaceExplorerCommands.CancelRenameUriCommand}" CommandParameter="{Binding}" />
+                        </TextBox.Resources>
+                    </TextBox>
                 </DockPanel>
             </HierarchicalDataTemplate>
 

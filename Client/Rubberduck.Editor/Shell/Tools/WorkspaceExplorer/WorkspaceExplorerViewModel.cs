@@ -87,6 +87,16 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                         node.NameEditCompleted += OnNameEditCompleted;
                     }
                 });
+            var cancelRenameUriCommand = new DelegateCommand(UIServiceHelper.Instance!,
+                parameter =>
+                {
+                    var node = this.Workspaces.Select(e => e.FindChildNode((WorkspaceUri)parameter!)).SingleOrDefault();
+                    if (node != null)
+                    {
+                        node.IsEditingName = false;
+                        node.NameEditCompleted -= OnNameEditCompleted;
+                    }
+                });
 
             CommandBindings = [
                 new CommandBinding(WorkspaceExplorerCommands.OpenFileCommand, openDocumentCommand.ExecutedRouted(), openDocumentCommand.CanExecuteRouted()),
@@ -96,6 +106,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 new CommandBinding(WorkspaceExplorerCommands.CreateFolderCommand, ((CommandBase)_handlers.CreateFolderCommand).ExecutedRouted(), ((CommandBase)_handlers.CreateFolderCommand).CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.DeleteUriCommand, ((CommandBase)_handlers.DeleteUriCommand).ExecutedRouted(), ((CommandBase)_handlers.DeleteUriCommand).CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.RenameUriCommand, prepareRenameUriCommand.ExecutedRouted()),
+                new CommandBinding(WorkspaceExplorerCommands.CancelRenameUriCommand, cancelRenameUriCommand.ExecutedRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.ExpandFolderCommand, expandFolderCommand.ExecutedRouted(), expandFolderCommand.CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.CollapseFolderCommand, collapseFolderCommand.ExecutedRouted(), collapseFolderCommand.CanExecuteRouted()),
                 new CommandBinding(WorkspaceExplorerCommands.NewProjectCommand,((CommandBase)_handlers.NewProjectCommand).ExecutedRouted()),

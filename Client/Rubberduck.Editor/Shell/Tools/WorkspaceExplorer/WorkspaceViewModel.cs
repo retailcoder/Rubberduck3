@@ -344,7 +344,7 @@ public class WorkspaceViewModel : ViewModelBase, IWorkspaceTreeNode, IWorkspaceV
         }
     }
 
-    public WorkspaceUri Uri { get; set; } = default!; // FIXME this will come back to bite me...
+    public WorkspaceUri Uri { get; set; } = default!;
     public string FileName { get; set; } = ProjectFile.FileName;
 
     public void AddChildNode(IWorkspaceTreeNode childNode)

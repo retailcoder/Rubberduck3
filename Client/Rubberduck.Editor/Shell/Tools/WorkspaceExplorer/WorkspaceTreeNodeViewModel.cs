@@ -1,4 +1,5 @@
-﻿using Rubberduck.InternalApi.Extensions;
+﻿using AsyncAwaitBestPractices;
+using Rubberduck.InternalApi.Extensions;
 using Rubberduck.UI;
 using Rubberduck.UI.Shell.Tools.WorkspaceExplorer;
 using System;
@@ -7,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 
@@ -44,6 +46,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _name = value;
                     OnPropertyChanged();
+
+                    _editName = _name;
                     DisplayName = _name;
                 }
             }
@@ -71,6 +75,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                         OnPropertyChanged();
                     }
                     IsEditingName = false;
+                    RefreshItems();
                 }
             }
         }
@@ -85,6 +90,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _displayName = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
         }
@@ -99,6 +105,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _uri = value;
                     OnPropertyChanged();
+                    DisplayName = _uri.Name;
                 }
             }
         }
@@ -111,12 +118,19 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
             {
                 if (_fileName != value)
                 {
-                    var oldValue = _fileName;
+                    var oldValue = _fileName ?? System.IO.Path.GetFileName(Uri.AbsoluteLocation.LocalPath);
                     _fileName = value;
                     OnPropertyChanged();
 
-                    var extension = _uri.AbsoluteLocation.LocalPath.Split(".").Last();
-                    Uri = new WorkspaceFileUri(System.IO.Path.Combine(_uri.AbsoluteLocation.LocalPath[..^(oldValue?.Length ?? 0)] + "." + extension, value), _uri.WorkspaceRoot);
+                    if (Uri is WorkspaceFileUri)
+                    {
+                        var extension = _uri.AbsoluteLocation.LocalPath.Split(".").Last();
+                        Uri = new WorkspaceFileUri(System.IO.Path.Combine(_uri.AbsoluteLocation.LocalPath[..^(oldValue?.Length ?? 0)] + "." + extension, value), _uri.WorkspaceRoot);
+                    }
+                    else if (Uri is WorkspaceFolderUri)
+                    {
+                        Uri = new WorkspaceFolderUri(System.IO.Path.Combine(_uri.AbsoluteLocation.LocalPath[..^(oldValue?.Length ?? 0)], value), _uri.WorkspaceRoot);
+                    }
                 }
             }
         }
@@ -131,6 +145,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isInProject = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
         }
@@ -163,6 +178,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isOpen = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
         }
@@ -177,6 +193,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isFileWatcherEnabled = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
         }
@@ -192,6 +209,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isSelected = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
         }
@@ -199,6 +217,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
         public void AddChildNode(IWorkspaceTreeNode childNode)
         {
             _children.Add(childNode);
+            RefreshItems();
         }
 
         private bool _isFiltered;
@@ -211,6 +230,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isFiltered = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
         }
@@ -225,6 +245,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isExpanded = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
         }
@@ -239,6 +260,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isEditingName = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
         }
@@ -257,8 +279,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                         node.ShowFileExtensions = _showFileExtensions;
                     }
                     OnPropertyChanged();
+                    RefreshItems();
                 }
-                ItemsViewSource.Refresh();
             }
         }
 
@@ -276,8 +298,8 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                         node.ShowAllFiles = _showAllFiles;
                     }
                     OnPropertyChanged();
+                    RefreshItems();
                 }
-                ItemsViewSource.Refresh();
             }
         }
 
@@ -291,6 +313,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isLoadError = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
         }
@@ -305,6 +328,7 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isVisible = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
         }
@@ -319,8 +343,14 @@ namespace Rubberduck.Editor.Shell.Tools.WorkspaceExplorer
                 {
                     _isDeleted = value;
                     OnPropertyChanged();
+                    RefreshItems();
                 }
             }
+        }
+
+        private void RefreshItems()
+        {
+            Application.Current.Dispatcher.BeginInvoke(ItemsViewSource.Refresh).Task.SafeFireAndForget();
         }
     }
 }
