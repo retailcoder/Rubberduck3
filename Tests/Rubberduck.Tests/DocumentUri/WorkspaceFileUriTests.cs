@@ -1,12 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Model.Workspace;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using SUT = Rubberduck.InternalApi.Extensions.WorkspaceFileUri;
 namespace Rubberduck.Tests.DocumentUri;

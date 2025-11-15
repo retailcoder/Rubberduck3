@@ -1,12 +1,12 @@
-﻿using System;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+﻿using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.Model.Declarations.Types;
+using System;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 
-public record class VBDateValue : VBTypedValue, 
+public record class VBDateValue : VBTypedValue,
     IVBTypedValue<VBDateValue, DateTime>,
-    INumericCoercion, 
+    INumericCoercion,
     IStringCoercion
 {
     public VBDateValue(TypedSymbol? declarationSymbol = null)
@@ -46,4 +46,6 @@ public record class VBDateValue : VBTypedValue,
         }
         return this with { Value = Zero.Value.AddDays(value) };
     }
+
+    public override string ToString() => Value.ToString("yyyy-MM-dd hh:mm:ss tt");
 }

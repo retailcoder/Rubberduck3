@@ -5,6 +5,22 @@ using System.Linq;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
 
+public record class VBTypeDesc : VBType
+{
+    private static readonly VBTypeDesc _type = new(nameof(VBType));
+
+    public VBTypeDesc(string name)
+        : base(typeof(Type), name, isUserDefined: false, isHidden: true)
+    {
+    }
+
+    public static VBTypeDesc TypeInfo => _type;
+    public override VBTypedValue DefaultValue { get; } = new VBTypeDescValue(VBVariantType.TypeInfo);
+}
+
+/// <summary>
+/// A base abstract class representing any VB data type.
+/// </summary>
 public abstract record class VBType
 {
     public VBType(Type? managedType, string name, bool isUserDefined = false, bool isHidden = false)
@@ -15,6 +31,9 @@ public abstract record class VBType
         IsHidden = isHidden;
     }
 
+    /// <summary>
+    /// The underlying managed type that represents this VB type, if any.
+    /// </summary>
     public Type? ManagedType { get; init; }
 
     /// <summary>
@@ -25,7 +44,14 @@ public abstract record class VBType
     /// </remarks>
     public string Name { get; init; }
 
+    /// <summary>
+    /// Whether this type is defined by user code.
+    /// </summary>
     public bool IsUserDefined { get; init; }
+
+    /// <summary>
+    /// Only <c>true</c> for types that are hidden from the user in IntelliSense.
+    /// </summary>
     public bool IsHidden { get; init; }
 
     /// <summary>

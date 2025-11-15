@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Moq;
+using NSubstitute;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model;
 using Rubberduck.InternalApi.Model.Declarations.Execution;
@@ -26,7 +26,8 @@ public abstract class OperatorTests : ServiceBaseTest
 
     protected override void ConfigureServices(IServiceCollection services)
     {
-        ((Mock<IFileSystem>)Mocks[typeof(IFileSystem)]).Setup(m => m.Path.Combine(It.IsAny<string>(), It.IsAny<string>())).Returns(() => "some path");
+        ((IPath)Mocks[typeof(IPath)]).Combine(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>()).Returns("some path");
+        ((IFileSystem)Mocks[typeof(IFileSystem)]).Path.Returns((IPath)Mocks[typeof(IPath)]);
 
         base.ConfigureServices(services);
         services.AddScoped<VBExecutionContext>();

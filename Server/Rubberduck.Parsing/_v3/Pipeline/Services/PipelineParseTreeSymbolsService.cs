@@ -1,12 +1,12 @@
 ﻿using Antlr4.Runtime.Tree;
-using Rubberduck.Parsing._v3.Pipeline.Services;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
-using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Settings;
-using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
+using Rubberduck.InternalApi.Settings;
 using Rubberduck.InternalApi.Settings.Model;
+using Rubberduck.Parsing._v3.Pipeline.Services;
 
 namespace Rubberduck.Parsing._v3.Pipeline;
 public abstract class SyntaxTreeTraversalService
@@ -70,7 +70,7 @@ public class PipelineParseTreeSymbolsService : SyntaxTreeTraversalService
     /// <returns>
     /// Returns a copy of the provided <c>moduleSymbol</c> with all its members, including parameters. Types are not resolved, unless implicit or intrinsic.
     /// </returns>
-    public Symbol DiscoverHierarchicalSymbols(IParseTree tree, WorkspaceFileUri uri) => TraverseTree(tree, new HierarchicalSymbolsListener(uri));
+    public Symbol DiscoverHierarchicalSymbols(IParseTree tree, WorkspaceFileUri uri) => TraverseTree(tree, new MemberSymbolsListener(_logger, uri));
 
     /// <summary>
     /// Resolves a <c>VBType</c> for all symbols in the provided module.

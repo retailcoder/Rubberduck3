@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
+using Rubberduck.Unmanaged.Registration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
-using Rubberduck.Unmanaged.Registration;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Types;
 
@@ -21,5 +21,11 @@ public record class VBCollectionType : VBClassType, IEnumerableType
     }
 
     public bool IsArray { get; } = false;
+    /// <summary>
+    /// The member that provides the enumerator for this collection.
+    /// </summary>
+    /// <remarks>
+    /// Controlled by the <c>VB_UserMemId</c> attribute with a value of <c>-4</c> or the <c>@NewEnum</c> annotation.
+    /// </remarks>
     public VBReturningMember? NewEnumMember { get; init; }
 }

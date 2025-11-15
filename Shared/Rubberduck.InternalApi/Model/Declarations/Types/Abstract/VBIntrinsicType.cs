@@ -10,20 +10,20 @@ public abstract record class VBIntrinsicType : VBType
         [
             VBBooleanType.TypeInfo,
             VBByteType.TypeInfo,
+            VBCurrencyType.TypeInfo,
+            VBDateType.TypeInfo,
+            VBDecimalType.TypeInfo,
+            VBDoubleType.TypeInfo,
+            VBEmptyType.TypeInfo,
+            VBErrorType.TypeInfo,
             VBIntegerType.TypeInfo,
             VBLongType.TypeInfo,
             VBLongLongType.TypeInfo,
-            VBCurrencyType.TypeInfo,
-            VBDecimalType.TypeInfo,
-            VBSingleType.TypeInfo,
-            VBDoubleType.TypeInfo,
-            VBDateType.TypeInfo,
-            VBStringType.TypeInfo,
-            VBVariantType.TypeInfo,
-            VBObjectType.TypeInfo,
-            VBEmptyType.TypeInfo,
             VBNullType.TypeInfo,
-            VBErrorType.TypeInfo,
+            VBSingleType.TypeInfo,
+            VBStringType.TypeInfo,
+            VBObjectType.TypeInfo,
+            VBVariantType.TypeInfo,
         ];
 
     protected VBIntrinsicType(string name, Type managedType)
@@ -55,7 +55,7 @@ public abstract record class VBIntrinsicType : VBType
 
 public abstract record class VBIntrinsicType<T> : VBIntrinsicType
 {
-    protected VBIntrinsicType(string name) 
+    protected VBIntrinsicType(string name)
         : base(name, typeof(T))
     {
     }

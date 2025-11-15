@@ -47,7 +47,7 @@ public record class VBAssignmentOperator : VBBinaryOperator
                 }
                 else
                 {
-                    throw VBRuntimeErrorException.TypeMismatch(this, "This reference assignment is referring to incompatible object types.");
+                    throw VBRuntimeErrorException.TypeMismatch(Range, "This reference assignment is referring to incompatible object types.");
                 }
             }
             else if (_kind == AssignmentKind.ValueAssignment)
@@ -74,7 +74,7 @@ public record class VBAssignmentOperator : VBBinaryOperator
                     return letCoercedValue;
                 }
 
-                throw VBRuntimeErrorException.TypeMismatch(this, "This value assignment is referring to incompatible data types.");
+                throw VBRuntimeErrorException.TypeMismatch(Range, "This value assignment is referring to incompatible data types.");
             }
             else if (_kind == AssignmentKind.ValueAssignment)
             {
@@ -84,7 +84,7 @@ public record class VBAssignmentOperator : VBBinaryOperator
                 }
                 else
                 {
-                    throw VBRuntimeErrorException.TypeMismatch(this, "This value assignment is referring to conflicting data types.");
+                    throw VBRuntimeErrorException.TypeMismatch(Range, "This value assignment is referring to conflicting data types.");
                 }
             }
         }

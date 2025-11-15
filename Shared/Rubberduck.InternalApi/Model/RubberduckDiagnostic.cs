@@ -3,6 +3,7 @@ using Rubberduck.InternalApi.Model.Declarations.Execution;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using System;
+using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace Rubberduck.InternalApi.Model;
 
@@ -51,7 +52,7 @@ public enum RubberduckDiagnosticId
     ObsoleteTypeHint,
     ObsoleteWhileWend,
     ObsoleteOnLocalErrorStatement,
-    
+
     ObsoleteMemberUsage = 401, // members with an @Obsolete annotation
     InvalidAnnotation = 404, // @NotAnAnnotationButParsedLikeOne
 
@@ -80,26 +81,27 @@ public static class RubberduckDiagnosticIdExtensions
 public record class RubberduckDiagnostic : Diagnostic
 {
     private static Diagnostic CreateDiagnostic(Symbol symbol, DiagnosticSeverity severity, RubberduckDiagnosticId id, string message, string? source = null) =>
-    CreateDiagnostic(symbol, severity, $"RD3{(int)id:00000}", message, source);
-    private static Diagnostic CreateDiagnostic(Symbol symbol, DiagnosticSeverity severity, string code, string message, string? source = null) =>
+        CreateDiagnostic(symbol.Range, severity, $"RD3{(int)id:00000}", message, source);
+
+    private static Diagnostic CreateDiagnostic(Range location, DiagnosticSeverity severity, string code, string message, string? source = null) =>
         new()
         {
             Code = new DiagnosticCode(code),
             CodeDescription = new CodeDescription { Href = new Uri($"https://rd3.rubberduckvba.com/diagnostics/{code}") },
             Message = message,
             Severity = severity,
-            Source = source ?? symbol.Uri.ToString(),
-            Range = symbol?.Range!,
+            Source = source,
+            Range = location,
         };
 
 
     /* [VBC]: VB [C]ompile-time errors */
     public static Diagnostic CompileError(VBCompileErrorException error) =>
-        CreateDiagnostic(error.Symbol, DiagnosticSeverity.Error, error.DiagnosticCode, error.Message, error.StackTrace);
+        CreateDiagnostic(error.Symbol.Range, DiagnosticSeverity.Error, error.DiagnosticCode, error.Message, error.StackTrace);
 
     /* [VBR]: VB [R]un-time errors */
-    public static Diagnostic RuntimeError(VBRuntimeErrorException error) => 
-        CreateDiagnostic(error.Symbol, DiagnosticSeverity.Error, error.DiagnosticCode, error.Message, error.StackTrace);
+    public static Diagnostic RuntimeError(VBRuntimeErrorException error) =>
+        CreateDiagnostic(error.Location, DiagnosticSeverity.Error, error.DiagnosticCode, error.Message, error.StackTrace);
 
     /* [RD3]: RD3 Language Server diagnostics */
     public static Diagnostic PreferConcatOperatorForStringConcatenation(Symbol symbol) =>

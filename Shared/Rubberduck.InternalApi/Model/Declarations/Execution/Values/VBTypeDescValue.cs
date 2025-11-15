@@ -1,5 +1,4 @@
-﻿using Rubberduck.InternalApi.Model.Declarations.Symbols;
-using System;
+﻿using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 
@@ -11,8 +10,8 @@ namespace Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 /// </remarks>
 public record class VBTypeDescValue : VBTypedValue
 {
-    public VBTypeDescValue(TypedSymbol symbol) 
-        : base(symbol.ResolvedType!, symbol) { }
+    public VBTypeDescValue(VBType symbol)
+        : base(symbol) { }
 
     public override int Size => sizeof(int);
 }

@@ -14,4 +14,7 @@ public record class VBStringType : VBIntrinsicType<string?>
     public override VBType[] ConvertsSafelyToTypes { get; } = [VBVariantType.TypeInfo];
 }
 
-public record class VBFixedStringType : VBStringType { }
+public record class VBFixedStringType : VBStringType
+{
+    public int Length { get; init; }
+}

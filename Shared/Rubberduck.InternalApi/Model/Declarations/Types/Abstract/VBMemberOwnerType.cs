@@ -5,6 +5,9 @@ using System.Linq;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
 
+/// <summary>
+/// The base abstract class for VB types that can own members (e.g., classes, modules, etc.).
+/// </summary>
 public abstract record class VBMemberOwnerType : VBType, IVBMemberOwnerType
 {
     public VBMemberOwnerType(string name, Uri uri, bool isUserDefined = false, IEnumerable<VBTypeMember>? members = null, bool isHidden = false)
@@ -16,7 +19,7 @@ public abstract record class VBMemberOwnerType : VBType, IVBMemberOwnerType
 
     public Uri Uri { get; init; }
     public ImmutableArray<VBTypeMember> Members { get; init; }
-    public VBTypeMember? this[string name] => Members.SingleOrDefault(e => e.Name == name 
+    public VBTypeMember? this[string name] => Members.SingleOrDefault(e => e.Name == name
         && (e is not IVBProperty || e is VBPropertyGetMember || e is VBPropertyLetMember || e is VBPropertySetMember));
 
     public VBMemberOwnerType WithMembers(IEnumerable<VBTypeMember> members) => this with { Members = members.ToImmutableArray() };

@@ -1,14 +1,14 @@
-﻿using System.Diagnostics;
+﻿using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.Model;
+using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.VBEditor.Utility;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Runtime.Serialization;
-using Rubberduck.VBEditor.Utility;
-using TYPEATTR = System.Runtime.InteropServices.ComTypes.TYPEATTR;
 using IMPLTYPEFLAGS = System.Runtime.InteropServices.ComTypes.IMPLTYPEFLAGS;
+using TYPEATTR = System.Runtime.InteropServices.ComTypes.TYPEATTR;
 using TYPEFLAGS = System.Runtime.InteropServices.ComTypes.TYPEFLAGS;
-using Rubberduck.InternalApi.Model;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
-using Rubberduck.InternalApi.Extensions;
 
 namespace Rubberduck.Parsing.Model.ComReflection;
 
@@ -55,7 +55,7 @@ public class ComCoClass : ComType, IComTypeWithMembers
         }
     }
 
-    public ComCoClass(IComBase parent, ITypeLib typeLib, ITypeInfo info, TYPEATTR attrib, int index) : base (parent, typeLib, attrib, index)
+    public ComCoClass(IComBase parent, ITypeLib typeLib, ITypeInfo info, TYPEATTR attrib, int index) : base(parent, typeLib, attrib, index)
     {
         Type = DeclarationType.ClassModule;
         GetImplementedInterfaces(info, attrib);
@@ -109,6 +109,6 @@ public class ComCoClass : ComType, IComTypeWithMembers
     {
         var instancing = Instancing.PublicNotCreatable; // TODO
         var children = new List<Symbol>(); // TODO
-        return new ClassModuleSymbol(instancing, Name, uri, children, isUserDefined: false); 
+        return new ClassModuleSymbol(instancing, Name, uri, children, IsPreDeclared, isUserDefined: false);
     }
 }

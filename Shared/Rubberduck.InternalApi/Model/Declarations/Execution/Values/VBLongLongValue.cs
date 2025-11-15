@@ -1,5 +1,4 @@
-﻿using Rubberduck.InternalApi.Model.Declarations.Symbols;
-using Rubberduck.InternalApi.Model.Declarations.Types;
+﻿using Rubberduck.InternalApi.Model.Declarations.Types;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 
@@ -7,7 +6,7 @@ public record class VBLongLongValue : VBNumericTypedValue,
     IVBTypedValue<VBLongLongValue, long>,
     INumericValue<VBLongLongValue>
 {
-    public VBLongLongValue(TypedSymbol? declarationSymbol = null)
+    public VBLongLongValue(Symbols.TypedSymbol? declarationSymbol = null)
         : base(VBLongLongType.TypeInfo, declarationSymbol) { }
 
     public static VBLongLongValue MinValue { get; } = new VBLongLongValue { NumericValue = long.MinValue };
@@ -18,10 +17,10 @@ public record class VBLongLongValue : VBNumericTypedValue,
     VBLongLongValue INumericValue<VBLongLongValue>.Zero => Zero;
     VBLongLongValue INumericValue<VBLongLongValue>.MaxValue => MaxValue;
 
-    public long Value => (long)NumericValue;    
+    public long Value => (long)NumericValue;
     public override int Size => sizeof(long);
     public override double NumericValue { get; init; }
 
     public new VBLongLongValue WithValue(double value) => this with { NumericValue = (long)value };
-    public VBLongLongValue WithValue(int value) => this with { NumericValue = (long)value };
+    public VBLongLongValue WithValue(long value) => this with { NumericValue = value };
 }

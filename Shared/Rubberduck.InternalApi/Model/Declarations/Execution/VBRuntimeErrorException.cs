@@ -3,6 +3,7 @@ using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Execution;
 
@@ -163,7 +164,8 @@ public class VBRuntimeErrorException : ApplicationException, IDiagnosticSource
     public static VBRuntimeErrorException SubscriptOutOfRange(Symbol symbol, string? verbose = null) => new(symbol, 9, verbose: verbose);
     public static VBRuntimeErrorException ArrayIsFixedOrLocked(Symbol symbol, string? verbose = null) => new(symbol, 10, verbose: verbose);
     public static VBRuntimeErrorException DivisionByZero(Symbol symbol, string? verbose = null) => new(symbol, 11, verbose: verbose);
-    public static VBRuntimeErrorException TypeMismatch(Symbol symbol, string? verbose = null) => new(symbol, 13, verbose: verbose);
+    public static VBRuntimeErrorException TypeMismatch(Range location, string? verbose = null) => new(location, 13, verbose: verbose);
+    public static VBRuntimeErrorException TypeMismatch(Symbol symbol, string? verbose = null) => new(symbol.Range, 13, verbose: verbose);
     public static VBRuntimeErrorException OutOfStringSpace(Symbol symbol, string? verbose = null) => new(symbol, 14, verbose: verbose);
     public static VBRuntimeErrorException ExpressionTooComplex(Symbol symbol, string? verbose = null) => new(symbol, 16, verbose: verbose);
     public static VBRuntimeErrorException CantPerformRequestedOperation(Symbol symbol, string? verbose = null) => new(symbol, 17, verbose: verbose);
@@ -244,28 +246,30 @@ public class VBRuntimeErrorException : ApplicationException, IDiagnosticSource
     public static VBRuntimeErrorException SearchTextNotFound(Symbol symbol, string? verbose = null) => new(symbol, 744, verbose: verbose);
     public static VBRuntimeErrorException ReplacementsTooLong(Symbol symbol, string? verbose = null) => new(symbol, 746, verbose: verbose);
 
-    public static VBRuntimeErrorException ApplicationDefinedError(Symbol symbol, int number = 1004, string? verbose = null) => new (symbol, number, VBRuntimeErrors[-1], verbose);
+    public static VBRuntimeErrorException ApplicationDefinedError(Symbol symbol, int number = 1004, string? verbose = null) => new(symbol, number, VBRuntimeErrors[-1], verbose);
     #endregion
 
     public VBRuntimeErrorException(Symbol symbol, int vBErrorNumber, string? message = null, string? verbose = null)
+        : this(symbol.Range, vBErrorNumber, message, verbose) { }
+    public VBRuntimeErrorException(Range location, int vBErrorNumber, string? message = null, string? verbose = null)
         : base($"Runtime error '{vBErrorNumber}': {message ?? (VBRuntimeErrors.TryGetValue(vBErrorNumber, out var errMessage) ? errMessage : VBRuntimeErrors[-1])}")
     {
-        Symbol = symbol;
+        Location = location;
         VBErrorNumber = vBErrorNumber;
         Verbose = verbose;
     }
 
     public string DiagnosticCode => $"VBR{VBErrorNumber:00000}";
-    public Symbol Symbol { get; }
+    public Range Location { get; }
     public int VBErrorNumber { get; }
     public string? Verbose { get; }
 
     public IEnumerable<Diagnostic> Diagnostics => [Diagnostic];
     public Diagnostic Diagnostic => RubberduckDiagnostic.RuntimeError(this);
 
-    public (int, string) Deconstruct(out int vbErrorNumber, out string message) => 
+    public (int, string) Deconstruct(out int vbErrorNumber, out string message) =>
         (vbErrorNumber = VBErrorNumber, message = Message);
 
-    public (int, string, string?) Deconstruct(out int vbErrorNumber, out string message, out string? verbose) => 
+    public (int, string, string?) Deconstruct(out int vbErrorNumber, out string message, out string? verbose) =>
         (vbErrorNumber = VBErrorNumber, message = Message, verbose = Verbose);
 }

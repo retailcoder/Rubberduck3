@@ -7,7 +7,7 @@ public record class VBVariantType : VBIntrinsicType<object?>
 {
     private static readonly VBVariantType _type = new();
 
-    private VBVariantType(VBType? subtype = null) : base(Tokens.Variant) 
+    private VBVariantType(VBType? subtype = null) : base(Tokens.Variant)
     {
         Subtype = subtype ?? VBEmptyType.TypeInfo;
     }

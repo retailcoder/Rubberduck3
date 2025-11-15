@@ -4,8 +4,8 @@ using Rubberduck.InternalApi.Model.Declarations.Types;
 namespace Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 
 public record class VBStringValue : VBTypedValue,
-    IVBTypedValue<VBStringValue, string>, 
-    INumericCoercion, 
+    IVBTypedValue<VBStringValue, string>,
+    INumericCoercion,
     IStringCoercion
 {
     public VBStringValue(TypedSymbol? symbol = null)
@@ -29,5 +29,7 @@ public record class VBStringValue : VBTypedValue,
         throw VBRuntimeErrorException.TypeMismatch(Symbol!, $"Numeric coercion failed to coerce \"{Value}\" to a numeric value.");
     }
 
-    public virtual VBStringValue WithValue(string? value) => this with { Value = value };
+    public virtual VBStringValue WithValue(string? value) => this with { Value = value ?? string.Empty };
+
+    public override string ToString() => Value ?? Tokens.vbNullString;
 }

@@ -1,5 +1,4 @@
-﻿using OmniSharp.Extensions.JsonRpc.Generation;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+﻿using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -44,6 +43,13 @@ public enum RubberduckSymbolKind
     Event = SymbolKind.Event,
     Operator = SymbolKind.Operator,
     //TypeParameter = SymbolKind.TypeParameter, /* no generics in Classic-VB */
+
+    /* 27-31: padding */
+
+    Expression = 32,
+    DateLiteral,
+    VariantLiteral,
+
 }
 
 public static class RubberduckSymbolKindExtensions

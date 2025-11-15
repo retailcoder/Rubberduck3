@@ -27,9 +27,9 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
     /// </summary>
     private readonly ConcurrentDictionary<string, ConcurrentStack<VBType>> _typeNames = new();
 
-    public VBExecutionContext(ILogger logger, 
-        RubberduckSettingsProvider settingsProvider, 
-        PerformanceRecordAggregator performance) 
+    public VBExecutionContext(ILogger logger,
+        RubberduckSettingsProvider settingsProvider,
+        PerformanceRecordAggregator performance)
         : base(logger, settingsProvider, performance)
     {
     }
@@ -49,6 +49,17 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
     public VBType ResolveType(string name, WorkspaceUri scopeUri)
     {
         var workspace = scopeUri.WorkspaceRoot;
+
+        var scopeSymbol = _symbolTable.Keys.SingleOrDefault(e => e.Uri == scopeUri);
+        var scopeClassSymbol = scopeSymbol is ClassModuleSymbol classSymbol
+            ? classSymbol
+            : _symbolTable.Keys.SingleOrDefault(e => e.Uri == scopeSymbol!.ParentUri) as ClassModuleSymbol;
+
+        if (name == Tokens.Me && scopeClassSymbol?.ResolvedType is VBClassType me)
+        {
+            return me;
+        }
+
         if (_typeNames.TryGetValue(name, out var candidates))
         {
             if (candidates.Count == 1)
@@ -91,7 +102,14 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
         _typeNames[key].Push(vbType);
     }
 
-
+    public VBType? TryGetVBType(string name)
+    {
+        if (_typeNames.TryGetValue(name, out var candidates) && candidates.TryPeek(out var vbType))
+        {
+            return vbType;
+        }
+        return null;
+    }
 
     public VBExecutionScope EnterScope(VBTypeMember member)
     {
@@ -120,7 +138,7 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
         return CurrentScope;
     }
 
-    public VBTypeMember? GetModuleMember(Symbol symbol) => 
+    public VBTypeMember? GetModuleMember(Symbol symbol) =>
         _symbolTable.Keys
             .Where(e => e is ClassModuleSymbol || e is StandardModuleSymbol)
             .SelectMany(e => ((VBMemberOwnerType)e.ResolvedType!).Members)

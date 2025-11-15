@@ -163,7 +163,7 @@ public abstract class CodeDocumentTabViewModel : DocumentTabViewModel, ICodeDocu
     {
         var request = new DocumentDiagnosticParams
         {
-            Identifier = "RDE",
+            Identifier = "RDE", // ???
             TextDocument = new TextDocumentIdentifier
             {
                 Uri = _uri.RelativeUriString!,

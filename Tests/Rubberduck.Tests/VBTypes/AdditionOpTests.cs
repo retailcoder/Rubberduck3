@@ -7,7 +7,6 @@ using Rubberduck.InternalApi.Model.Declarations.Operators;
 using Rubberduck.InternalApi.Model.Declarations.Operators.Abstract;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.Model.Declarations.Types;
-using Rubberduck.Tests.VBTypes;
 using System;
 
 namespace Rubberduck.Tests.VBTypes;

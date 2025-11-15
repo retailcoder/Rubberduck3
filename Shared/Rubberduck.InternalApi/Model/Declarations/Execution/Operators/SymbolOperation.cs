@@ -77,7 +77,7 @@ public static class SymbolOperation
                 return new VBDoubleValue(symbol) { NumericValue = (double)value };
             }
 
-            throw VBRuntimeErrorException.TypeMismatch(symbol);
+            throw VBRuntimeErrorException.TypeMismatch(symbol.Range);
         }
 
         if (context.GetTypedValue(symbol) is INumericCoercion coercible)
@@ -103,7 +103,7 @@ public static class SymbolOperation
         }
         else
         {
-            throw VBRuntimeErrorException.TypeMismatch(symbol);
+            throw VBRuntimeErrorException.TypeMismatch(symbol.Range);
         }
     }
 
@@ -128,7 +128,7 @@ public static class SymbolOperation
             }
         }
 
-        throw VBRuntimeErrorException.TypeMismatch(opSymbol, "The data types involved in this comparison operation are not compatible.");
+        throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "The data types involved in this comparison operation are not compatible.");
     }
 
     public static VBBooleanValue EvaluateCompareOpResult(ref VBExecutionScope context, TypedSymbol opSymbol, VBNumericTypedValue lhsValue, VBTypedValue rhsValue, Func<double, double, bool> compareOp)
@@ -161,7 +161,7 @@ public static class SymbolOperation
             return new VBBooleanValue(opSymbol) { Value = compareOp.Invoke(lhsNumeric, rhsCoerced) };
         }
 
-        throw VBRuntimeErrorException.TypeMismatch(opSymbol, "The data types involved in this comparison operation are not compatible.");
+        throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "The data types involved in this comparison operation are not compatible.");
     }
 
     public static VBTypedValue EvaluateBinaryOpResult(ref VBExecutionScope context, TypedSymbol opSymbol, VBTypedValue lhsValue, VBTypedValue rhsValue, Func<double, double, double> binaryOp)
@@ -193,7 +193,7 @@ public static class SymbolOperation
             return EvaluateNumericOp(ref context, opSymbol, lhsNumericValue, rhsValue, binaryOp);
         }
 
-        throw VBRuntimeErrorException.TypeMismatch(opSymbol, "The data types involved in this binary operation are not compatible.");
+        throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "The data types involved in this binary operation are not compatible.");
     }
 
     public static VBTypedValue EvaluateBinaryOpResult(ref VBExecutionScope context, TypedSymbol opSymbol, VBTypedValue lhsValue, VBTypedValue rhsValue, Func<int, int, int> binaryOp)
@@ -266,7 +266,7 @@ public static class SymbolOperation
             return new VBBooleanValue(opSymbol).WithValue(binaryOp.Invoke(lhsNumeric, rhsNumeric));
         }
 
-        throw VBRuntimeErrorException.TypeMismatch(opSymbol, "The data types involved in this binary operation are not compatible.");
+        throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "The data types involved in this binary operation are not compatible.");
     }
 
     public static VBTypedValue EvaluateBinaryOpResult(ref VBExecutionScope context, TypedSymbol opSymbol, VBTypedValue lhsValue, VBTypedValue rhsValue, Func<int, int, double> binaryOp)
@@ -319,7 +319,7 @@ public static class SymbolOperation
             return ((INumericValue)result).AsDouble();
         }
 
-        throw VBRuntimeErrorException.TypeMismatch(opSymbol, "The data types involved in this binary operation are not compatible.");
+        throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "The data types involved in this binary operation are not compatible.");
     }
 
     #region TODO refactor
@@ -343,12 +343,12 @@ public static class SymbolOperation
                 }
                 catch
                 {
-                    throw VBRuntimeErrorException.TypeMismatch(opSymbol, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
+                    throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
                 }
             }
             else if (!double.TryParse(lhsString.Value, out lhsNumberValue) || !double.IsRealNumber(lhsNumberValue))
             {
-                throw VBRuntimeErrorException.TypeMismatch(opSymbol, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
+                throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
             }
 
             var rhsNumberValue = numeric.NumericValue;
@@ -361,7 +361,7 @@ public static class SymbolOperation
         {
             if (!double.TryParse(lhsString.Value, out var lhsNumberValue))
             {
-                throw VBRuntimeErrorException.TypeMismatch(opSymbol, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
+                throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
             }
 
             var rhsNumberValue = coercible.AsCoercedNumeric()?.Value ?? 0;
@@ -383,7 +383,7 @@ public static class SymbolOperation
             throw VBCompileErrorException.InvalidUseOfObject(rhsValue.Symbol!, "Object could not be let-coerced into a `String`.");
         }
 
-        throw VBRuntimeErrorException.TypeMismatch(rhsValue.Symbol!, $"Could not coerce RHS operand ({rhsType.Name}) into a `String`.");
+        throw VBRuntimeErrorException.TypeMismatch(rhsValue.Symbol!.Range, $"Could not coerce RHS operand ({rhsType.Name}) into a `String`.");
     }
 
     private static VBTypedValue EvaluateStringCoercedIntegerOp(ref VBExecutionScope context, TypedSymbol opSymbol, VBStringValue lhsString, VBTypedValue rhsValue, Func<int, int, double> binaryOp)
@@ -395,7 +395,7 @@ public static class SymbolOperation
         }
 
         var rhsType = rhsValue.TypeInfo;
-        if (rhsValue is VBNumericTypedValue numeric) 
+        if (rhsValue is VBNumericTypedValue numeric)
         {
             double lhsNumberValue;
             if (lhsString.Value.StartsWith("&H"))
@@ -404,14 +404,14 @@ public static class SymbolOperation
                 {
                     lhsNumberValue = Convert.ToInt32(lhsString.Value.Replace("&H", "0x"), 16);
                 }
-                catch 
+                catch
                 {
-                    throw VBRuntimeErrorException.TypeMismatch(opSymbol, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
+                    throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
                 }
             }
             else if (!double.TryParse(lhsString.Value, out lhsNumberValue) || !double.IsRealNumber(lhsNumberValue))
             {
-                throw VBRuntimeErrorException.TypeMismatch(opSymbol, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
+                throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
             }
 
             var rhsNumberValue = numeric.NumericValue;
@@ -424,7 +424,7 @@ public static class SymbolOperation
         {
             if (!double.TryParse(lhsString.Value, out var lhsNumberValue))
             {
-                throw VBRuntimeErrorException.TypeMismatch(opSymbol, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
+                throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, "This expression evaluates to a `Double`; LHS `String` value must have a numeric value. Consider explicitly validating and converting the values first.");
             }
 
             var rhsNumberValue = coercible.AsCoercedNumeric()?.Value ?? 0;
@@ -445,7 +445,7 @@ public static class SymbolOperation
             throw VBCompileErrorException.InvalidUseOfObject(rhsValue.Symbol!, "Object could not be let-coerced into a `String`.");
         }
 
-        throw VBRuntimeErrorException.TypeMismatch(rhsValue.Symbol!, $"Could not coerce RHS operand ({rhsType.Name}) into a `String`.");
+        throw VBRuntimeErrorException.TypeMismatch(rhsValue.Symbol!.Range, $"Could not coerce RHS operand ({rhsType.Name}) into a `String`.");
     }
     #endregion
 
@@ -483,7 +483,7 @@ public static class SymbolOperation
             }
         }
 
-        throw VBRuntimeErrorException.TypeMismatch(opSymbol, $"Could not coerce RHS operand ({rhsType.Name}) into a numeric value.");
+        throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, $"Could not coerce RHS operand ({rhsType.Name}) into a numeric value.");
     }
 
     private static VBTypedValue EvaluateIntegerOp(ref VBExecutionScope context, TypedSymbol opSymbol, VBNumericTypedValue lhsNumericValue, VBTypedValue rhsValue, Func<int, int, int> binaryOp)
@@ -525,7 +525,7 @@ public static class SymbolOperation
             }
         }
 
-        throw VBRuntimeErrorException.TypeMismatch(opSymbol, $"Could not coerce RHS operand ({rhsType.Name}) into a numeric value.");
+        throw VBRuntimeErrorException.TypeMismatch(opSymbol.Range, $"Could not coerce RHS operand ({rhsType.Name}) into a numeric value.");
     }
     #endregion
 }

@@ -1,8 +1,6 @@
 ﻿using Rubberduck.InternalApi.Model.Workspace;
 using System;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 
 namespace Rubberduck.InternalApi.Extensions;
 
@@ -11,7 +9,7 @@ namespace Rubberduck.InternalApi.Extensions;
 /// </summary>
 public class WorkspaceFileUri : WorkspaceUri
 {
-    public WorkspaceFileUri([StringSyntax("Uri")] string relativeUriString, Uri workspaceRoot) 
+    public WorkspaceFileUri([StringSyntax("Uri")] string relativeUriString, Uri workspaceRoot)
         : base(relativeUriString, workspaceRoot) { }
 
     /// <summary>
@@ -41,15 +39,15 @@ public class WorkspaceFileUri : WorkspaceUri
 /// </summary>
 public class WorkspaceFolderUri : WorkspaceUri
 {
-    public WorkspaceFolderUri([StringSyntax("Uri")] string? relativeUriString, Uri workspaceRoot) 
-        : base(relativeUriString, workspaceRoot) 
+    public WorkspaceFolderUri([StringSyntax("Uri")] string? relativeUriString, Uri workspaceRoot)
+        : base(relativeUriString, workspaceRoot)
     {
     }
 
     /// <summary>
     /// Gets a name representing this workspace folder.
     /// </summary>
-    public string FolderName => IsSrcRoot 
+    public string FolderName => IsSrcRoot
         ? WorkspaceRoot.Segments[^1] // this should be the workspace name
         : System.IO.Path.GetFileName(AbsoluteLocation.LocalPath);
 }
@@ -155,7 +153,7 @@ public abstract class WorkspaceUri : Uri
     /// <summary>
     /// The absolute <c>Uri</c> for the project file of this workspace.
     /// </summary>
-    public Uri ProjectFileUri =>new(System.IO.Path.Combine(_root.LocalPath, ProjectFile.FileName));
+    public Uri ProjectFileUri => new(System.IO.Path.Combine(_root.LocalPath, ProjectFile.FileName));
 
     /// <summary>
     /// The absolute <c>Uri</c> location this <c>WorkspaceUri</c> is pointing to.
@@ -176,7 +174,7 @@ public abstract class WorkspaceUri : Uri
                 }
                 else
                 {
-                    var result = new Uri($"{_srcRoot.LocalPath.Replace("\\","/")}/{_relativeUri![..^System.IO.Path.GetFileName(Name).Length]}{Name}");
+                    var result = new Uri($"{_srcRoot.LocalPath.Replace("\\", "/")}/{_relativeUri![..^System.IO.Path.GetFileName(Name).Length]}{Name}");
                     return result;
                 }
             }

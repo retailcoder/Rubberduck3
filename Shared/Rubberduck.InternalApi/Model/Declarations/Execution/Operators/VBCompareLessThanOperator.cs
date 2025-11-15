@@ -4,7 +4,6 @@ using Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 using Rubberduck.InternalApi.Model.Declarations.Operators.Abstract;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.Model.Declarations.Types;
-using System;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Operators;
 
@@ -30,6 +29,6 @@ public record class VBCompareLessThanOperator : VBComparisonOperator
                     (lhs, rhs) => lhs.CompareTo(rhs) < 0);
             }
         }
-        throw VBRuntimeErrorException.TypeMismatch(this, $"Types {lhsValue.TypeInfo.Name} and {rhsValue.TypeInfo.Name} are not comparable.");
+        throw VBRuntimeErrorException.TypeMismatch(Range, $"Types {lhsValue.TypeInfo.Name} and {rhsValue.TypeInfo.Name} are not comparable.");
     }
 }

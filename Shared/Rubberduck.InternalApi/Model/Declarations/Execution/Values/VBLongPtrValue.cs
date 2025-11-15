@@ -5,8 +5,8 @@ using System;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 
-public record class VBLongPtrValue : VBNumericTypedValue, 
-    IVBTypedValue<VBLongPtrValue, long>, 
+public record class VBLongPtrValue : VBNumericTypedValue,
+    IVBTypedValue<VBLongPtrValue, long>,
     INumericValue<VBLongPtrValue>
 {
     public VBLongPtrValue(TypedSymbol? declarationSymbol = null)

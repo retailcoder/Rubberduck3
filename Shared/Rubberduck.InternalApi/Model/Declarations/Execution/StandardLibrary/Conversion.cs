@@ -42,7 +42,7 @@ namespace Rubberduck.InternalApi.Model.Declarations.Execution.StandardLibrary
                 return new VBDateValue(value.Symbol!).WithValue(dtValue);
             }
 
-            throw VBRuntimeErrorException.TypeMismatch(value.Symbol!, $"Type `{value.TypeInfo.Name}` cannot be converted directly to a `Date`.");
+            throw VBRuntimeErrorException.TypeMismatch(value.Symbol!.Range, $"Type `{value.TypeInfo.Name}` cannot be converted directly to a `Date`.");
         }
 
         public static VBDoubleValue CDbl(ref VBExecutionScope context, TypedSymbol symbol, VBTypedValue value) =>
@@ -63,7 +63,7 @@ namespace Rubberduck.InternalApi.Model.Declarations.Execution.StandardLibrary
 
         public static VBLongLongValue CLngLng(ref VBExecutionScope context, TypedSymbol symbol, VBTypedValue value) =>
             CheckNullError(value, e => (VBLongLongValue)new VBLongLongValue(symbol).WithValue(e.Value), out var nop)
-                ? nop : (VBLongLongValue) new VBLongLongValue(symbol).WithValue(GetNumericValueOrThrow(ref context, value));
+                ? nop : (VBLongLongValue)new VBLongLongValue(symbol).WithValue(GetNumericValueOrThrow(ref context, value));
 
         public static VBLongPtrValue CLngPtr(ref VBExecutionScope context, TypedSymbol symbol, VBTypedValue value)
         {
@@ -94,7 +94,7 @@ namespace Rubberduck.InternalApi.Model.Declarations.Execution.StandardLibrary
                 context = context.WithDiagnostic(RubberduckDiagnostic.PreferErrRaiseOverErrorStatement(symbol));
                 if (number == 0)
                 {
-                    throw VBRuntimeErrorException.InvalidProcedureCallOrArgument(symbol, 
+                    throw VBRuntimeErrorException.InvalidProcedureCallOrArgument(symbol,
                         "Error code 0 encodes the \"no error\" state; the `Error` statement cannot raise error 0, so the argument is invalid.");
                 }
 
@@ -128,7 +128,7 @@ namespace Rubberduck.InternalApi.Model.Declarations.Execution.StandardLibrary
             new VBStringValue(symbol).WithValue(GetStringValueOrThrow(value));
 
         public static VBDoubleValue Val(ref VBExecutionScope context, TypedSymbol symbol, VBTypedValue value) =>
-            CheckNullError(value, null as Func<VBTypedValue, VBDoubleValue>, out var nop) 
+            CheckNullError(value, null as Func<VBTypedValue, VBDoubleValue>, out var nop)
                 ? nop : throw new NotImplementedException(); // <~ TODO!
 
         private static VBVariantValue Convert<T>(ref VBExecutionScope context, TypedSymbol symbol, VBTypedValue value, Func<double, T> op) =>
@@ -142,8 +142,8 @@ namespace Rubberduck.InternalApi.Model.Declarations.Execution.StandardLibrary
         /// </summary>
         /// <exception cref="VBRuntimeErrorException" />
         private static string GetStringValueOrThrow(VBTypedValue value) => value is IStringCoercion coercible
-            ? coercible.AsCoercedString()?.Value ?? throw VBRuntimeErrorException.TypeMismatch(value.Symbol!)
-            : throw VBRuntimeErrorException.TypeMismatch(value.Symbol!);
+            ? coercible.AsCoercedString()?.Value ?? throw VBRuntimeErrorException.TypeMismatch(value.Symbol!.Range)
+            : throw VBRuntimeErrorException.TypeMismatch(value.Symbol!.Range);
 
         /// <summary>
         /// Throws a <c>VBRuntimeErrorException.TypeMismatch</c> if it isn't a number, or can't be coerced into one.
@@ -152,7 +152,7 @@ namespace Rubberduck.InternalApi.Model.Declarations.Execution.StandardLibrary
         private static double GetNumericValueOrThrow(ref VBExecutionScope context, VBTypedValue value) =>
             TryConvertNumericValue(ref context, value, out var numericResult)
                 ? numericResult
-                : throw VBRuntimeErrorException.TypeMismatch(value.Symbol!);
+                : throw VBRuntimeErrorException.TypeMismatch(value.Symbol!.Range);
 
         private static bool TryConvertNumericValue(ref VBExecutionScope context, VBTypedValue value, out double numericResult)
         {
@@ -205,7 +205,7 @@ namespace Rubberduck.InternalApi.Model.Declarations.Execution.StandardLibrary
             {
                 if (convertErrorValue is null)
                 {
-                    throw VBRuntimeErrorException.TypeMismatch(value.Symbol!, $"Type `{value.TypeInfo.Name}` cannot be converted to {typeof(T).Name}.");
+                    throw VBRuntimeErrorException.TypeMismatch(value.Symbol!.Range, $"Type `{value.TypeInfo.Name}` cannot be converted to {typeof(T).Name}.");
                 }
 
                 typedResult = convertErrorValue(error);

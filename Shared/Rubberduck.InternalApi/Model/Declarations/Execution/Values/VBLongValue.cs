@@ -3,8 +3,8 @@ using Rubberduck.InternalApi.Model.Declarations.Types;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 
-public record class VBLongValue : VBNumericTypedValue, 
-    IVBTypedValue<VBLongValue, int>, 
+public record class VBLongValue : VBNumericTypedValue,
+    IVBTypedValue<VBLongValue, int>,
     INumericValue<VBLongValue>
 {
     public VBLongValue(TypedSymbol? declarationSymbol = null)

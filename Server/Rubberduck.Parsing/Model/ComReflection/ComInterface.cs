@@ -1,17 +1,17 @@
-﻿using System.Diagnostics;
+﻿using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.Model;
+using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.VBEditor.Utility;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Runtime.Serialization;
-using Rubberduck.VBEditor.Utility;
-using TYPEATTR = System.Runtime.InteropServices.ComTypes.TYPEATTR;
-using FUNCDESC = System.Runtime.InteropServices.ComTypes.FUNCDESC;
 using CALLCONV = System.Runtime.InteropServices.ComTypes.CALLCONV;
+using FUNCDESC = System.Runtime.InteropServices.ComTypes.FUNCDESC;
+using TYPEATTR = System.Runtime.InteropServices.ComTypes.TYPEATTR;
 using TYPEFLAGS = System.Runtime.InteropServices.ComTypes.TYPEFLAGS;
 using TYPELIBATTR = System.Runtime.InteropServices.ComTypes.TYPELIBATTR;
 using VARDESC = System.Runtime.InteropServices.ComTypes.VARDESC;
-using Rubberduck.InternalApi.Model;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
-using Rubberduck.InternalApi.Extensions;
 
 namespace Rubberduck.Parsing.Model.ComReflection;
 
@@ -137,6 +137,7 @@ public class ComInterface : ComType, IComTypeWithMembers
         return new ClassModuleSymbol(Instancing.PublicNotCreatable, Name, uri, children)
         {
             IsUserDefined = false,
+            PredeclaredId = IsPreDeclared,
             Detail = Documentation.DocString,
         };
     }
