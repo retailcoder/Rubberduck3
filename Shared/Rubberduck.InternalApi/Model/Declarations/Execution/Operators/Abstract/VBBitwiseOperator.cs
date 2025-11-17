@@ -9,26 +9,26 @@ namespace Rubberduck.InternalApi.Model.Declarations.Operators.Abstract;
 
 public abstract record class VBBitwiseOperator : VBBinaryOperator
 {
-    protected VBBitwiseOperator(string token, WorkspaceUri parentUri, string lhsExpression, string rhsExpression, TypedSymbol? lhs = null, TypedSymbol? rhs = null) 
-        : base(token, parentUri, lhsExpression, rhsExpression, lhs, rhs)
+    protected VBBitwiseOperator(string token, WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
+        : base(token, parentUri, lhs, rhs)
     {
-        ResolvedType = VBLongType.TypeInfo;
+        Type = VBLongType.TypeInfo;
     }
 
-    public VBBooleanValue ExecuteAsLogicalOp(ref VBExecutionScope context, VBTypedValue lhsValue, VBTypedValue rhsValue) =>
-        new(this) { Value = ((VBLongValue)ExecuteBinaryOperator(ref context, lhsValue, rhsValue)).Value != 0 };
+    public VBBooleanValue ExecuteAsLogicalOp(VBExecutionContext context, VBTypedValue lhsValue, VBTypedValue rhsValue) =>
+        new(this) { Value = ((VBLongValue)ExecuteBinaryOperator(context, lhsValue, rhsValue)).Value != 0 };
 
     protected abstract Func<int, int, int> BitwiseOp { get; }
 
-    protected sealed override VBTypedValue ExecuteBinaryOperator(ref VBExecutionScope context, VBTypedValue lhsValue, VBTypedValue rhsValue)
+    protected sealed override VBTypedValue ExecuteBinaryOperator(VBExecutionContext context, VBTypedValue lhsValue, VBTypedValue rhsValue)
     {
-        var result = SymbolOperation.EvaluateBinaryOpResult(ref context, this, lhsValue, rhsValue, BitwiseOp);
+        var result = SymbolOperation.EvaluateBinaryOpResult(context, this, lhsValue, rhsValue, BitwiseOp);
         if (lhsValue.TypeInfo is VBBooleanType && rhsValue.TypeInfo is VBBooleanType)
         {
             return result;
         }
 
-        context = context.WithDiagnostic(RubberduckDiagnostic.BitwiseOperator(this));
+        context.AddDiagnostic(RubberduckDiagnostic.BitwiseOperator(this));
         return ((INumericValue)result).AsLong();
     }
 }

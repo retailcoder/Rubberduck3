@@ -15,7 +15,7 @@ public interface ITypedSymbol
     /// <summary>
     /// Gets the symbol's resolved type.
     /// </summary>
-    VBType? ResolvedType { get; }
+    VBType? Type { get; }
 
     /// <summary>
     /// Gets a copy of this symbol with the specified resolved type.

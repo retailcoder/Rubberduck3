@@ -3,18 +3,17 @@ using Rubberduck.InternalApi.Model.Declarations.Execution;
 using Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 using Rubberduck.InternalApi.Model.Declarations.Operators.Abstract;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
-using System;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Operators;
 
 public record class VBConcatOperator : VBBinaryOperator
 {
-    public VBConcatOperator(WorkspaceUri parentUri, string lhsExpression, string rhsExpression, TypedSymbol? lhs = null, TypedSymbol? rhs = null)
-        : base(Tokens.ConcatOp, parentUri, lhsExpression, rhsExpression, lhs, rhs)
+    public VBConcatOperator(WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
+        : base(Tokens.ConcatOp, parentUri, lhs, rhs)
     {
     }
 
-    protected override VBTypedValue ExecuteBinaryOperator(ref VBExecutionScope context, VBTypedValue lhsValue, VBTypedValue rhsValue)
+    protected override VBTypedValue ExecuteBinaryOperator(VBExecutionContext context, VBTypedValue lhsValue, VBTypedValue rhsValue)
     {
         string? lhsString = null;
         if (lhsValue is VBStringValue stringValueLhs)
@@ -23,7 +22,7 @@ public record class VBConcatOperator : VBBinaryOperator
         }
         else if (lhsValue is IStringCoercion stringCoercibleLhs)
         {
-            context = context.WithDiagnostics([RubberduckDiagnostic.ImplicitStringCoercion(lhsValue.Symbol!)]);
+            context.AddDiagnostic(RubberduckDiagnostic.ImplicitStringCoercion(lhsValue.Symbol!));
             lhsString = stringCoercibleLhs.AsCoercedString()!.Value;
         }
 
@@ -39,7 +38,7 @@ public record class VBConcatOperator : VBBinaryOperator
         }
         else if (rhsValue is IStringCoercion stringCoercibleRhs)
         {
-            context = context.WithDiagnostics([RubberduckDiagnostic.ImplicitStringCoercion(rhsValue.Symbol!)]);
+            context.AddDiagnostic(RubberduckDiagnostic.ImplicitStringCoercion(rhsValue.Symbol!));
             rhsString = stringCoercibleRhs.AsCoercedString()!.Value;
         }
 

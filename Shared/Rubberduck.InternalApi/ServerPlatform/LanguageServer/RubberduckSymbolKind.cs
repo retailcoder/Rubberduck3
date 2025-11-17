@@ -46,7 +46,8 @@ public enum RubberduckSymbolKind
 
     /* 27-31: padding */
 
-    Expression = 32,
+    LineLabel = 32,
+    Expression,
     DateLiteral,
     VariantLiteral,
 

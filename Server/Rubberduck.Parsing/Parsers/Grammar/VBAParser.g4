@@ -344,15 +344,15 @@ letterRange : singleLetter MINUS singleLetter;
 doLoopStmt :
     DO endOfStatement 
     block
-    statementLabelDefinition? whiteSpace? LOOP
+    statementLabelDefinition? whiteSpace? LOOP                              #doBlockLoop
     |
     DO whiteSpace (WHILE | UNTIL) whiteSpace expression endOfStatement
     block
-    statementLabelDefinition? whiteSpace? LOOP
+    statementLabelDefinition? whiteSpace? LOOP                              #doWhileUntilBlockLoop
     | 
     DO endOfStatement
     block
-    statementLabelDefinition? whiteSpace? LOOP whiteSpace (WHILE | UNTIL) whiteSpace expression
+    statementLabelDefinition? whiteSpace? LOOP whiteSpace (WHILE | UNTIL) whiteSpace expression #doBlockLoopWhileUntil
 ;
 
 enumerationStmt: 
@@ -725,10 +725,10 @@ namedArgument : unrestrictedIdentifier whiteSpace? ASSIGN whiteSpace? argumentEx
 missingArgument : ;
 
 argumentExpression :
-    (BYVAL whiteSpace)? expression
-    | addressOfExpression
+    (BYVAL whiteSpace)? expression  #byvalArgExpr
+    | addressOfExpression           #addressOfExpr
     // Special case for redim statements. The resolver doesn't have to deal with this because it is "picked apart" in the redim statement.
-    | lowerBoundArgumentExpression whiteSpace TO whiteSpace upperBoundArgumentExpression
+    | lowerBoundArgumentExpression whiteSpace TO whiteSpace upperBoundArgumentExpression    #redimArgExpr
 ;
 
 lowerBoundArgumentExpression : expression;

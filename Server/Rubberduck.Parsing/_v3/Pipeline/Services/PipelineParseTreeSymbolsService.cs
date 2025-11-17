@@ -93,7 +93,7 @@ public class PipelineParseTreeSymbolsService : SyntaxTreeTraversalService
         var typedSymbol = symbol as TypedSymbol;
         if (typedSymbol != null)
         {
-            type = typedSymbol.ResolvedType ?? _resolver.Resolve(typedSymbol);
+            type = typedSymbol.Type ?? _resolver.Resolve(typedSymbol);
         }
 
         if (recursive)
@@ -108,7 +108,7 @@ public class PipelineParseTreeSymbolsService : SyntaxTreeTraversalService
 
         if (typedSymbol != null && type != null)
         {
-            return typedSymbol with { ResolvedType = type };
+            return typedSymbol with { Type = type };
         }
 
         return symbol;

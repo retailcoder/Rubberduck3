@@ -18,22 +18,18 @@ public record class VBAssignmentOperator : VBBinaryOperator
 {
     private readonly AssignmentKind _kind;
 
-    public VBAssignmentOperator(AssignmentKind kind, WorkspaceUri parentUri, string lhsExpression, string rhsExpression, TypedSymbol? lhs = null, TypedSymbol? rhs = null)
-        : base(Tokens.CompareEqualOp, parentUri, lhsExpression, rhsExpression, lhs, rhs)
+    public VBAssignmentOperator(AssignmentKind kind, WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
+        : base(Tokens.CompareEqualOp, parentUri, lhs, rhs)
     {
         _kind = kind;
     }
 
-    public override VBBinaryOperator WithOperands(TypedSymbol? lhs, TypedSymbol? rhs)
-        => this with
-        {
-            ResolvedLeftHandSideExpression = lhs,
-            ResolvedRightHandSideExpression = rhs,
-            Children = new[] { lhs, rhs }.Where(e => e != null).OfType<TypedSymbol>().ToArray() ?? [],
-            ResolvedType = lhs?.ResolvedType,
-        };
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
+    {
+        return base.Execute(context, rethrow);
+    }
 
-    protected override VBTypedValue ExecuteBinaryOperator(ref VBExecutionScope context, VBTypedValue lhsValue, VBTypedValue rhsValue)
+    protected override VBTypedValue ExecuteBinaryOperator(VBExecutionContext context, VBTypedValue lhsValue, VBTypedValue rhsValue)
     {
         var assignmentTarget = lhsValue;
 
@@ -43,7 +39,7 @@ public record class VBAssignmentOperator : VBBinaryOperator
             {
                 if (assignmentTarget.TypeInfo.ConvertsSafelyToTypes.Contains(rhsValue.TypeInfo))
                 {
-                    context = context.WithDiagnostics([RubberduckDiagnostic.TypeCastConversion(this)]);
+                    context.AddDiagnostic(RubberduckDiagnostic.TypeCastConversion(this));
                 }
                 else
                 {
@@ -53,11 +49,11 @@ public record class VBAssignmentOperator : VBBinaryOperator
             else if (_kind == AssignmentKind.ValueAssignment)
             {
                 assignmentTarget = lhsObject.LetCoerce();
-                context = context.WithDiagnostics([RubberduckDiagnostic.ImplicitLetCoercion(lhsObject.Symbol!)]);
+                context.AddDiagnostic(RubberduckDiagnostic.ImplicitLetCoercion(lhsObject.Symbol!));
 
                 if (rhsValue is VBObjectValue rhsObject)
                 {
-                    context = context.WithDiagnostics([RubberduckDiagnostic.SuspiciousValueAssignment(this)]);
+                    context.AddDiagnostic(RubberduckDiagnostic.SuspiciousValueAssignment(this));
                 }
             }
         }
@@ -69,8 +65,8 @@ public record class VBAssignmentOperator : VBBinaryOperator
                 if (rhsValue is VBObjectValue rhsObject && _kind == AssignmentKind.ValueAssignment)
                 {
                     var letCoercedValue = rhsObject.LetCoerce();
-                    context = context.WithDiagnostics([RubberduckDiagnostic.ImplicitLetCoercion(rhsObject.Symbol!)]);
-                    context.SetTypedValue(lhsValue.Symbol!, letCoercedValue);
+                    context.AddDiagnostic(RubberduckDiagnostic.ImplicitLetCoercion(rhsObject.Symbol!));
+                    context.CurrentScope.SetTypedValue(lhsValue.Symbol!, letCoercedValue);
                     return letCoercedValue;
                 }
 
@@ -80,7 +76,7 @@ public record class VBAssignmentOperator : VBBinaryOperator
             {
                 if (assignmentTarget.TypeInfo.ConvertsSafelyToTypes.Contains(rhsValue.TypeInfo))
                 {
-                    context = context.WithDiagnostics([RubberduckDiagnostic.ImplicitWideningConversion(this)]);
+                    context.AddDiagnostic(RubberduckDiagnostic.ImplicitWideningConversion(this));
                 }
                 else
                 {
@@ -89,7 +85,7 @@ public record class VBAssignmentOperator : VBBinaryOperator
             }
         }
 
-        context.SetTypedValue(assignmentTarget.Symbol!, rhsValue);
+        context.CurrentScope.SetTypedValue(assignmentTarget.Symbol!, rhsValue);
         return rhsValue;
     }
 }

@@ -22,6 +22,8 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
     private readonly ConcurrentDictionary<Uri, ProjectSymbol> _referencedLibraries = new();
     private readonly ConcurrentDictionary<TypedSymbol, VBTypedValue> _symbolTable = new();
 
+    private readonly ConcurrentDictionary<Uri, LineLabelSymbol> _lineLabels = new();
+
     /// <summary>
     /// Last-in, first-out concurrent data structure mapping type names to possible <c>VBType</c> values to resolve class types.
     /// </summary>
@@ -37,10 +39,12 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
     public int LanguageVersion { get; set; } = 7;
     public bool Is64BitHost { get; set; }
 
-    public void AddToSymbolTable(TypedSymbol symbol)
+    public void AddLineLabel(LineLabelSymbol lineLabel) => _lineLabels.TryAdd(lineLabel.ParentUri, lineLabel);
+
+    public void AddSymbol(TypedSymbol symbol)
     {
-        _symbolTable.TryAdd(symbol, symbol.ResolvedType!.DefaultValue);
-        if (symbol is ClassModuleSymbol classModule && classModule.ResolvedType is VBClassType vbClassType)
+        _symbolTable.TryAdd(symbol, symbol.Type!.DefaultValue);
+        if (symbol is ClassModuleSymbol classModule && classModule.Type is VBClassType vbClassType)
         {
             AddVBType(vbClassType);
         }
@@ -55,7 +59,7 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
             ? classSymbol
             : _symbolTable.Keys.SingleOrDefault(e => e.Uri == scopeSymbol!.ParentUri) as ClassModuleSymbol;
 
-        if (name == Tokens.Me && scopeClassSymbol?.ResolvedType is VBClassType me)
+        if (name == Tokens.Me && scopeClassSymbol?.Type is VBClassType me)
         {
             return me;
         }
@@ -79,11 +83,25 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
     }
 
     public void AddDiagnostic(Diagnostic diagnostic) => Diagnostics.Add(diagnostic);
+    public void AddDiagnostics(VBRuntimeErrorException exception)
+    {
+        foreach (var diagnostic in exception.Diagnostics)
+        {
+            AddDiagnostic(diagnostic);
+        }
+    }
+    public void AddDiagnostics(VBCompileErrorException exception)
+    {
+        foreach (var diagnostic in exception.Diagnostics)
+        {
+            AddDiagnostic(diagnostic);
+        }
+    }
 
     public void LoadReferencedLibrarySymbols(ProjectSymbol symbol)
     {
         _referencedLibraries[symbol.Uri] = symbol;
-        foreach (var vbType in symbol.Children?.OfType<ClassModuleSymbol>().Select(e => e.ResolvedType).OfType<VBClassType>() ?? [])
+        foreach (var vbType in symbol.Children?.OfType<ClassModuleSymbol>().Select(e => e.Type).OfType<VBClassType>() ?? [])
         {
             AddVBType(vbType);
         }
@@ -125,6 +143,11 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
 
     public void End() => _callStack.Clear();
 
+    public void ExitBlock(BlockStatement block)
+    {
+
+    }
+
     public VBExecutionScope? ExitScope(VBRuntimeErrorException? error = null)
     {
         _callStack.Pop();
@@ -141,23 +164,23 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
     public VBTypeMember? GetModuleMember(Symbol symbol) =>
         _symbolTable.Keys
             .Where(e => e is ClassModuleSymbol || e is StandardModuleSymbol)
-            .SelectMany(e => ((VBMemberOwnerType)e.ResolvedType!).Members)
+            .SelectMany(e => ((VBMemberOwnerType)e.Type!).Members)
             .SingleOrDefault(e => e.Declaration == symbol);
 
     /// <summary>
     /// Gets all resolved symbols in the context.
     /// </summary>
-    public ImmutableHashSet<TypedSymbol> ResolvedSymbols => _symbolTable.Keys.Where(e => e.ResolvedType != null).ToImmutableHashSet();
+    public ImmutableHashSet<TypedSymbol> ResolvedSymbols => _symbolTable.Keys.Where(e => e.Type != null).ToImmutableHashSet();
 
     /// <summary>
     /// Gets all unresolved symbols in the context.
     /// </summary>
-    public ImmutableHashSet<TypedSymbol> UnresolvedSymbols => _symbolTable.Keys.Where(e => e.ResolvedType is null).ToImmutableHashSet();
+    public ImmutableHashSet<TypedSymbol> UnresolvedSymbols => _symbolTable.Keys.Where(e => e.Type is null).ToImmutableHashSet();
 
     /// <summary>
     /// Gets all <c>VBMemberOwnerType</c> data types in the context.
     /// </summary>
-    public ImmutableHashSet<TypedSymbol> MemberOwnerTypes => _symbolTable.Keys.Where(e => e.ResolvedType is VBMemberOwnerType).ToImmutableHashSet();
+    public ImmutableHashSet<TypedSymbol> MemberOwnerTypes => _symbolTable.Keys.Where(e => e.Type is VBMemberOwnerType).ToImmutableHashSet();
 
     public ConcurrentBag<Diagnostic> Diagnostics { get; init; } = [];
 
@@ -186,4 +209,7 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
     /// Sets the currently held value of the specified symbol.
     /// </summary>
     public void SetSymbolValue(TypedSymbol symbol, VBTypedValue value) => _symbolTable[symbol] = value;
+
+    public LineLabelSymbol? FindLineLabel(Uri parentUri, string name) => _lineLabels.TryGetValue(parentUri, out var label)
+        ? label.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase) ? label : default : default;
 }

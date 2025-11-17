@@ -9,11 +9,11 @@ namespace Rubberduck.InternalApi.Model.Declarations.Operators;
 
 public record class VBIntegerDivisionOperator : VBBinaryOperator
 {
-    public VBIntegerDivisionOperator(WorkspaceUri parentUri, string lhsExpression, string rhsExpression, TypedSymbol? lhs = null, TypedSymbol? rhs = null)
-        : base(Tokens.IntegerDivisionOp, parentUri, lhsExpression, rhsExpression, lhs, rhs) { }
+    public VBIntegerDivisionOperator(WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
+        : base(Tokens.IntegerDivisionOp, parentUri, lhs, rhs) { }
 
-    protected override VBTypedValue ExecuteBinaryOperator(ref VBExecutionScope context, VBTypedValue lhsValue, VBTypedValue rhsValue) =>
-        SymbolOperation.EvaluateBinaryOpResult(ref context, this, lhsValue, rhsValue, (lhs, rhs) =>
+    protected override VBTypedValue ExecuteBinaryOperator(VBExecutionContext context, VBTypedValue lhsValue, VBTypedValue rhsValue) =>
+        SymbolOperation.EvaluateBinaryOpResult(context, this, lhsValue, rhsValue, (lhs, rhs) =>
         {
             if (rhs == 0)
             {

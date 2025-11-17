@@ -4,23 +4,21 @@ using Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 using Rubberduck.InternalApi.Model.Declarations.Operators.Abstract;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.Model.Declarations.Types;
-using System;
-using System.Linq;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Operators;
 
 public record class VBNotOperator : VBUnaryOperator
 {
-    public VBNotOperator(string expression, WorkspaceUri parentUri, TypedSymbol? operand = null) 
-        : base(Tokens.Not, expression, parentUri, operand) { }
+    public VBNotOperator(WorkspaceUri parentUri, ValuedExpression operand)
+        : base(Tokens.Not, parentUri, operand) { }
 
-    protected override VBTypedValue? EvaluateResult(ref VBExecutionScope context)
+    protected override VBTypedValue? EvaluateResult(VBExecutionContext context)
     {
-        var operand = (TypedSymbol)Children!.Single();
-        if (operand.ResolvedType != VBBooleanType.TypeInfo)
+        var operand = Operand.Execute(context);
+        if (operand?.TypeInfo != VBBooleanType.TypeInfo)
         {
-            context = context.WithDiagnostic(RubberduckDiagnostic.BitwiseOperator(this));
+            context.AddDiagnostic(RubberduckDiagnostic.BitwiseOperator(this));
         }
-        return SymbolOperation.EvaluateUnaryOpResult(ref context, this, operand, e => ~(int)e);
+        return SymbolOperation.EvaluateUnaryOpResult(context, this, Operand, e => ~(int)e);
     }
 }

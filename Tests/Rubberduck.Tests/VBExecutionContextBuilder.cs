@@ -22,7 +22,7 @@ public class VBExecutionContextBuilder
     {
         foreach (var symbol in symbols)
         {
-            _context.AddToSymbolTable(symbol);
+            _context.AddSymbol(symbol);
         }
         return this;
     }

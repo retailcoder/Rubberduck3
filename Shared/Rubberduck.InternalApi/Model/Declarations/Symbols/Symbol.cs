@@ -13,34 +13,29 @@ using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Symbols;
 
-public interface IValuedExpression<TValue> where TValue : VBTypedValue
+public interface IExecutable : IExecutable<VBTypedValue>
 {
-    /// <summary>
-    /// Evaluates the expression in the given scope.
-    /// </summary>
-    /// <returns>Returns a <c>VBTypedValue</c> representing the result of the expression.</returns>
-    TValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false);
 }
 
-public interface IExecutable : IValuedExpression<VBTypedValue>
+public interface IExecutable<TValue> where TValue : VBTypedValue
 {
     /// <summary>
     /// Executes the symbol and its children, in the given context.
     /// </summary>
     /// <returns>
-    /// Returns a <c>VBTypedValue</c> representing the result of the expression; <c>null</c> if the symbol is a non-returning executable member.
+    /// Returns a <c>TValue</c> representing the result of the expression; <c>null</c> if the symbol is a non-returning executable member.
     /// </returns>
-    VBTypedValue? Execute(ref VBExecutionContext context, bool rethrow = false);
+    TValue? Execute(VBExecutionContext context, bool rethrow = false);
 }
 
-public abstract record class ValuedExpression : TypedSymbol, IValuedExpression<VBTypedValue>
+public abstract record class ValuedExpression : TypedSymbol, IExecutable<VBTypedValue>
 {
-    protected ValuedExpression(RubberduckSymbolKind kind, string name, WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
-        : base(kind, Accessibility.Undefined, name, parentUri, children)
+    protected ValuedExpression(RubberduckSymbolKind kind, VBType vbType, string name, WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
+        : base(kind, Accessibility.Undefined, name, parentUri, children, vbType)
     {
     }
 
-    public virtual VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false) => Children?.OfType<ValuedExpression>().FirstOrDefault()?.Evaluate(ref scope, rethrow);
+    public virtual VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false) => default;
 }
 
 public record class TypeDescValuedExpression : ValuedExpression<VBTypeDescValue>
@@ -51,74 +46,72 @@ public record class TypeDescValuedExpression : ValuedExpression<VBTypeDescValue>
         ReferredType = type;
     }
     public VBType ReferredType { get; }
-    public override VBTypeDescValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypeDescValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         return new VBTypeDescValue(ReferredType);
     }
 }
 
-public abstract record class ValuedExpression<TValue> : ValuedExpression
+public abstract record class ValuedExpression<TValue> : ValuedExpression, IExecutable<TValue>
     where TValue : VBTypedValue
 {
     protected ValuedExpression(RubberduckSymbolKind kind, VBType vbType, string name, WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
-        : base(kind, name, parentUri, children)
+        : base(kind, vbType, name, parentUri, children)
     {
         Type = vbType;
     }
 
-    public VBType Type { get; }
-    public override TValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public VBType Type { get; init; }
+
+    public override TValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
-        return Children?.OfType<ValuedExpression<TValue>>().FirstOrDefault()?.Evaluate(ref scope, rethrow) as TValue;
+        return Children?.OfType<ValuedExpression<TValue>>().FirstOrDefault()?.Execute(context, true);
     }
 }
 
 public abstract record class OperatorExpression<TValue> : ValuedExpression<TValue>
     where TValue : VBTypedValue
 {
-    protected OperatorExpression(string name, VBType vbType, WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
+    protected OperatorExpression(string name, VBType vbType, WorkspaceUri parentUri, IEnumerable<ValuedExpression> children)
         : base(RubberduckSymbolKind.Operator, vbType, name, parentUri, children)
     {
     }
 }
 
-public abstract record class OperatorExpression : OperatorExpression<VBTypedValue>
+public abstract record class BinaryOperatorExpression<TValue> : OperatorExpression<TValue>
+    where TValue : VBTypedValue
 {
-    protected OperatorExpression(string name, WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
-        : this(name, VBVariantType.TypeInfo, parentUri, children)
+    protected BinaryOperatorExpression(string name, VBType vbType, WorkspaceUri parentUri, ValuedExpression left, ValuedExpression right)
+        : base(name, vbType, parentUri, [left, right])
     {
-    }
-
-    protected OperatorExpression(string name, VBType vbType, WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
-        : base(name, vbType, parentUri, children)
-    {
-    }
-}
-public abstract record class BooleanOperatorExpression : OperatorExpression<VBBooleanValue>
-{
-    protected BooleanOperatorExpression(string name, WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
-        : base(name, VBBooleanType.TypeInfo, parentUri, [lhs, rhs])
-    {
-        Left = lhs;
-        Right = rhs;
+        Left = left;
+        Right = right;
     }
 
     public ValuedExpression Left { get; }
     public ValuedExpression Right { get; }
 }
 
-public abstract record class BitwiseOpExpression : BooleanOperatorExpression
+public abstract record class BooleanOperatorExpression : BinaryOperatorExpression<VBBooleanValue>
+{
+    protected BooleanOperatorExpression(string name, WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
+        : base(name, VBBooleanType.TypeInfo, parentUri, lhs, rhs)
+    {
+    }
+}
+
+public abstract record class BitwiseOpExpression : BinaryOperatorExpression<VBLongValue>
 {
     public BitwiseOpExpression(WorkspaceUri parentUri, string op, ValuedExpression left, ValuedExpression right)
-        : base(op, parentUri, left, right)
+        : base(op, VBLongType.TypeInfo, parentUri, left, right)
     {
     }
 
     protected abstract Func<int, int, int> BitwiseOp { get; }
 
-    public override VBBooleanValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBLongValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
-        var lhs = Left.Evaluate(ref scope, rethrow);
+        var lhs = Left.Execute(context, rethrow);
         var intLhs = 0;
         if (lhs is VBBooleanValue vbBoolL)
         {
@@ -129,7 +122,7 @@ public abstract record class BitwiseOpExpression : BooleanOperatorExpression
             intLhs = (int)vbNumL.NumericValue;
         }
 
-        var rhs = Right.Evaluate(ref scope, rethrow);
+        var rhs = Right.Execute(context, rethrow);
         var intRhs = 0;
         if (rhs is VBBooleanValue vbBoolR)
         {
@@ -140,9 +133,8 @@ public abstract record class BitwiseOpExpression : BooleanOperatorExpression
             intRhs = (int)vbNumR.NumericValue;
         }
 
-        return BitwiseOp(intLhs, intRhs) == 0
-            ? VBBooleanValue.False
-            : VBBooleanValue.True;
+        var result = BitwiseOp(intLhs, intRhs);
+        return new VBLongValue().WithValue(result);
     }
 }
 
@@ -202,27 +194,49 @@ public abstract record class CompareOpExpression : BooleanOperatorExpression
     {
     }
 
-    protected abstract bool CompareOp(double left, double right);
+    protected abstract bool CompareStringOp(string left, string right, StringComparison stringComparison);
+    protected abstract bool CompareNumberOp(double left, double right);
 
-    public override VBBooleanValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBBooleanValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         VBBooleanValue? result = default;
 
-        var lhsValue = Left.Evaluate(ref scope, rethrow);
+        var rhsValue = Right.Execute(context, rethrow);
+        var lhsValue = Left.Execute(context, rethrow);
+
         if (lhsValue is VBNumericTypedValue lhsNumeric)
         {
-            var rhsValue = Right.Evaluate(ref scope, rethrow);
             if (rhsValue is VBNumericTypedValue rhsNumeric)
             {
-                result = SymbolOperation.EvaluateCompareOpResult(ref scope, this, lhsNumeric, rhsNumeric, CompareOp);
+                result = SymbolOperation.ExecuteCompareOpResult(context, this, lhsNumeric, rhsNumeric, CompareNumberOp);
             }
             else if (rhsValue?.TypeInfo.ConvertsSafelyToType(lhsValue.TypeInfo) ?? false)
             {
-                // TODO coerced numeric
+                var coercedRhs = rhsValue.AsVariant().AsCoercedNumeric()?.NumericValue;
+                result = SymbolOperation.ExecuteCompareOpResult(context, this, lhsNumeric, rhsValue, CompareNumberOp);
+            }
+            else
+            {
+                var exception = VBRuntimeErrorException.TypeMismatch(Right);
+                context.AddDiagnostics(exception);
+                if (rethrow)
+                {
+                    throw exception;
+                }
             }
         }
-
-        // TODO string lhs/coerced string rhs
+        else if (lhsValue is VBStringValue lhsString)
+        {
+            if (rhsValue is VBStringValue rhsString)
+            {
+                result = SymbolOperation.ExecuteCompareOpResult(context, this, lhsString, rhsString, CompareStringOp);
+            }
+            else if (rhsValue?.TypeInfo.ConvertsSafelyToType(lhsValue.TypeInfo) ?? false)
+            {
+                var coercedRhs = rhsValue.AsVariant().AsCoercedString();
+                result = SymbolOperation.ExecuteCompareOpResult(context, this, lhsString, rhsValue, CompareStringOp);
+            }
+        }
 
         return result;
     }
@@ -235,7 +249,9 @@ public record class EqCompareOpExpression : CompareOpExpression
     {
     }
 
-    protected override bool CompareOp(double left, double right) => left.Equals(right); // TODO .VBEquals(right)
+    protected override bool CompareNumberOp(double left, double right) => left.Equals(right);
+
+    protected override bool CompareStringOp(string left, string right, StringComparison stringComparison) => left.Equals(right, stringComparison);
 }
 public record class NeqCompareOpExpression : CompareOpExpression
 {
@@ -244,7 +260,9 @@ public record class NeqCompareOpExpression : CompareOpExpression
     {
     }
 
-    protected override bool CompareOp(double left, double right) => !left.Equals(right); // TODO !.VBEquals(right)
+    protected override bool CompareNumberOp(double left, double right) => !left.Equals(right); // TODO !.VBEquals(right)
+
+    protected override bool CompareStringOp(string left, string right, StringComparison stringComparison) => !left.Equals(right, stringComparison);
 }
 public record class LtCompareOpExpression : CompareOpExpression
 {
@@ -253,7 +271,9 @@ public record class LtCompareOpExpression : CompareOpExpression
     {
     }
 
-    protected override bool CompareOp(double left, double right) => Comparer<double>.Default.Compare(left, right) < 0;
+    protected override bool CompareNumberOp(double left, double right) => Comparer<double>.Default.Compare(left, right) < 0;
+
+    protected override bool CompareStringOp(string left, string right, StringComparison stringComparison) => string.Compare(left, right, stringComparison) < 0;
 }
 public record class LEqCompareOpExpression : CompareOpExpression
 {
@@ -262,7 +282,9 @@ public record class LEqCompareOpExpression : CompareOpExpression
     {
     }
 
-    protected override bool CompareOp(double left, double right) => Comparer<double>.Default.Compare(left, right) <= 0;
+    protected override bool CompareNumberOp(double left, double right) => Comparer<double>.Default.Compare(left, right) <= 0;
+
+    protected override bool CompareStringOp(string left, string right, StringComparison stringComparison) => string.Compare(left, right, stringComparison) <= 0;
 }
 public record class GtCompareOpExpression : CompareOpExpression
 {
@@ -271,7 +293,8 @@ public record class GtCompareOpExpression : CompareOpExpression
     {
     }
 
-    protected override bool CompareOp(double left, double right) => Comparer<double>.Default.Compare(left, right) > 0;
+    protected override bool CompareNumberOp(double left, double right) => Comparer<double>.Default.Compare(left, right) > 0;
+    protected override bool CompareStringOp(string left, string right, StringComparison stringComparison) => string.Compare(left, right, stringComparison) > 0;
 }
 public record class GEqCompareOpExpression : CompareOpExpression
 {
@@ -280,7 +303,8 @@ public record class GEqCompareOpExpression : CompareOpExpression
     {
     }
 
-    protected override bool CompareOp(double left, double right) => Comparer<double>.Default.Compare(left, right) >= 0;
+    protected override bool CompareNumberOp(double left, double right) => Comparer<double>.Default.Compare(left, right) >= 0;
+    protected override bool CompareStringOp(string left, string right, StringComparison stringComparison) => string.Compare(left, right, stringComparison) >= 0;
 }
 
 public record class LikeCompareOpExpression : CompareOpExpression
@@ -289,8 +313,8 @@ public record class LikeCompareOpExpression : CompareOpExpression
         : base(parentUri, Tokens.CompareLikeOp, left, right)
     {
     }
-
-    protected override bool CompareOp(double left, double right) => throw new NotImplementedException();
+    protected override bool CompareNumberOp(double left, double right) => Comparer<double>.Default.Compare(left, right) >= 0;
+    protected override bool CompareStringOp(string left, string right, StringComparison stringComparison) => string.Compare(left, right, stringComparison) >= 0;
 }
 
 public record class IsCompareOpExpression : CompareOpExpression
@@ -300,7 +324,41 @@ public record class IsCompareOpExpression : CompareOpExpression
     {
     }
 
-    protected override bool CompareOp(double left, double right) => throw new NotImplementedException();
+    // NOTE: there would be a type mismatch on LHS symbol given a VBObjectValue RHS
+    // These overrides are obligatory, but will not be invoked since we're overriding Execute
+
+    protected override bool CompareStringOp(string left, string right, StringComparison stringComparison) => throw VBCompileErrorException.TypeMismatch(Right, "An object reference is expected in this context");
+
+    protected override bool CompareNumberOp(double left, double right) => throw VBCompileErrorException.TypeMismatch(Right, "An object reference is expected in this context");
+
+    public override VBBooleanValue? Execute(VBExecutionContext context, bool rethrow = false)
+    {
+        var rhs = Right.Execute(context, rethrow);
+        var lhs = Left.Execute(context, rethrow);
+
+        if (rhs?.TypeInfo is VBTypeDesc typeofRhs)
+        {
+            if (lhs?.TypeInfo is VBTypeDesc typeofLhs)
+            {
+                var result = typeofLhs.Equals(typeofRhs);
+                return new VBBooleanValue(this) { Value = result };
+            }
+            else
+            {
+                throw VBCompileErrorException.TypeMismatch(Left);
+            }
+
+        }
+        else if (Right.Type is VBObjectType)
+        {
+            throw VBCompileErrorException.TypeMismatch(Right);
+        }
+
+        // TODO
+        throw new NotImplementedException();
+
+        //return base.Execute(context, rethrow);
+    }
 }
 
 public record class ConcatOpExpression : OperatorExpression<VBStringValue>
@@ -314,10 +372,10 @@ public record class ConcatOpExpression : OperatorExpression<VBStringValue>
     public ValuedExpression Left { get; }
     public ValuedExpression Right { get; }
 
-    public override VBStringValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBStringValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
-        var rhs = Right.Evaluate(ref scope, rethrow) as VBStringValue;
-        var lhs = Left.Evaluate(ref scope, rethrow) as VBStringValue;
+        var rhs = Right.Execute(context, rethrow) as VBStringValue;
+        var lhs = Left.Execute(context, rethrow) as VBStringValue;
 
         // TODO handle adding VBRuntimeErrorException.TypeMismatch to the execution context
 
@@ -326,41 +384,61 @@ public record class ConcatOpExpression : OperatorExpression<VBStringValue>
     }
 }
 
-public record class ParenthesizedExpression : OperatorExpression
+public record class ParenthesizedExpression : OperatorExpression<VBTypedValue>
 {
     public ParenthesizedExpression(WorkspaceUri parentUri, ValuedExpression innerExpression)
-        : base("()", innerExpression.ResolvedType!, parentUri, [innerExpression])
+        : base("LET_COERCE", innerExpression.Type!, parentUri, [innerExpression])
     {
         InnerExpression = innerExpression;
     }
     public ValuedExpression InnerExpression { get; }
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
-        return InnerExpression.Evaluate(ref scope, rethrow);
+        var value = InnerExpression.Execute(context, rethrow);
+        if (value is VBObjectValue objectValue)
+        {
+            try
+            {
+                return objectValue.LetCoerce();
+            }
+            catch (VBRuntimeErrorException exception)
+            {
+                context.AddDiagnostics(exception);
+                if (rethrow)
+                {
+                    throw;
+                }
+            }
+        }
+        else
+        {
+            return value;
+        }
+
+        return default;
     }
 }
 
-public record class AddOpExpression : OperatorExpression
+public record class AddOpExpression : BinaryOperatorExpression<VBTypedValue>
 {
-    public AddOpExpression(WorkspaceUri parentUri, ValuedExpression left, ValuedExpression right)
-        : base(Tokens.AdditionOp, parentUri, [left, right])
+    public AddOpExpression(WorkspaceUri parentUri, StringValuedExpression left, StringValuedExpression right)
+        : base(Tokens.AdditionOp, VBStringType.TypeInfo, parentUri, left, right)
     {
-        Left = left;
-        Right = right;
+    }
+    public AddOpExpression(WorkspaceUri parentUri, ValuedExpression left, ValuedExpression right)
+        : base(Tokens.AdditionOp, VBDoubleType.TypeInfo, parentUri, left, right)
+    {
     }
 
-    public ValuedExpression Left { get; }
-    public ValuedExpression Right { get; }
-
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         VBTypedValue? result = default;
 
-        var lhsValue = Left.Evaluate(ref scope, rethrow);
+        var lhsValue = Left.Execute(context, rethrow);
         if (lhsValue is VBStringValue lhsString)
         {
             // if LHS coerces to a string, RHS is coerced to string and concatenated
-            var rhsValue = Right.Evaluate(ref scope, rethrow);
+            var rhsValue = Right.Execute(context, rethrow);
             if (rhsValue?.TypeInfo.ConvertsSafelyToType(VBStringType.TypeInfo) ?? false)
             {
                 // TODO safely convert value to string
@@ -368,7 +446,7 @@ public record class AddOpExpression : OperatorExpression
                 if (rhsValue is VBStringValue rhsString)
                 {
                     var resultValue = $"{lhsString.Value}{rhsString.Value}";
-                    result = new VBStringValue().WithValue(resultValue);
+                    result = new VBStringValue(this) { Value = resultValue };
                 }
             }
             else
@@ -381,7 +459,7 @@ public record class AddOpExpression : OperatorExpression
         }
         else if (lhsValue is VBNumericTypedValue lhsNumeric)
         {
-            var rhsValue = Right.Evaluate(ref scope, rethrow);
+            var rhsValue = Right.Execute(context, rethrow);
             if (rhsValue is VBNumericTypedValue rhsNumeric)
             {
                 // both sides are numeric, perform addition
@@ -417,26 +495,21 @@ public record class AddOpExpression : OperatorExpression
     }
 }
 
-public record class SubtractOpExpression : OperatorExpression
+public record class SubtractOpExpression : BinaryOperatorExpression<VBTypedValue>
 {
     public SubtractOpExpression(WorkspaceUri parentUri, ValuedExpression left, ValuedExpression right)
-        : base(Tokens.SubtractionOp, parentUri, [left, right])
+        : base(Tokens.SubtractionOp, left.Type, parentUri, left, right)
     {
-        Left = left;
-        Right = right;
     }
 
-    public ValuedExpression Left { get; }
-    public ValuedExpression Right { get; }
-
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         VBTypedValue? result = default;
 
-        var lhsValue = Left.Evaluate(ref scope, rethrow);
+        var lhsValue = Left.Execute(context, rethrow);
         if (lhsValue is VBNumericTypedValue lhsNumeric)
         {
-            var rhsValue = Right.Evaluate(ref scope, rethrow);
+            var rhsValue = Right.Execute(context, rethrow);
             if (rhsValue is VBNumericTypedValue rhsNumeric)
             {
                 // both sides are numeric, perform subtraction
@@ -451,20 +524,22 @@ public record class SubtractOpExpression : OperatorExpression
                 }
                 catch (VBRuntimeErrorException vbRuntimeError)
                 {
+                    context.AddDiagnostics(vbRuntimeError);
                     if (rethrow)
                     {
                         throw;
                     }
-                    // TODO handle adding VBRuntimeErrorException.Overflow to the execution context
-                    result = new VBErrorValue().WithValue(vbRuntimeError.VBErrorNumber);
                 }
             }
             else
             {
                 // RHS is not numeric, VBA would throw a type mismatch at runtime.
-                // TODO handle adding VBRuntimeErrorException.TypeMismatch to the execution context
-                //scope = scope.WithError(VBRuntimeErrorException.TypeMismatch(this));
-                result = new VBErrorValue().WithValue(VBRuntimeErrorException.TypeMismatch(default(Range)!).VBErrorNumber);
+                var exception = VBRuntimeErrorException.TypeMismatch(this);
+                context.AddDiagnostics(exception);
+                if (rethrow)
+                {
+                    throw exception;
+                }
             }
         }
 
@@ -472,26 +547,21 @@ public record class SubtractOpExpression : OperatorExpression
     }
 }
 
-public record class MultiplicationOpExpression : OperatorExpression
+public record class MultiplicationOpExpression : BinaryOperatorExpression<VBTypedValue>
 {
     public MultiplicationOpExpression(WorkspaceUri parentUri, ValuedExpression left, ValuedExpression right)
-        : base(Tokens.SubtractionOp, parentUri, [left, right])
+        : base(Tokens.SubtractionOp, left.Type, parentUri, left, right)
     {
-        Left = left;
-        Right = right;
     }
 
-    public ValuedExpression Left { get; }
-    public ValuedExpression Right { get; }
-
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         VBTypedValue? result = default;
 
-        var lhsValue = Left.Evaluate(ref scope, rethrow);
+        var lhsValue = Left.Execute(context, rethrow);
         if (lhsValue is VBNumericTypedValue lhsNumeric)
         {
-            var rhsValue = Right.Evaluate(ref scope, rethrow);
+            var rhsValue = Right.Execute(context, rethrow);
             if (rhsValue is VBNumericTypedValue rhsNumeric)
             {
                 // both sides are numeric, perform multiplication
@@ -507,20 +577,22 @@ public record class MultiplicationOpExpression : OperatorExpression
                 }
                 catch (VBRuntimeErrorException vbRuntimeError)
                 {
+                    context.AddDiagnostics(vbRuntimeError);
                     if (rethrow)
                     {
                         throw;
                     }
-                    // TODO handle adding VBRuntimeErrorException.Overflow to the execution context
-                    result = new VBErrorValue().WithValue(vbRuntimeError.VBErrorNumber);
                 }
             }
             else
             {
                 // RHS is not numeric, VBA would throw a type mismatch at runtime.
-                // TODO handle adding VBRuntimeErrorException.TypeMismatch to the execution context
-                //scope = scope.WithError(VBRuntimeErrorException.TypeMismatch(this));
-                result = new VBErrorValue().WithValue(VBRuntimeErrorException.TypeMismatch(default(Range)!).VBErrorNumber);
+                var exception = VBRuntimeErrorException.TypeMismatch(this);
+                context.AddDiagnostics(exception);
+                if (rethrow)
+                {
+                    throw exception;
+                }
             }
         }
 
@@ -528,26 +600,21 @@ public record class MultiplicationOpExpression : OperatorExpression
     }
 }
 
-public record class DivisionOpExpression : OperatorExpression
+public record class DivisionOpExpression : BinaryOperatorExpression<VBTypedValue>
 {
     public DivisionOpExpression(WorkspaceUri parentUri, ValuedExpression left, ValuedExpression right)
-        : base(Tokens.DivisionOp, parentUri, [left, right])
+        : base(Tokens.DivisionOp, left.Type, parentUri, left, right)
     {
-        Left = left;
-        Right = right;
     }
 
-    public ValuedExpression Left { get; }
-    public ValuedExpression Right { get; }
-
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         VBTypedValue? result = default;
 
-        var lhsValue = Left.Evaluate(ref scope, rethrow);
+        var lhsValue = Left.Execute(context, rethrow);
         if (lhsValue is VBNumericTypedValue lhsNumeric)
         {
-            var rhsValue = Right.Evaluate(ref scope, rethrow);
+            var rhsValue = Right.Execute(context, rethrow);
             if (rhsValue is VBNumericTypedValue rhsNumeric)
             {
                 // both sides are numeric, perform division
@@ -563,46 +630,43 @@ public record class DivisionOpExpression : OperatorExpression
                 }
                 catch (VBRuntimeErrorException vbRuntimeError)
                 {
+                    context.AddDiagnostics(vbRuntimeError);
                     if (rethrow)
                     {
                         throw;
                     }
-                    // TODO handle adding VBRuntimeErrorException.Overflow to the execution context
-                    result = new VBErrorValue().WithValue(vbRuntimeError.VBErrorNumber);
                 }
             }
             else
             {
                 // RHS is not numeric, VBA would throw a type mismatch at runtime.
-                // TODO handle adding VBRuntimeErrorException.TypeMismatch to the execution context
-                //scope = scope.WithError(VBRuntimeErrorException.TypeMismatch(this));
-                result = new VBErrorValue().WithValue(VBRuntimeErrorException.TypeMismatch(default(Range)!).VBErrorNumber);
+                var exception = VBRuntimeErrorException.TypeMismatch(this);
+                context.AddDiagnostics(exception);
+                if (rethrow)
+                {
+                    throw exception;
+                }
             }
         }
 
         return result;
     }
 }
-public record class IntegerDivisionOpExpression : OperatorExpression
+public record class IntegerDivisionOpExpression : BinaryOperatorExpression<VBTypedValue>
 {
     public IntegerDivisionOpExpression(WorkspaceUri parentUri, ValuedExpression left, ValuedExpression right)
-        : base(Tokens.IntegerDivisionOp, parentUri, [left, right])
+        : base(Tokens.IntegerDivisionOp, left.Type, parentUri, left, right)
     {
-        Left = left;
-        Right = right;
     }
 
-    public ValuedExpression Left { get; }
-    public ValuedExpression Right { get; }
-
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         VBTypedValue? result = default;
 
-        var lhsValue = Left.Evaluate(ref scope, rethrow);
+        var lhsValue = Left.Execute(context, rethrow);
         if (lhsValue is VBNumericTypedValue lhsNumeric)
         {
-            var rhsValue = Right.Evaluate(ref scope, rethrow);
+            var rhsValue = Right.Execute(context, rethrow);
             if (rhsValue is VBNumericTypedValue rhsNumeric)
             {
                 // both sides are numeric, perform division
@@ -618,46 +682,43 @@ public record class IntegerDivisionOpExpression : OperatorExpression
                 }
                 catch (VBRuntimeErrorException vbRuntimeError)
                 {
+                    context.AddDiagnostics(vbRuntimeError);
                     if (rethrow)
                     {
                         throw;
                     }
-                    // TODO handle adding VBRuntimeErrorException.Overflow to the execution context
-                    result = new VBErrorValue().WithValue(vbRuntimeError.VBErrorNumber);
                 }
             }
             else
             {
                 // RHS is not numeric, VBA would throw a type mismatch at runtime.
-                // TODO handle adding VBRuntimeErrorException.TypeMismatch to the execution context
-                //scope = scope.WithError(VBRuntimeErrorException.TypeMismatch(this));
-                result = new VBErrorValue().WithValue(VBRuntimeErrorException.TypeMismatch(default(Range)!).VBErrorNumber);
+                var exception = VBRuntimeErrorException.TypeMismatch(this);
+                context.AddDiagnostics(exception);
+                if (rethrow)
+                {
+                    throw exception;
+                }
             }
         }
 
         return result;
     }
 }
-public record class ModulusOpExpression : OperatorExpression
+public record class ModulusOpExpression : BinaryOperatorExpression<VBTypedValue>
 {
     public ModulusOpExpression(WorkspaceUri parentUri, ValuedExpression left, ValuedExpression right)
-        : base(Tokens.Mod, parentUri, [left, right])
+        : base(Tokens.Mod, VBDoubleType.TypeInfo, parentUri, left, right)
     {
-        Left = left;
-        Right = right;
     }
 
-    public ValuedExpression Left { get; }
-    public ValuedExpression Right { get; }
-
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         VBTypedValue? result = default;
 
-        var lhsValue = Left.Evaluate(ref scope, rethrow);
+        var lhsValue = Left.Execute(context, rethrow);
         if (lhsValue is VBNumericTypedValue lhsNumeric)
         {
-            var rhsValue = Right.Evaluate(ref scope, rethrow);
+            var rhsValue = Right.Execute(context, rethrow);
             if (rhsValue is VBNumericTypedValue rhsNumeric)
             {
                 // both sides are numeric, perform operation
@@ -673,97 +734,90 @@ public record class ModulusOpExpression : OperatorExpression
                 }
                 catch (VBRuntimeErrorException vbRuntimeError)
                 {
+                    context.AddDiagnostics(vbRuntimeError);
                     if (rethrow)
                     {
                         throw;
                     }
-                    // TODO handle adding VBRuntimeErrorException.Overflow to the execution context
-                    result = new VBErrorValue().WithValue(vbRuntimeError.VBErrorNumber);
                 }
             }
             else
             {
                 // RHS is not numeric, VBA would throw a type mismatch at runtime.
-                // TODO handle adding VBRuntimeErrorException.TypeMismatch to the execution context
-                //scope = scope.WithError(VBRuntimeErrorException.TypeMismatch(this));
-                result = new VBErrorValue().WithValue(VBRuntimeErrorException.TypeMismatch(default(Range)!).VBErrorNumber);
+                var exception = VBRuntimeErrorException.TypeMismatch(this);
+                context.AddDiagnostics(exception);
+                if (rethrow)
+                {
+                    throw exception;
+                }
             }
         }
 
         return result;
     }
 }
-public record class UnaryMinusOpExpression : OperatorExpression
+
+public record class UnaryMinusOpExpression : OperatorExpression<VBTypedValue>
 {
     public UnaryMinusOpExpression(WorkspaceUri parentUri, ValuedExpression expression)
-        : base(Tokens.SubtractionOp, parentUri, [expression])
+        : base(Tokens.SubtractionOp, VBDoubleType.TypeInfo, parentUri, [expression])
     {
         Expression = expression;
     }
 
     public ValuedExpression Expression { get; }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
-        VBTypedValue? result = default;
-
-        if (Expression is NumericValuedExpression numericExpression)
+        var expression = Expression.Execute(context, rethrow);
+        if (expression is VBNumericTypedValue value)
         {
-            var value = numericExpression.Evaluate(ref scope, rethrow);
-            if (value is VBNumericTypedValue numericValue)
-            {
-                result = numericValue.WithValue(-1 * value.NumericValue);
-            }
-            else
-            {
-                result = new VBErrorValue().WithValue(VBRuntimeErrorException.TypeMismatch(default(Range)!).VBErrorNumber);
-            }
-        }
-        else
-        {
-            result = new VBErrorValue().WithValue(VBRuntimeErrorException.TypeMismatch(default(Range)!).VBErrorNumber);
+            var newValue = -value.NumericValue;
+            return new VBDoubleValue(this) { NumericValue = newValue };
         }
 
-        return result;
+        var exception = VBRuntimeErrorException.TypeMismatch(this);
+        context.AddDiagnostics(exception);
+        if (rethrow)
+        {
+            throw exception;
+        }
+
+        return default;
     }
 }
 
-
-
-public record class UnaryNotOpExpression : OperatorExpression
+public record class UnaryNotOpExpression : OperatorExpression<VBTypedValue>
 {
     public UnaryNotOpExpression(WorkspaceUri parentUri, ValuedExpression expression)
-        : base(Tokens.LogicalNotOp, parentUri, [expression])
+        : base(Tokens.LogicalNotOp, VBLongType.TypeInfo, parentUri, [expression])
     {
         Expression = expression;
     }
 
     public ValuedExpression Expression { get; }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         VBTypedValue? result = default;
 
-        if (Expression is BooleanValuedExpression boolExpression)
+        var expression = Expression.Execute(context, rethrow);
+        if (expression is VBBooleanValue boolExpression)
         {
-            var value = boolExpression.Evaluate(ref scope, rethrow)!;
-            result = new VBBooleanValue().WithValue(!value.Value);
+            result = new VBBooleanValue(this) { Value = !boolExpression.Value };
         }
-        else if (Expression is NumericValuedExpression numericExpression)
+        else if (expression is VBNumericTypedValue numericExpression)
         {
-            var value = numericExpression.Evaluate(ref scope, rethrow);
-            if (value is VBNumericTypedValue numericValue)
-            {
-                result = numericValue.WithValue(-1 * value.NumericValue);
-            }
-            else
-            {
-                result = new VBErrorValue().WithValue(VBRuntimeErrorException.TypeMismatch(default(Range)!).VBErrorNumber);
-            }
+            result = numericExpression.WithValue(-1 * numericExpression.NumericValue);
         }
         else
         {
-            result = new VBErrorValue().WithValue(VBRuntimeErrorException.TypeMismatch(default(Range)!).VBErrorNumber);
+            var exception = VBRuntimeErrorException.TypeMismatch(this);
+            context.AddDiagnostics(exception);
+            if (rethrow)
+            {
+                throw exception;
+            }
         }
 
         return result;
@@ -771,26 +825,22 @@ public record class UnaryNotOpExpression : OperatorExpression
 }
 
 
-public record class PowOpExpression : OperatorExpression
+public record class PowOpExpression : BinaryOperatorExpression<VBNumericTypedValue>
 {
     public PowOpExpression(WorkspaceUri parentUri, ValuedExpression left, ValuedExpression right)
-        : base(Tokens.PowerOp, parentUri, [left, right])
+        : base(Tokens.PowerOp, VBDoubleType.TypeInfo, parentUri, left, right)
     {
-        Left = left;
-        Right = right;
     }
 
-    public ValuedExpression Left { get; }
-    public ValuedExpression Right { get; }
-
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBNumericTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
-        VBTypedValue? result = default;
+        VBNumericTypedValue? result = default;
 
-        var lhsValue = Left.Evaluate(ref scope, rethrow);
+        var rhsValue = Right.Execute(context, rethrow);
+        var lhsValue = Left.Execute(context, rethrow);
+
         if (lhsValue is VBNumericTypedValue lhsNumeric)
         {
-            var rhsValue = Right.Evaluate(ref scope, rethrow);
             if (rhsValue is VBNumericTypedValue rhsNumeric)
             {
                 // both sides are numeric, perform subtraction
@@ -799,26 +849,27 @@ public record class PowOpExpression : OperatorExpression
                 // return the widest of the two types
                 try
                 {
-                    result = lhsNumeric.Size >= rhsNumeric.Size
+                    result = (lhsNumeric.Size >= rhsNumeric.Size
                         ? lhsNumeric.WithValue(resultValue)
-                        : rhsNumeric.WithValue(resultValue);
+                        : rhsNumeric.WithValue(resultValue)) as VBNumericTypedValue;
                 }
                 catch (VBRuntimeErrorException vbRuntimeError)
                 {
+                    context.AddDiagnostics(vbRuntimeError);
                     if (rethrow)
                     {
                         throw;
                     }
-                    // TODO handle adding VBRuntimeErrorException.Overflow to the execution context
-                    result = new VBErrorValue().WithValue(vbRuntimeError.VBErrorNumber);
                 }
             }
             else
             {
                 // RHS is not numeric, VBA would throw a type mismatch at runtime.
-                // TODO handle adding VBRuntimeErrorException.TypeMismatch to the execution context
-                //scope = scope.WithError(VBRuntimeErrorException.TypeMismatch(this));
-                result = new VBErrorValue().WithValue(VBRuntimeErrorException.TypeMismatch(default(Range)!).VBErrorNumber);
+                var exception = VBRuntimeErrorException.TypeMismatch(this);
+                if (rethrow)
+                {
+                    throw exception;
+                }
             }
         }
 
@@ -826,43 +877,55 @@ public record class PowOpExpression : OperatorExpression
     }
 }
 
-public record class TypeOfExpression : ValuedExpression
+public record class TypeOfExpression : ValuedExpression<VBTypeDescValue>
 {
-    public TypeOfExpression(WorkspaceUri parentUri, ValuedExpression expression)
-        : base(RubberduckSymbolKind.Operator, Tokens.TypeOf, parentUri, [expression])
+    public TypeOfExpression(WorkspaceUri parentUri, ValuedExpression value)
+        : base(RubberduckSymbolKind.Operator, value.Type, Tokens.TypeOf, parentUri)
     {
-        Expression = expression;
+        Expression = value;
     }
+
     public ValuedExpression Expression { get; }
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    public override VBTypeDescValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
-        VBTypedValue? result = default;
-        var exprValue = Expression.Evaluate(ref scope, rethrow);
-        if (exprValue is VBObjectValue objValue)
+        if (Expression.Execute(context, rethrow) is VBTypedValue result)
         {
-            return new VBTypeDescValue(objValue.TypeInfo);
+            return new VBTypeDescValue(result.TypeInfo);
         }
-        return result;
+        else
+        {
+            var exception = VBRuntimeErrorException.ObjectVariableNotSet(Expression);
+            if (rethrow)
+            {
+                throw exception;
+            }
+            else
+            {
+                context.AddDiagnostic(RubberduckDiagnostic.RuntimeError(exception));
+            }
+        }
+
+        return default;
     }
 }
 
 /// <summary>
 /// Represents a literal expression.
 /// </summary>
-public record class LiteralExpression : ValuedExpression
+public record class LiteralExpression<TValue> : ValuedExpression<TValue> where TValue : VBTypedValue
 {
-    public LiteralExpression(RubberduckSymbolKind kind, WorkspaceUri parentUri, VBTypedValue value)
-        : base(kind, value.ToString(), parentUri)
+    public LiteralExpression(RubberduckSymbolKind kind, WorkspaceUri parentUri, TValue value)
+        : base(kind, value.TypeInfo, value.ToString(), parentUri)
     {
         Value = value;
     }
 
-    public VBTypedValue Value { get; }
+    public TValue Value { get; }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false) => Value;
+    public override TValue? Execute(VBExecutionContext context, bool rethrow = false) => Value;
 }
 
-public record class StringLiteralExpression : LiteralExpression
+public record class StringLiteralExpression : LiteralExpression<VBStringValue>
 {
     public StringLiteralExpression(WorkspaceUri parentUri, VBStringValue value)
         : base(RubberduckSymbolKind.StringLiteral, parentUri, value)
@@ -884,7 +947,7 @@ public record class HintedStringLiteralExpression : StringLiteralExpression
 /// <summary>
 /// Represents the <c>Nothing</c> literal value.
 /// </summary>
-public record class ObjectLiteralExpression : LiteralExpression
+public record class ObjectLiteralExpression : LiteralExpression<VBObjectValue>
 {
     public ObjectLiteralExpression(WorkspaceUri parentUri)
         : base(RubberduckSymbolKind.Nothing, parentUri, VBObjectValue.Nothing)
@@ -892,7 +955,7 @@ public record class ObjectLiteralExpression : LiteralExpression
     }
 }
 
-public record class DateLiteralExpression : LiteralExpression
+public record class DateLiteralExpression : LiteralExpression<VBDateValue>
 {
     public DateLiteralExpression(WorkspaceUri parentUri, VBDateValue value)
         : base(RubberduckSymbolKind.DateLiteral, parentUri, value)
@@ -900,7 +963,7 @@ public record class DateLiteralExpression : LiteralExpression
     }
 }
 
-public record class BooleanLiteralExpression : LiteralExpression
+public record class BooleanLiteralExpression : LiteralExpression<VBBooleanValue>
 {
     public BooleanLiteralExpression(WorkspaceUri parentUri, VBBooleanValue value)
         : base(RubberduckSymbolKind.BooleanLiteral, parentUri, value)
@@ -908,25 +971,25 @@ public record class BooleanLiteralExpression : LiteralExpression
     }
 }
 
-public record class HexLiteralExpression : NumericLiteralExpression
+public record class HexLiteralExpression : NumericLiteralExpression<VBLongValue>
 {
-    public HexLiteralExpression(WorkspaceUri parentUri, VBNumericTypedValue value)
+    public HexLiteralExpression(WorkspaceUri parentUri, VBLongValue value)
         : base(parentUri, value)
     {
     }
 }
 
-public record class OctalLiteralExpression : NumericLiteralExpression
+public record class OctalLiteralExpression : NumericLiteralExpression<VBLongValue>
 {
-    public OctalLiteralExpression(WorkspaceUri parentUri, VBNumericTypedValue value)
+    public OctalLiteralExpression(WorkspaceUri parentUri, VBLongValue value)
         : base(parentUri, value)
     {
     }
 }
 
-public abstract record class VariantLiteralExpression : LiteralExpression
+public abstract record class VariantLiteralExpression : LiteralExpression<VBVariantValue>
 {
-    protected VariantLiteralExpression(WorkspaceUri parentUri, VBTypedValue value)
+    protected VariantLiteralExpression(WorkspaceUri parentUri, VBVariantValue value)
         : base(RubberduckSymbolKind.VariantLiteral, parentUri, value)
     {
     }
@@ -935,7 +998,7 @@ public abstract record class VariantLiteralExpression : LiteralExpression
 public record class EmptyLiteralExpression : VariantLiteralExpression
 {
     public EmptyLiteralExpression(WorkspaceUri parentUri)
-        : base(parentUri, VBEmptyValue.Empty)
+        : base(parentUri, VBEmptyValue.Empty.AsVariant())
     {
     }
 }
@@ -943,7 +1006,7 @@ public record class EmptyLiteralExpression : VariantLiteralExpression
 public record class NullLiteralExpression : VariantLiteralExpression
 {
     public NullLiteralExpression(WorkspaceUri parentUri)
-        : base(parentUri, VBNullValue.Null)
+        : base(parentUri, VBNullValue.Null.AsVariant())
     {
     }
 }
@@ -951,9 +1014,18 @@ public record class NullLiteralExpression : VariantLiteralExpression
 /// <summary>
 /// Represents an implicitly-typed numeric literal value.
 /// </summary>
-public record class NumericLiteralExpression : LiteralExpression
+public record class NumericLiteralExpression : LiteralExpression<VBNumericTypedValue>
 {
     public NumericLiteralExpression(WorkspaceUri parentUri, VBNumericTypedValue value)
+        : base(RubberduckSymbolKind.NumberLiteral, parentUri, value)
+    {
+    }
+}
+
+public record class NumericLiteralExpression<TValue> : LiteralExpression<TValue>
+    where TValue : VBNumericTypedValue
+{
+    public NumericLiteralExpression(WorkspaceUri parentUri, TValue value)
         : base(RubberduckSymbolKind.NumberLiteral, parentUri, value)
     {
     }
@@ -1029,9 +1101,9 @@ public record class DoubleLiteralExpression : NumericLiteralExpression
 /// <summary>
 /// Represents an expression that evaluates to an object reference.
 /// </summary>
-public abstract record class ObjectValuedExpression : ValuedExpression<VBObjectValue>
+public record class ObjectValuedExpression : ValuedExpression<VBObjectValue>
 {
-    protected ObjectValuedExpression(WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
+    public ObjectValuedExpression(WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
         : base(RubberduckSymbolKind.Expression, VBObjectType.TypeInfo, Tokens.Object, parentUri, children)
     {
     }
@@ -1043,34 +1115,23 @@ public abstract record class ObjectValuedExpression : ValuedExpression<VBObjectV
 public record class NewInstExpression : OperatorExpression<VBObjectValue>
 {
     public NewInstExpression(WorkspaceUri parentUri, ClassModuleSymbol classType)
-        : base(Tokens.New, classType.ResolvedType!, parentUri, [])
+        : base(Tokens.New, classType.Type!, parentUri, [])
     {
         ClassType = classType;
     }
 
     public ClassModuleSymbol ClassType { get; }
 
-    public override VBObjectValue? Evaluate(ref VBExecutionScope context, bool rethrow = false)
+    public override VBObjectValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         return new VBObjectValue(ClassType) { Value = Guid.NewGuid() };
     }
 }
 
 /// <summary>
-/// Represents an expression that evaluates to a Boolean value.
-/// </summary>
-public record class BooleanValuedExpression : ValuedExpression<VBBooleanValue>
-{
-    public BooleanValuedExpression(WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
-        : base(RubberduckSymbolKind.Expression, VBBooleanType.TypeInfo, string.Empty, parentUri, children)
-    {
-    }
-}
-
-/// <summary>
 /// Represents an expression that evaluates to a string value.
 /// </summary>
-public record class StringValuedExpression : ValuedExpression<VBStringValue>
+public record class StringValuedExpression : ValuedExpression
 {
     public StringValuedExpression(WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
         : base(RubberduckSymbolKind.Expression, VBStringType.TypeInfo, string.Empty, parentUri, children)
@@ -1078,7 +1139,15 @@ public record class StringValuedExpression : ValuedExpression<VBStringValue>
     }
 }
 
-public record class NumericValuedExpression : ValuedExpression<VBNumericTypedValue>
+public record class BooleanValuedExpression : ValuedExpression
+{
+    public BooleanValuedExpression(WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
+        : base(RubberduckSymbolKind.Expression, VBBooleanType.TypeInfo, string.Empty, parentUri, children)
+    {
+    }
+}
+
+public record class NumericValuedExpression : ValuedExpression
 {
     public NumericValuedExpression(WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
         : base(RubberduckSymbolKind.Expression, VBDoubleType.TypeInfo, string.Empty, parentUri, children)
@@ -1089,10 +1158,9 @@ public record class NumericValuedExpression : ValuedExpression<VBNumericTypedVal
 public record class InvalidExpression : ValuedExpression
 {
     public InvalidExpression(string name, WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = null)
-        : base(RubberduckSymbolKind.UnknownSymbol, name, parentUri, children)
+        : base(RubberduckSymbolKind.UnknownSymbol, VBAnyType.TypeInfo, name, parentUri, children)
     {
     }
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false) => null;
 }
 
 public record class InvalidSymbol : Symbol
@@ -1150,7 +1218,7 @@ public abstract record class TypedSymbol : Symbol, ITypedSymbol
         : base(kind, name, parentUri, accessibility, children)
     {
         Accessibility = accessibility;
-        ResolvedType = type ?? ResolveIntrinsicType(asTypeName);
+        Type = type ?? ResolveIntrinsicType(asTypeName);
         TypeName = type?.Name ?? asTypeName;
     }
 
@@ -1166,8 +1234,8 @@ public abstract record class TypedSymbol : Symbol, ITypedSymbol
 
     public string? TypeName { get; init; }
 
-    public VBType? ResolvedType { get; init; }
-    public TypedSymbol WithResolvedType(VBType? resolvedType) => this with { ResolvedType = resolvedType };
+    public VBType? Type { get; init; }
+    public TypedSymbol WithResolvedType(VBType? resolvedType) => this with { Type = resolvedType };
 }
 
 public record class ClassTypeInstanceSymbol : TypedSymbol
@@ -1223,7 +1291,7 @@ public abstract record class ValuedTypedSymbol : TypedSymbol, IValuedSymbol
     /// </remarks>
     public VBType? ResolvedValueExpressionType { get; init; }
 
-    public abstract VBTypedValue Evaluate(ref VBExecutionScope context, bool rethrow = false);
+    public abstract VBTypedValue Execute(VBExecutionContext context, bool rethrow = false);
 
     public ITypedSymbol WithResolvedValueExpressionType(VBType? type) => this with { ResolvedValueExpressionType = type };
 }
@@ -1272,7 +1340,7 @@ public record class OptionalParameterSymbol : ParameterSymbol, IValuedSymbol
     public string? ValueExpression { get; init; }
     public VBType? ResolvedValueExpressionType { get; init; }
 
-    public VBTypedValue? Evaluate(ref VBExecutionScope context, bool rethrow = false) => context.GetTypedValue(this);
+    public VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false) => context.CurrentScope.GetTypedValue(this);
 
     public ITypedSymbol WithResolvedValueExpressionType(VBType? resolvedValueExpressionType) => this with { ResolvedValueExpressionType = resolvedValueExpressionType };
 }
@@ -1282,7 +1350,7 @@ public record class UserDefinedTypeSymbol : TypedSymbol
     public UserDefinedTypeSymbol(string name, WorkspaceUri parentUri, Accessibility accessibility, IEnumerable<UserDefinedTypeMemberSymbol> children)
         : base(RubberduckSymbolKind.UserDefinedType, accessibility, name, parentUri, children.Cast<Symbol>())
     {
-        ResolvedType = new VBUserDefinedType(name, parentUri, this);
+        Type = new VBUserDefinedType(name, parentUri, this);
     }
 }
 
@@ -1337,20 +1405,14 @@ public record class FunctionSymbol : TypedSymbol, IExecutable
 
     public bool? IsReachable { get; init; }
 
-    public VBTypedValue? Evaluate(ref VBExecutionScope context, bool rethrow = false)
-    {
-        // TODO walk the executable symbol tree to track the assigned value
-        // for now we're happy just getting a resolved type back
-        return context.GetTypedValue(this);
-    }
-
-    public VBTypedValue? Execute(ref VBExecutionContext context, bool rethrow = false)
+    public VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         var member = context.GetModuleMember(this);
         if (member != null)
         {
             var scope = context.EnterScope(member);
-            return Evaluate(ref scope);
+            scope.Execute(context, rethrow);
+
         }
         throw VBRuntimeErrorException.PropertyOrMethodNotFound(this); // fitting, but is it really a VB-trappable error? or it's a .net-side bug?
     }
@@ -1361,10 +1423,10 @@ public record class ProcedureSymbol : TypedSymbol, IExecutable
     public ProcedureSymbol(string name, WorkspaceUri parentUri, Accessibility accessibility, IEnumerable<Symbol>? children = null, RubberduckSymbolKind kind = RubberduckSymbolKind.Procedure)
         : base(kind, accessibility, name, parentUri, (children ?? []).ToArray(), VBLongPtrType.TypeInfo) { }
 
-    public VBTypedValue? Evaluate(ref VBExecutionScope context, bool rethrow = false) =>
+    public VBTypedValue? Evaluate(VBExecutionScope context, bool rethrow = false) =>
         context.GetTypedValue(this) as VBLongPtrValue; // symbol table contains a VBLongPtrValue for procedures that can be used with the AddressOf operator.
 
-    public VBTypedValue? Execute(ref VBExecutionContext context, bool rethrow = false)
+    public VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         var member = context.GetModuleMember(this);
         if (member != null)
@@ -1372,7 +1434,7 @@ public record class ProcedureSymbol : TypedSymbol, IExecutable
             try
             {
                 var scope = context.EnterScope(member);
-                scope.Execute(ref context);
+                scope.Execute(context);
             }
             catch (VBCompileErrorException vbCompileError)
             {
@@ -1413,7 +1475,7 @@ public record class EnumSymbol : TypedSymbol
     public EnumSymbol(string name, WorkspaceUri parentUri, Accessibility accessibility, IEnumerable<EnumMemberSymbol>? children = null, bool isUserDefined = false)
         : base(RubberduckSymbolKind.Enum, accessibility, name, parentUri, children)
     {
-        ResolvedType = new VBEnumType(name, parentUri, this, isUserDefined: isUserDefined);
+        Type = new VBEnumType(name, parentUri, this, isUserDefined: isUserDefined);
     }
 }
 
@@ -1422,10 +1484,10 @@ public record class EnumMemberSymbol : ValuedTypedSymbol
     public EnumMemberSymbol(string name, WorkspaceUri parentUri, string? value)
         : base(RubberduckSymbolKind.EnumMember, Accessibility.Public, name, parentUri, null, value)
     {
-        ResolvedType = VBLongType.TypeInfo;
+        Type = VBLongType.TypeInfo;
     }
 
-    public override VBTypedValue Evaluate(ref VBExecutionScope context, bool rethrow = false) => context.GetTypedValue(this);
+    public override VBTypedValue Execute(VBExecutionContext context, bool rethrow = false) => context.CurrentScope.GetTypedValue(this);
 }
 
 public record class EventSymbol : ProcedureSymbol
@@ -1439,11 +1501,13 @@ public record class ConstantDeclarationSymbol : ValuedTypedSymbol
     public ConstantDeclarationSymbol(string name, WorkspaceUri parentUri, Accessibility accessibility, string? asTypeNameExpression, string? valueExpression)
         : base(RubberduckSymbolKind.Constant, accessibility, name, parentUri, asTypeNameExpression, valueExpression) { }
 
-    public override VBTypedValue Evaluate(ref VBExecutionScope context, bool rethrow = false) => context.GetTypedValue(this);
+    public override VBTypedValue Execute(VBExecutionContext context, bool rethrow = false) => context.CurrentScope.GetTypedValue(this);
 }
 
 public record class VariableDeclarationSymbol : DeclarationExpressionSymbol
 {
+    public VariableDeclarationSymbol(string name, WorkspaceUri parentUri, Accessibility accessibility, VBType type)
+        : base(RubberduckSymbolKind.Variable, name, parentUri, accessibility, children: [], annotations: [], type: type) { }
     public VariableDeclarationSymbol(string name, WorkspaceUri parentUri, Accessibility accessibility, string? asTypeNameExpression)
         : base(RubberduckSymbolKind.Variable, name, parentUri, accessibility, children: [], annotations: [], asTypeNameExpression) { }
 }
@@ -1464,40 +1528,59 @@ public record class NumberLiteralSymbol : TypedSymbol
     }
 }
 
-public abstract record class OperatorSymbol : TypedSymbol, IValuedExpression<VBTypedValue>
+public abstract record class OperatorSymbol : ValuedExpression<VBTypedValue>
 {
-    public OperatorSymbol(string token, WorkspaceUri parentUri, IEnumerable<Symbol>? children)
-        : base(RubberduckSymbolKind.Operator, Accessibility.Undefined, token, parentUri, children, null)
+    public OperatorSymbol(string token, VBType type, WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children)
+        : base(RubberduckSymbolKind.Operator, type, token, parentUri, children)
     {
     }
 
-    public VBTypedValue? Evaluate(ref VBExecutionScope context, bool rethrow = false)
+    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         try
         {
-            return EvaluateResult(ref context);
+            return EvaluateResult(context);
         }
         catch (VBCompileErrorException vbCompileError)
         {
-            context = context.WithDiagnostics(vbCompileError.Diagnostics);
+            foreach (var diagnostic in vbCompileError.Diagnostics)
+            {
+                context.AddDiagnostic(diagnostic);
+            }
+
             if (rethrow)
             {
                 throw;
             }
+
             return null;
         }
         catch (VBRuntimeErrorException vbRuntimeError)
         {
-            context = context.WithError(vbRuntimeError);
+            foreach (var diagnostic in vbRuntimeError.Diagnostics)
+            {
+                context.AddDiagnostic(diagnostic);
+            }
+
             if (rethrow)
             {
                 throw;
             }
+
             return null;
         }
     }
 
-    protected abstract VBTypedValue? EvaluateResult(ref VBExecutionScope context);
+    protected abstract VBTypedValue? EvaluateResult(VBExecutionContext context);
+}
+
+public record class LineLabelSymbol : Symbol
+{
+    public LineLabelSymbol(string name, WorkspaceUri parentUri)
+        : base(RubberduckSymbolKind.LineLabel, name, parentUri)
+    {
+    }
+    public bool IsLineNumber => int.TryParse(Name, out _);
 }
 
 /// <summary>
@@ -1505,9 +1588,10 @@ public abstract record class OperatorSymbol : TypedSymbol, IValuedExpression<VBT
 /// </summary>
 public abstract record class ExecutableStatement : IExecutable
 {
-    protected ExecutableStatement(WorkspaceUri parentUri)
+    protected ExecutableStatement(WorkspaceUri parentUri, LineLabelSymbol? parentLabel = default)
     {
         ParentUri = parentUri;
+        ParentLabel = parentLabel;
     }
 
     /// <summary>
@@ -1519,18 +1603,16 @@ public abstract record class ExecutableStatement : IExecutable
     public WorkspaceUri ParentUri { get; init; }
 
     /// <summary>
-    /// Evaluates the statement in the given scope.
+    /// The line label (or number) associated with this statement, if any.
     /// </summary>
-    public abstract VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false);
+    public LineLabelSymbol? ParentLabel { get; init; }
 
     /// <summary>
     /// Executes the statement in the given context.
     /// </summary>
-    public virtual VBTypedValue? Execute(ref VBExecutionContext context, bool rethrow = false)
-    {
-        var scope = context.CurrentScope;
-        return Evaluate(ref scope, rethrow);
-    }
+    public VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false) => ExecuteInternal(context, rethrow);
+
+    protected virtual VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false) => default;
 }
 
 /// <summary>
@@ -1546,9 +1628,36 @@ public record class CallStatement : ExecutableStatement
 
     public IExecutable Target { get; }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false) => Target.Evaluate(ref scope, rethrow);
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        VBTypedValue? result = default;
+        try
+        {
+            if (Target is VBTypeMember target)
+            {
+                context.EnterScope(target);
+            }
+            result = Target.Execute(context, rethrow);
+        }
+        catch (VBRuntimeErrorException exception)
+        {
+            context.AddDiagnostics(exception);
+            if (rethrow)
+            {
+                throw;
+            }
+        }
+        catch (VBCompileErrorException exception)
+        {
+            context.AddDiagnostics(exception);
+            if (rethrow)
+            {
+                throw;
+            }
+        }
 
-    public override VBTypedValue? Execute(ref VBExecutionContext context, bool rethrow = false) => Target.Execute(ref context, rethrow);
+        return result;
+    }
 }
 
 /// <summary>
@@ -1556,27 +1665,28 @@ public record class CallStatement : ExecutableStatement
 /// </summary>
 public abstract record class BlockStatement : ExecutableStatement
 {
-    public BlockStatement(WorkspaceUri parentUri, IEnumerable<IExecutable>? children = null)
-        : base(parentUri)
+    public BlockStatement(WorkspaceUri parentUri, IEnumerable<IExecutable>? children = null, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, parentLabel)
     {
         Children = children ?? [];
     }
 
     public IEnumerable<IExecutable> Children { get; }
 
-    public override VBTypedValue? Execute(ref VBExecutionContext context, bool rethrow = false)
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
     {
-        var success = ExecuteBody(ref context, rethrow);
+        var success = ExecuteBody(context, rethrow);
         return new VBBooleanValue().WithValue(success);
     }
 
-    protected bool ExecuteBody(ref VBExecutionContext context, bool rethrow = false)
+    protected bool ExecuteBody(VBExecutionContext context, bool rethrow = false)
     {
         try
         {
+            // TODO implement execution pointer and orchestrate execution in the context
             foreach (var child in Children)
             {
-                _ = child.Execute(ref context, rethrow);
+                _ = child.Execute(context, rethrow);
             }
             return true;
         }
@@ -1587,17 +1697,67 @@ public abstract record class BlockStatement : ExecutableStatement
     }
 }
 
+public record class GoToStatement : ExecutableStatement
+{
+    public GoToStatement(WorkspaceUri parentUri, LineLabelSymbol targetLabel, bool isImplicit = false)
+        : base(parentUri)
+    {
+        TargetLabel = targetLabel;
+        IsImplicit = isImplicit;
+    }
+
+    public bool IsImplicit { get; init; }
+    public LineLabelSymbol TargetLabel { get; }
+
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        // TODO this will be easier with context.ExecutionPointer
+        return base.ExecuteInternal(context, rethrow);
+    }
+}
+
 public record class IfStatement : BlockStatement
 {
-    public IfStatement(WorkspaceUri parentUri, BooleanValuedExpression condition, IEnumerable<IExecutable> body)
+    public IfStatement(WorkspaceUri parentUri, BooleanValuedExpression condition, IEnumerable<IExecutable> body, IEnumerable<ElseIfStatement> elseIfBlocks = default, ElseStatement? elseBlock = default)
         : base(parentUri, body)
     {
         Condition = condition;
+        ElseIfBlocks = elseIfBlocks ?? [];
+        ElseBlock = elseBlock;
     }
 
     public BooleanValuedExpression Condition { get; }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false) => Condition.Evaluate(ref scope, rethrow);
+    public IEnumerable<ElseIfStatement> ElseIfBlocks { get; } = [];
+    public ElseStatement? ElseBlock { get; init; }
+
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        var condition = Condition.Execute(context, rethrow);
+        if (condition is VBBooleanValue conditionResult)
+        {
+            if (conditionResult.Value)
+            {
+                ExecuteBody(context, rethrow);
+                return VBBooleanValue.True;
+            }
+            else
+            {
+                foreach (var elseIfBlock in ElseIfBlocks)
+                {
+                    if (elseIfBlock.Execute(context, rethrow) is VBBooleanValue didExecute && didExecute.Value)
+                    {
+                        break;
+                    }
+                }
+
+                ElseBlock?.Execute(context, rethrow);
+                return VBBooleanValue.False;
+            }
+        }
+
+        return default;
+    }
 }
 
 public record class ElseIfStatement : BlockStatement
@@ -1610,7 +1770,24 @@ public record class ElseIfStatement : BlockStatement
 
     public BooleanValuedExpression Condition { get; }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false) => Condition.Evaluate(ref scope, rethrow);
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        var condition = Condition.Execute(context, rethrow);
+        if (condition is VBBooleanValue conditionResult)
+        {
+            if (conditionResult.Value)
+            {
+                ExecuteBody(context, rethrow);
+                return VBBooleanValue.True;
+            }
+            else
+            {
+                return VBBooleanValue.False;
+            }
+        }
+
+        return default;
+    }
 }
 
 public record class ElseStatement : BlockStatement
@@ -1618,7 +1795,11 @@ public record class ElseStatement : BlockStatement
     public ElseStatement(WorkspaceUri parentUri, IEnumerable<IExecutable> body)
         : base(parentUri, body) { }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false) => default;
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        ExecuteBody(context, rethrow);
+        return default;
+    }
 }
 
 public record class ForNextStatement : BlockStatement
@@ -1639,45 +1820,42 @@ public record class ForNextStatement : BlockStatement
     NumericValuedExpression ToExpression { get; }
     NumericValuedExpression? StepExpression { get; }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    private bool Evaluate(VBExecutionContext context, bool rethrow = false)
     {
         var result = false;
 
-        var stepValue = StepExpression?.Evaluate(ref scope, rethrow) ?? ImplicitStepValue;
+        var stepValue = StepExpression?.Execute(context, rethrow) ?? ImplicitStepValue;
         var increment = ((VBNumericTypedValue)stepValue).NumericValue;
 
-        var toValue = ToExpression.Evaluate(ref scope, rethrow);
+        var toValue = ToExpression.Execute(context, rethrow);
         if (toValue is VBNumericTypedValue numericToValue)
         {
             result = increment >= 0
-                ? ((VBNumericTypedValue)scope.GetTypedValue(ControlVariable)).NumericValue <= numericToValue.NumericValue
-                : ((VBNumericTypedValue)scope.GetTypedValue(ControlVariable)).NumericValue >= numericToValue.NumericValue;
+                ? ((VBNumericTypedValue)context.CurrentScope.GetTypedValue(ControlVariable)).NumericValue <= numericToValue.NumericValue
+                : ((VBNumericTypedValue)context.CurrentScope.GetTypedValue(ControlVariable)).NumericValue >= numericToValue.NumericValue;
         }
 
-        return new VBBooleanValue().WithValue(result);
+        return result;
     }
 
-    public override VBTypedValue? Execute(ref VBExecutionContext context, bool rethrow = false)
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
     {
         var didEnter = false;
 
         var scope = context.CurrentScope;
-        var initialValue = FromExpression.Evaluate(ref scope, rethrow);
+        var initialValue = FromExpression.Execute(context, rethrow);
         if (initialValue is VBNumericTypedValue numericInitialValue)
         {
             scope.SetTypedValue(ControlVariable, numericInitialValue);
         }
 
-        var stepValue = StepExpression?.Evaluate(ref scope, rethrow) ?? ImplicitStepValue;
-        var increment = ((VBNumericTypedValue)stepValue).NumericValue;
-
-        var toValue = ToExpression.Evaluate(ref scope, rethrow);
+        var toValue = ToExpression.Execute(context, rethrow);
         if (toValue is VBNumericTypedValue numericToValue)
         {
-            while (Evaluate(ref scope, rethrow) is VBBooleanValue vbBool && vbBool.Value)
+            while (Evaluate(context, rethrow))
             {
                 didEnter = true;
-                ExecuteBody(ref context, rethrow); // TODO handle Exit For
+                ExecuteBody(context, rethrow);
 
                 //var currentControlValue = (scope.GetTypedValue(ControlVariable.ReferencedSymbol) as VBNumericTypedValue)!;
                 //var newControlValue = currentControlValue.WithValue(currentControlValue.NumericValue + increment);
@@ -1687,7 +1865,7 @@ public record class ForNextStatement : BlockStatement
             }
         }
 
-        return new VBBooleanValue().WithValue(didEnter);
+        return new VBBooleanValue() { Value = didEnter };
     }
 }
 
@@ -1703,16 +1881,21 @@ public record class ForEachStatementSymbol : BlockStatement
     public ObjectValuedExpression VariableExpression { get; init; }
     public ObjectValuedExpression InExpression { get; init; }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
     {
         var result = false;
 
-        if (InExpression.Evaluate(ref scope, rethrow) is VBObjectValue objValue)
+        if (InExpression.Execute(context, rethrow) is VBObjectValue objValue)
         {
-            result = objValue.TypeInfo is VBCollectionType;
+            if (objValue.TypeInfo is VBCollectionType vbCollection && vbCollection.IsArray)
+            {
+                context.AddDiagnostic(RubberduckDiagnostic.EnumerationOverArray(InExpression));
+            }
+
+            result = ExecuteBody(context, rethrow);
         }
 
-        return new VBBooleanValue().WithValue(result);
+        return new VBBooleanValue() { Value = result };
     }
 }
 
@@ -1755,12 +1938,7 @@ public abstract record class DoLoopBlockStatement : BlockStatement
     public DoLoopType LoopType { get; }
     public BooleanValuedExpression? Condition { get; }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
-    {
-        return Condition?.Evaluate(ref scope, rethrow) ?? VBBooleanValue.True;
-    }
-
-    public override VBTypedValue? Execute(ref VBExecutionContext context, bool rethrow = false)
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
     {
         var didEnter = false;
         var scope = context.CurrentScope;
@@ -1768,15 +1946,15 @@ public abstract record class DoLoopBlockStatement : BlockStatement
         {
             case DoLoopType.DoLoop:
                 didEnter = true;
-                ExecuteBody(ref context, rethrow);
+                ExecuteBody(context, rethrow);
                 break; // unconditioned loop, execute body once
 
             case DoLoopType.DoUntil:
             case DoLoopType.DoWhile:
-                while (Evaluate(ref scope, rethrow) is VBBooleanValue vbBool && !vbBool.Value)
+                while (Condition?.Execute(context, rethrow) is VBBooleanValue vbBool && !vbBool.Value)
                 {
                     didEnter = true;
-                    ExecuteBody(ref context, rethrow);
+                    ExecuteBody(context, rethrow);
                     break; // only execute once for now
                 }
                 break;
@@ -1786,17 +1964,17 @@ public abstract record class DoLoopBlockStatement : BlockStatement
                 do
                 {
                     didEnter = true;
-                    ExecuteBody(ref context, rethrow);
+                    ExecuteBody(context, rethrow);
                     break; // only execute once for now
                 }
-                while (Evaluate(ref scope, rethrow) is VBBooleanValue vbBool && vbBool.Value);
+                while (Condition?.Execute(context, rethrow) is VBBooleanValue vbBool && vbBool.Value);
                 break;
 
             default:
                 break;
         }
 
-        return new VBBooleanValue().WithValue(didEnter);
+        return new VBBooleanValue() { Value = didEnter };
     }
 }
 
@@ -1864,11 +2042,6 @@ public record class WhileWendStatement : BlockStatement
     }
 
     public BooleanValuedExpression Condition { get; init; }
-
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false)
-    {
-        throw new NotImplementedException();
-    }
 }
 
 public record class WithStatementSymbol : BlockStatement
@@ -1881,5 +2054,92 @@ public record class WithStatementSymbol : BlockStatement
 
     public ObjectValuedExpression TargetExpression { get; init; }
 
-    public override VBTypedValue? Evaluate(ref VBExecutionScope scope, bool rethrow = false) => TargetExpression.Evaluate(ref scope, rethrow);
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        var withObjectVariable = TargetExpression.Execute(context, rethrow);
+        if (withObjectVariable == VBObjectValue.Nothing)
+        {
+            context.AddDiagnostics(VBRuntimeErrorException.ObjectVariableNotSet(TargetExpression, "With block variable or expression evaluates to Nothing"));
+        }
+
+        ExecuteBody(context, rethrow);
+        return default;
+    }
+}
+
+public record class ExitStatement : ExecutableStatement
+{
+    public ExitStatement(WorkspaceUri parentUri, BlockStatement? binding, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, parentLabel)
+    {
+        Binding = binding;
+    }
+
+    public BlockStatement? Binding { get; }
+
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        if (Binding is not null)
+        {
+            context.ExitBlock(Binding);
+        }
+
+        return default;
+    }
+}
+
+public record class RaiseEventStatement : ExecutableStatement
+{
+    public RaiseEventStatement(WorkspaceUri parentUri, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, parentLabel)
+    {
+    }
+}
+
+public record class DimStatement : ExecutableStatement
+{
+    // NOTE: Dim statements are executed upon entering a scope
+
+    public DimStatement(WorkspaceUri parentUri, IEnumerable<TypedSymbol> symbols, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, parentLabel)
+    {
+        Symbols = symbols;
+    }
+
+    public IEnumerable<TypedSymbol> Symbols { get; }
+
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        foreach (var symbol in Symbols)
+        {
+            context.AddSymbol(symbol);
+        }
+
+        return default;
+    }
+}
+
+public record class ReDimStatement : DimStatement
+{
+    public ReDimStatement(WorkspaceUri parentUri, IEnumerable<TypedSymbol> symbols, bool preserve = false, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, symbols, parentLabel)
+    {
+        Preserve = preserve;
+    }
+
+    public bool Preserve { get; init; }
+
+    // NOTE: ReDim statements are declarative on scope entry, but still executable
+
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        // base Dim implementation adds the symbols to the context
+        var result = base.Execute(context, rethrow);
+        foreach (var symbol in Symbols)
+        {
+            // TODO add or update array bounds, validate, issue diagnostics
+        }
+
+        return result;
+    }
 }

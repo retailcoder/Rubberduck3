@@ -9,43 +9,30 @@ namespace Rubberduck.InternalApi.Model.Declarations.Operators.Abstract;
 
 public abstract record class VBBinaryOperator : VBOperator
 {
-    protected VBBinaryOperator(string token, WorkspaceUri parentUri, string lhsExpression, string rhsExpression, TypedSymbol? lhs = null, TypedSymbol? rhs = null)
-        : base(token, parentUri, new[] { lhs, rhs }.Where(e => e != null).OfType<TypedSymbol>().ToArray() ?? [])
+    protected VBBinaryOperator(string token, WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
+        : base(token, parentUri, [lhs, rhs])
     {
-        LeftHandSideExpression = lhsExpression;
-        RightHandSideExpression = rhsExpression;
-
-        ResolvedLeftHandSideExpression = lhs;
-        ResolvedRightHandSideExpression = rhs;
+        Left = lhs;
+        Right = rhs;
     }
 
-    public string LeftHandSideExpression { get; init; }
-    public TypedSymbol? ResolvedLeftHandSideExpression { get; init; }
+    public ValuedExpression Left { get; init; }
+    public ValuedExpression Right { get; init; }
 
-    public string RightHandSideExpression { get; init; }
-    public TypedSymbol? ResolvedRightHandSideExpression { get; init; }
-
-    public virtual VBBinaryOperator WithOperands(TypedSymbol? lhs, TypedSymbol? rhs)
-        => this with
-        {
-            ResolvedLeftHandSideExpression = lhs,
-            ResolvedRightHandSideExpression = rhs,
-            Children = new[] { lhs, rhs }.Where(e => e != null).OfType<TypedSymbol>().ToArray() ?? [],
-        };
-
-    protected sealed override VBTypedValue? EvaluateResult(ref VBExecutionScope context)
+    protected sealed override VBTypedValue? EvaluateResult(VBExecutionContext context)
     {
-        if (!CanExecute)
+        var lhs = Left.Execute(context);
+        var rhs = Right.Execute(context);
+
+        if (lhs != null && rhs != null)
         {
-            throw new InvalidOperationException("Symbol operand types must be resolved first.");
+            return ExecuteBinaryOperator(context, lhs, rhs);
         }
 
-        var lhs = context.GetTypedValue(ResolvedLeftHandSideExpression!);
-        var rhs = context.GetTypedValue(ResolvedRightHandSideExpression!);
-        return ExecuteBinaryOperator(ref context, lhs, rhs);
+        return default;
     }
 
-    protected abstract VBTypedValue ExecuteBinaryOperator(ref VBExecutionScope context, VBTypedValue lhsValue, VBTypedValue rhsValue);
+    protected abstract VBTypedValue ExecuteBinaryOperator(VBExecutionContext context, VBTypedValue lhsValue, VBTypedValue rhsValue);
 
     protected bool CanConvertSafely(VBTypedValue lhsValue, VBTypedValue rhsValue)
         => lhsValue.TypeInfo.ConvertsSafelyToTypes.Contains(rhsValue.TypeInfo);

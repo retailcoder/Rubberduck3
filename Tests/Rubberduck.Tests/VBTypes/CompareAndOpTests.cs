@@ -9,7 +9,6 @@ using Rubberduck.InternalApi.Model.Declarations.Operators.Abstract;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.Model.Declarations.Types;
 using System;
-using System.Windows.Xps.Serialization;
 
 namespace Rubberduck.Tests.VBTypes;
 
@@ -18,7 +17,7 @@ public class CompareAndOpTests : OperatorTests
 {
     protected override VBUnaryOperator CreateOperator(WorkspaceUri uri, TypedSymbol symbol) => throw new NotSupportedException();
     protected override VBBinaryOperator CreateOperator(WorkspaceUri uri, TypedSymbol lhs, TypedSymbol rhs) =>
-        new VBAndOperator(Tokens.And, uri, lhs.Name, rhs.Name, lhs, rhs);
+        new VBAndOperator(Tokens.And, uri, lhs, rhs);
 
     [TestMethod]
     [TestCategory("Operators")]
@@ -228,9 +227,8 @@ public class CompareAndOpTests : OperatorTests
 [TestClass]
 public class CompareOrOpTests : OperatorTests
 {
-    protected override VBUnaryOperator CreateOperator(WorkspaceUri uri, TypedSymbol symbol) => throw new NotSupportedException();
-    protected override VBBinaryOperator CreateOperator(WorkspaceUri uri, TypedSymbol lhs, TypedSymbol rhs) =>
-        new VBOrOperator(Tokens.And, uri, lhs.Name, rhs.Name, lhs, rhs);
+
+    protected override VBBinaryOperator CreateOperator(WorkspaceUri uri, ValuedExpression lhs, ValuedExpression rhs) => new VBOrOperator(uri, lhs, rhs);
 
     [TestMethod]
     [TestCategory("Operators")]
@@ -257,5 +255,10 @@ public class CompareOrOpTests : OperatorTests
         Assert.IsNotNull(result);
         Assert.IsTrue(result is VBBooleanValue, result.TypeInfo.Name);
         Assert.AreEqual(expected, ((VBBooleanValue)result).Value);
+    }
+
+    protected override VBUnaryOperator CreateOperator(WorkspaceUri uri, ValuedExpression symbol)
+    {
+        throw new NotImplementedException();
     }
 }

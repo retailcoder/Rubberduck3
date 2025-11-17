@@ -13,55 +13,15 @@ namespace Rubberduck.InternalApi.Model.Declarations.Operators;
 
 public record class VBCompareLikeOperator : VBComparisonOperator
 {
-    public VBCompareLikeOperator(WorkspaceUri parentUri, string lhsExpression, string rhsExpression, TypedSymbol? lhs = null, TypedSymbol? rhs = null)
-        : base(Tokens.CompareLikeOp, parentUri, lhsExpression, rhsExpression, lhs, rhs)
+    public VBCompareLikeOperator(WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
+        : base(Tokens.CompareLikeOp, parentUri, lhs, rhs)
     {
     }
 
-
     private static char[] LikePatternChars = ['?', '#', '*', '['];
-    protected override VBTypedValue ExecuteBinaryOperator(ref VBExecutionScope context, VBTypedValue lhsValue, VBTypedValue rhsValue)
+
+    public static bool Execute(string lhsStringValue, string rhsPatternString, Symbol? patternExpressionSymbol = default)
     {
-        var lhsType = lhsValue.TypeInfo;
-        var rhsType = rhsValue.TypeInfo;
-        if (lhsType is VBNullType || rhsType is VBNullType)
-        {
-            return new VBNullValue(this);
-        }
-
-        string? lhsString = null;
-        if (lhsType is VBStringType)
-        {
-            lhsString = ((VBStringValue)lhsValue).Value;
-        }
-        else if (lhsType is IStringCoercion coercible)
-        {
-            lhsString = coercible.AsCoercedString()!.Value;
-            context = context.WithDiagnostic(RubberduckDiagnostic.ImplicitStringCoercion(lhsValue.Symbol!));
-        }
-
-        if (lhsString is null)
-        {
-            throw VBRuntimeErrorException.TypeMismatch(this, "LHS value expression did not resolve or coerce to a `String`.");
-        }
-
-
-        string? rhsPatternString = null;
-        if (rhsType is VBStringType)
-        {
-            rhsPatternString = ((VBStringValue)rhsValue).Value!;
-        }
-        else if (rhsType is IStringCoercion coercible)
-        {
-            rhsPatternString = coercible.AsCoercedString()!.Value;
-            context = context.WithDiagnostic(RubberduckDiagnostic.ImplicitStringCoercion(lhsValue.Symbol!));
-        }
-
-        if (rhsPatternString is null)
-        {
-            throw VBRuntimeErrorException.TypeMismatch(this, "RHS pattern expression did not resolve or coerce to a `String`.");
-        }
-
         var builder = new StringBuilder();
         var isTokenGroup = false;
 
@@ -111,10 +71,58 @@ public record class VBCompareLikeOperator : VBComparisonOperator
 
         if (isTokenGroup)
         {
-            throw VBRuntimeErrorException.InvalidPatternString(rhsValue.Symbol!, "Character list '[...]' appears to be missing a ']' delimiter.");
+            if (patternExpressionSymbol != default)
+            {
+                throw VBRuntimeErrorException.InvalidPatternString(patternExpressionSymbol, "Character list '[...]' appears to be missing a ']' delimiter.");
+            }
         }
 
         var patternString = $"^{builder}$";
-        return new VBBooleanValue(this) { Value = Regex.IsMatch(lhsString ?? string.Empty, patternString) };
+        return Regex.IsMatch(lhsStringValue ?? string.Empty, patternString);
+    }
+
+    protected override VBTypedValue ExecuteBinaryOperator(VBExecutionContext context, VBTypedValue lhsValue, VBTypedValue rhsValue)
+    {
+        var lhsType = lhsValue.TypeInfo;
+        var rhsType = rhsValue.TypeInfo;
+        if (lhsType is VBNullType || rhsType is VBNullType)
+        {
+            return new VBNullValue(this);
+        }
+
+        string? lhsString = null;
+        if (lhsType is VBStringType)
+        {
+            lhsString = ((VBStringValue)lhsValue).Value;
+        }
+        else if (lhsType is IStringCoercion coercible)
+        {
+            lhsString = coercible.AsCoercedString()!.Value;
+            context.AddDiagnostic(RubberduckDiagnostic.ImplicitStringCoercion(lhsValue.Symbol!));
+        }
+
+        if (lhsString is null)
+        {
+            throw VBRuntimeErrorException.TypeMismatch(this, "LHS value expression did not resolve or coerce to a `String`.");
+        }
+
+
+        string? rhsPatternString = null;
+        if (rhsType is VBStringType)
+        {
+            rhsPatternString = ((VBStringValue)rhsValue).Value!;
+        }
+        else if (rhsType is IStringCoercion coercible)
+        {
+            rhsPatternString = coercible.AsCoercedString()!.Value;
+            context.AddDiagnostic(RubberduckDiagnostic.ImplicitStringCoercion(lhsValue.Symbol!));
+        }
+
+        if (rhsPatternString is null)
+        {
+            throw VBRuntimeErrorException.TypeMismatch(this, "RHS pattern expression did not resolve or coerce to a `String`.");
+        }
+
+        return new VBBooleanValue(this) { Value = Execute(lhsString, rhsPatternString, rhsValue.Symbol) };
     }
 }

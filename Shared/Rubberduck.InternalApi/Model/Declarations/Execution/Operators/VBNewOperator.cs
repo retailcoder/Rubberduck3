@@ -11,15 +11,15 @@ namespace Rubberduck.InternalApi.Model.Declarations.Operators;
 
 public record class VBNewOperator : VBUnaryOperator
 {
-    public VBNewOperator(string expression, TypedSymbol operand, WorkspaceUri parentUri)
-        : base(Tokens.New, expression, parentUri, operand)
+    public VBNewOperator(string expression, ValuedExpression operand, WorkspaceUri parentUri)
+        : base(expression, parentUri, operand)
     {
     }
 
-    protected override VBTypedValue? EvaluateResult(ref VBExecutionScope context)
+    protected override VBTypedValue? EvaluateResult(VBExecutionContext context)
     {
         var symbol = (TypedSymbol)Children!.Single();
-        if (symbol.ResolvedType is VBClassType classTypeInfo)
+        if (symbol.Type is VBClassType classTypeInfo)
         {
             if (!classTypeInfo.IsCreatable)
             {

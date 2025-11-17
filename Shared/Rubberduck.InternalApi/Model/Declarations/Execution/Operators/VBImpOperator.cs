@@ -7,8 +7,8 @@ namespace Rubberduck.InternalApi.Model.Declarations.Operators;
 
 public record class VBImpOperator : VBBitwiseOperator
 {
-    public VBImpOperator(string token, WorkspaceUri parentUri, string lhsExpression, string rhsExpression, TypedSymbol? lhs = null, TypedSymbol? rhs = null) 
-        : base(token, parentUri, lhsExpression, rhsExpression, lhs, rhs)
+    public VBImpOperator(string token, WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
+        : base(Tokens.LogicalImpOp, parentUri, lhs, rhs)
     {
     }
 

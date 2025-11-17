@@ -2,11 +2,9 @@
 using Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Execution;
 
@@ -21,7 +19,7 @@ public record class VBExecutionScope : IDiagnosticSource, IExecutable
 {
     private readonly Stack<VBExecutionScope> _callStack;
     private readonly Dictionary<Symbol, VBTypedValue> _symbols;
-    
+
     public VBExecutionScope(Stack<VBExecutionScope> callStack, Dictionary<Symbol, VBTypedValue> symbolTable, VBTypeMember member, VBRuntimeErrorException? error = null, Diagnostic[]? diagnostics = null)
     {
         _callStack = callStack;
@@ -54,11 +52,10 @@ public record class VBExecutionScope : IDiagnosticSource, IExecutable
 
     public IEnumerable<Diagnostic> Diagnostics { get; init; }
 
-    public VBExecutionScope WithError(VBRuntimeErrorException error) => WithDiagnostics(error.Diagnostics) with { Error = error };
     public VBExecutionScope WithDiagnostics(IEnumerable<Diagnostic> diagnostics) => this with { Diagnostics = Diagnostics.Concat(diagnostics).ToArray() };
     public VBExecutionScope WithDiagnostic(Diagnostic diagnostic) => this with { Diagnostics = Diagnostics.Append(diagnostic).ToArray() };
 
-    public VBTypedValue? Execute(ref VBExecutionContext context, bool rethrow = false)
+    public VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
         try
         {
@@ -66,7 +63,6 @@ public record class VBExecutionScope : IDiagnosticSource, IExecutable
             // TODO map IExecutable symbols to an instructions table, implement traversal, jumps, loops, conditionals
 
             context.ExitScope();
-            return Evaluate(ref scope);
         }
         catch (VBCompileErrorException vbCompileError)
         {

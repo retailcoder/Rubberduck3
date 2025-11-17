@@ -261,7 +261,7 @@ public class VBFoldingListener : VBAParserBaseListener, IVBListener<IEnumerable<
         }
     }
 
-    public override void ExitDoLoopStmt([NotNull] VBAParser.DoLoopStmtContext context)
+    public override void ExitDoBlockLoop([NotNull] VBAParser.DoBlockLoopContext context)
     {
         if (CanFold(nameof(FoldBlockStatementsSetting)))
         {
@@ -271,6 +271,8 @@ public class VBFoldingListener : VBAParserBaseListener, IVBListener<IEnumerable<
             }
         }
     }
+
+    // TODO handle the other DO..LOOP types
 
     public override void ExitWhileWendStmt([NotNull] VBAParser.WhileWendStmtContext context)
     {

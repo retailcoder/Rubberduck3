@@ -18,5 +18,5 @@ public record class VBUserDefinedTypeValue : VBTypedValue,
     public Guid Value { get; }
 
     public override int Size => ((IVBMemberOwnerType)TypeInfo).Members.OfType<VBUserDefinedTypeMember>()
-        .Sum(member => ((TypedSymbol)member.Declaration!).ResolvedType!.DefaultValue.Size);
+        .Sum(member => ((TypedSymbol)member.Declaration!).Type!.DefaultValue.Size);
 }

@@ -12,13 +12,13 @@ public record class VBPropertySetMember : VBProcedureMember, IVBProperty
     public VBPropertySetMember(WorkspaceUri uri, string name, RubberduckSymbolKind kind, Accessibility accessibility, PropertySetSymbol declaration, PropertySetSymbol[]? definitions = null)
         : base(uri, name, kind, accessibility, declaration, definitions)
     {
-        ResolvedType = (Declaration as PropertySetSymbol)?.Children?.OfType<ParameterSymbol>().OrderBy(e => e.Range).LastOrDefault()?.ResolvedType;
+        ResolvedType = (Declaration as PropertySetSymbol)?.Children?.OfType<ParameterSymbol>().OrderBy(e => e.Range).LastOrDefault()?.Type;
     }
 
     public VBPropertySetMember(WorkspaceUri uri, string name, RubberduckSymbolKind kind, Accessibility accessibility, PropertySetSymbol? declaration = null, PropertySetSymbol[]? definitions = null, bool isUserDefined = false)
         : base(uri, name, kind, accessibility, declaration, definitions, isUserDefined)
     {
-        ResolvedType = (Declaration as PropertySetSymbol)?.Children?.OfType<ParameterSymbol>().OrderBy(e => e.Range).LastOrDefault()?.ResolvedType;
+        ResolvedType = (Declaration as PropertySetSymbol)?.Children?.OfType<ParameterSymbol>().OrderBy(e => e.Range).LastOrDefault()?.Type;
     }
 
     public VBType? ResolvedType { get; init; }

@@ -15,6 +15,13 @@ public enum VBCompileErrorId
     InvalidReDim,
     ExpectedArray,
     ExpectedIdentifier,
+    LabelNotDefined,
+    TypeMismatch,
+    UserDefinedTypeNotDefined,
+    ExitDoNotWithinDoLoop,
+    ExitForNotWithinForNext,
+    ExitFunctionNotAllowedInSubOrProperty,
+    ExitPropertyNotAllowedInSubOrFunction,
 }
 
 public interface IDiagnosticSource
@@ -35,6 +42,12 @@ public class VBCompileErrorException : ApplicationException, IDiagnosticSource
     public static VBCompileErrorException InvalidReDim(Symbol symbol, string? verbose = null) => new(symbol, VBCompileErrorId.InvalidReDim, "Invalid ReDim", verbose);
     public static VBCompileErrorException ExpectedArray(Symbol symbol, string? verbose = null) => new(symbol, VBCompileErrorId.ExpectedArray, "Expected array", verbose);
     public static VBCompileErrorException ExpectedIdentifier(Symbol symbol, string? verbose = null) => new(symbol, VBCompileErrorId.ExpectedIdentifier, "Expected identifier", verbose);
+    public static VBCompileErrorException LabelNotDefined(Symbol symbol, string? verbose = null) => new(symbol, VBCompileErrorId.LabelNotDefined, "Label not defined", verbose);
+    public static VBCompileErrorException TypeMismatch(Symbol symbol, string? verbose = null) => new(symbol, VBCompileErrorId.TypeMismatch, "Type mismatch", verbose);
+    public static VBCompileErrorException UserDefinedTypeNotDefined(Symbol symbol, string? verbose = null) => new(symbol, VBCompileErrorId.UserDefinedTypeNotDefined, "User-defined type not defined", verbose);
+    public static VBCompileErrorException ExitDoNotWithinDoLoop(Symbol symbol, string? verbose = null) => new(symbol, VBCompileErrorId.ExitDoNotWithinDoLoop, "Exit Do not within Do...Loop", verbose);
+    public static VBCompileErrorException ExitForNotWithinForNext(Symbol symbol, string? verbose = null) => new(symbol, VBCompileErrorId.ExitForNotWithinForNext, "Exit For not within For...Next", verbose);
+    public static VBCompileErrorException ExitFunctionNotAllowedInSubOrProperty(Symbol symbol, string? verbose = null) => new(symbol, VBCompileErrorId.ExitFunctionNotAllowedInSubOrProperty, "Exit Function not allowed in Sub or Property", verbose);
     #endregion
 
     public VBCompileErrorException(Symbol symbol, VBCompileErrorId id, string message, string? verbose = null)

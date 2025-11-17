@@ -33,21 +33,21 @@ public abstract class OperatorTests : ServiceBaseTest
         services.AddScoped<VBExecutionContext>();
     }
 
-    protected VBBinaryOperator CreateOperator(ref VBProcedureMember scope, TypedSymbol lhs, TypedSymbol rhs)
+    protected VBBinaryOperator CreateOperator(ref VBProcedureMember scope, ValuedExpression lhs, ValuedExpression rhs)
     {
         var procedureSymbol = ParentProcedureSymbol.WithChildren([lhs, rhs]);
         var parentProcedure = ParentProcedure.WithDeclaration(procedureSymbol);
         return CreateOperator(parentProcedure.Uri, lhs, rhs);
     }
-    protected abstract VBBinaryOperator CreateOperator(WorkspaceUri uri, TypedSymbol lhs, TypedSymbol rhs);
+    protected abstract VBBinaryOperator CreateOperator(WorkspaceUri uri, ValuedExpression lhs, ValuedExpression rhs);
 
-    protected VBUnaryOperator CreateOperator(ref VBProcedureMember scope, TypedSymbol symbol)
+    protected VBUnaryOperator CreateOperator(ref VBProcedureMember scope, ValuedExpression symbol)
     {
         var procedureSymbol = ParentProcedureSymbol.WithChildren([symbol]);
         var parentProcedure = ParentProcedure.WithDeclaration(procedureSymbol);
         return CreateOperator(parentProcedure.Uri, symbol);
     }
-    protected abstract VBUnaryOperator CreateOperator(WorkspaceUri uri, TypedSymbol symbol);
+    protected abstract VBUnaryOperator CreateOperator(WorkspaceUri uri, ValuedExpression symbol);
 
     protected void OutputExecutionScope(VBExecutionScope scope, bool outputNames = true, bool verboseDiagnostics = false)
     {

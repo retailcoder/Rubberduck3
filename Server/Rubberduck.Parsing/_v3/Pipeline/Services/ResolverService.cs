@@ -20,9 +20,9 @@ public class ResolverService : ServiceBase, IResolverService
 
     public VBType? Resolve(TypedSymbol symbol)
     {
-        if (symbol.ResolvedType != null)
+        if (symbol.Type != null)
         {
-            return symbol.ResolvedType;
+            return symbol.Type;
         }
 
         var workspace = _workspaces.GetWorkspace(symbol.Uri.WorkspaceRoot);

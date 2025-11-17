@@ -10,8 +10,8 @@ using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.Model.Declarations.Types;
 using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
 using Rubberduck.Parsing.Grammar;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using StringLiteralExpression = Rubberduck.InternalApi.Model.Declarations.Symbols.StringLiteralExpression;
 
 namespace Rubberduck.Parsing._v3.Pipeline.Services;
 
@@ -76,8 +76,6 @@ public class IdentifierTypeVisitor : VBAParserBaseVisitor<VBType>
     }
 }
 
-
-
 public class ExpressionSymbolVisitor : VBAParserBaseVisitor<ValuedExpression>
 {
     private readonly WorkspaceUri _parentUri;
@@ -92,6 +90,340 @@ public class ExpressionSymbolVisitor : VBAParserBaseVisitor<ValuedExpression>
     private ValuedExpression InvalidExpression(ParserRuleContext context) => new InvalidExpression(context.GetText(), _parentUri);
 
     private Stack<VBAParser.TypeHintContext> _typeHintContext = [];
+    #region 5.4 Statements
+
+    private Stack<List<ExecutableStatement>> _currentBlockStatements = [];
+    private List<ExecutableStatement> _currentStatements => _currentBlockStatements.Count > 0 ? _currentBlockStatements.Peek() : [];
+
+    private LineLabelSymbol? _currentLineLabel = default;
+
+    public override ValuedExpression VisitStatementLabelDefinition([NotNull] VBAParser.StatementLabelDefinitionContext context)
+    {
+        if (context.standaloneLineNumberLabel() is VBAParser.StandaloneLineNumberLabelContext lineNumberContext)
+        {
+            var lineNumber = lineNumberContext.lineNumberLabel().GetText();
+            var symbol = _currentLineLabel = new LineLabelSymbol(lineNumber, _parentUri);
+            _execution.AddLineLabel(symbol);
+        }
+        else if (context.identifierStatementLabel() is VBAParser.IdentifierStatementLabelContext labelContext)
+        {
+            var label = labelContext.legalLabelIdentifier().GetText();
+            var symbol = _currentLineLabel = new LineLabelSymbol(label, _parentUri);
+            _execution.AddLineLabel(symbol);
+        }
+        else if (context.combinedLabels() is VBAParser.CombinedLabelsContext combinedContext)
+        {
+            // since we have both, treat the line number as the primary/"current" label
+            // because it will always appear first on that line.
+
+            var lineNumber = combinedContext.lineNumberLabel().GetText();
+            var symbol = _currentLineLabel = new LineLabelSymbol(lineNumber, _parentUri);
+            _execution.AddLineLabel(symbol);
+
+            var label = combinedContext.identifierStatementLabel().legalLabelIdentifier().GetText();
+            _execution.AddLineLabel(new LineLabelSymbol(label, _parentUri));
+        }
+
+        return base.VisitStatementLabelDefinition(context);
+    }
+
+    public override ValuedExpression VisitModuleBodyElement([NotNull] VBAParser.ModuleBodyElementContext context)
+    {
+        Debug.Assert(_currentBlockStatements.Count == 0);
+        _currentBlockStatements.Clear();
+
+        return base.VisitModuleBodyElement(context);
+    }
+
+    public override ValuedExpression VisitBlock([NotNull] VBAParser.BlockContext context)
+    {
+        _currentBlockStatements.Push([]);
+        var result = base.VisitBlock(context);
+
+        // TODO issue diagnostic if block is empty
+        return result;
+    }
+
+    public override ValuedExpression VisitGoToStmt([NotNull] VBAParser.GoToStmtContext context)
+    {
+        // expression is either a SimpleNameExpression or NumberLiteralExpression
+        var expression = VisitExpression(context.expression());
+        var labelName = expression.Name;
+
+        var label = _execution.FindLineLabel(_parentUri, labelName);
+        if (label is null)
+        {
+            // statement refers to an undefined label; issue compile error diagnostic
+            label = new LineLabelSymbol(labelName, _parentUri);
+            _execution.AddDiagnostic(RubberduckDiagnostic.CompileError(VBCompileErrorException.LabelNotDefined(label)));
+        }
+
+        // VBE normally makes them explicit
+        var isImplicit = context.GOTO() is null;
+        _currentStatements.Add(new GoToStatement(_parentUri, label, isImplicit));
+
+        return expression;
+    }
+
+    public override ValuedExpression VisitSingleLineIfStmt([NotNull] VBAParser.SingleLineIfStmtContext context)
+    {
+        if (context.ifWithNonEmptyThen() is VBAParser.IfWithNonEmptyThenContext ifWithNonEmptyThen)
+        {
+            var expressionContext = ifWithNonEmptyThen.booleanExpression();
+            if (ifWithNonEmptyThen.singleLineElseClause() is VBAParser.SingleLineElseClauseContext elseClauseContext)
+            {
+                _currentBlockStatements.Push([]);
+                VisitListOrLabel(elseClauseContext.listOrLabel());
+            }
+
+            if (expressionContext is VBAParser.BooleanExpressionContext boolExpressionContext)
+            {
+                if (VisitBooleanExpression(boolExpressionContext) is BooleanValuedExpression condition)
+                {
+                    _currentBlockStatements.Push([]);
+                    VisitListOrLabel(ifWithNonEmptyThen.listOrLabel());
+
+                    _currentStatements.Add(new IfStatement(_parentUri, condition, _currentBlockStatements.Pop()));
+                }
+            }
+        }
+        else if (context.ifWithEmptyThen() is VBAParser.IfWithEmptyThenContext ifWithEmptyThen)
+        {
+            var expressionContext = ifWithEmptyThen.booleanExpression();
+            if (expressionContext is VBAParser.BooleanExpressionContext boolExpressionContext)
+            {
+                if (VisitBooleanExpression(boolExpressionContext) is BooleanValuedExpression condition)
+                {
+                    if (ifWithEmptyThen.singleLineElseClause() is VBAParser.SingleLineElseClauseContext elseClauseContext)
+                    {
+                        _currentBlockStatements.Push([]);
+                        VisitListOrLabel(elseClauseContext.listOrLabel());
+
+                        _currentStatements.Add(new ElseStatement(_parentUri, _currentBlockStatements.Pop()));
+                        // TODO support attaching diagnostics to statements
+                        //_execution.AddDiagnostic(RubberduckDiagnostic.EmptyIfBlock(symbol));
+                    }
+
+                    _currentStatements.Add(new IfStatement(_parentUri, condition, _currentBlockStatements.Pop()));
+                }
+            }
+        }
+
+        return base.VisitSingleLineIfStmt(context);
+    }
+
+    public override ValuedExpression VisitIfStmt([NotNull] VBAParser.IfStmtContext context)
+    {
+        if (context.booleanExpression() is VBAParser.BooleanExpressionContext boolExpressionContext)
+        {
+            if (VisitBooleanExpression(boolExpressionContext) is BooleanValuedExpression condition)
+            {
+                VisitBlock(context.block());
+
+                if (context.elseIfBlock() is VBAParser.ElseIfBlockContext[] elseIfBlockContexts)
+                {
+                    foreach (var elseIfBlockContext in elseIfBlockContexts)
+                    {
+                        if (elseIfBlockContext.booleanExpression() is VBAParser.BooleanExpressionContext elseIfBoolExpressionContext)
+                        {
+                            if (VisitBooleanExpression(elseIfBoolExpressionContext) is BooleanValuedExpression elseIfCondition)
+                            {
+                                _currentBlockStatements.Push([]);
+                                VisitBlock(elseIfBlockContext.block());
+                                _currentStatements.Add(new ElseIfStatement(_parentUri, elseIfCondition, _currentBlockStatements.Pop()));
+                            }
+                        }
+                    }
+                }
+
+                if (context.elseBlock() is VBAParser.ElseBlockContext elseBlockContext)
+                {
+                    _currentBlockStatements.Push([]);
+                    VisitBlock(elseBlockContext.block());
+
+                    //if (_currentBlockStatements.Count == 0)
+                    //{
+                    //    _execution.AddDiagnostic(RubberduckDiagnostic.EmptyCodeBlock(TODO));
+                    //}
+                    _currentStatements.Add(new ElseStatement(_parentUri, _currentBlockStatements.Pop()));
+                }
+
+                _currentStatements.Add(new IfStatement(_parentUri, condition, _currentBlockStatements.Pop()));
+            }
+        }
+
+        return base.VisitIfStmt(context);
+    }
+
+    public override ValuedExpression VisitDoBlockLoop([NotNull] VBAParser.DoBlockLoopContext context)
+    {
+        VisitBlock(context.block());
+        _currentStatements.Add(new DoLoopStatement(_parentUri, _currentBlockStatements.Pop()));
+        // TODO inspect to ensure there's an EXIT DO child, issue appropriate diagnostics
+        return base.VisitDoBlockLoop(context);
+    }
+
+    public override ValuedExpression VisitDoBlockLoopWhileUntil([NotNull] VBAParser.DoBlockLoopWhileUntilContext context)
+    {
+        VisitBlock(context.block());
+        if (VisitExpression(context.expression()) is BooleanValuedExpression condition)
+        {
+            if (context.WHILE() is not null)
+            {
+                _currentStatements.Add(new DoWhileLoopStatement(_parentUri, condition, _currentBlockStatements.Pop()));
+            }
+            else if (context.UNTIL() is not null)
+            {
+                _currentStatements.Add(new DoUntilLoopStatement(_parentUri, condition, _currentBlockStatements.Pop()));
+            }
+        }
+        return base.VisitDoBlockLoopWhileUntil(context);
+    }
+
+    public override ValuedExpression VisitDoWhileUntilBlockLoop([NotNull] VBAParser.DoWhileUntilBlockLoopContext context)
+    {
+        VisitBlock(context.block());
+        if (VisitExpression(context.expression()) is BooleanValuedExpression condition)
+        {
+            if (context.WHILE() is not null)
+            {
+                _currentStatements.Add(new LoopWhileDoStatement(_parentUri, condition, _currentBlockStatements.Pop()));
+            }
+            else if (context.UNTIL() is not null)
+            {
+                _currentStatements.Add(new LoopUntilDoStatement(_parentUri, condition, _currentBlockStatements.Pop()));
+            }
+        }
+        return base.VisitDoWhileUntilBlockLoop(context);
+    }
+
+    public override ValuedExpression VisitWithStmt([NotNull] VBAParser.WithStmtContext context)
+    {
+        if (VisitExpression(context.expression()) is ValuedExpression expression)
+        {
+            VisitBlock(context.block());
+            var target = new ObjectValuedExpression(_parentUri) { Children = expression.Children };
+            _currentStatements.Add(new WithStatementSymbol(target, _parentUri, _currentBlockStatements.Pop()));
+        }
+        return base.VisitWithStmt(context);
+    }
+
+    private Stack<BlockStatement> _enteredSubBlocks = [];
+    private Stack<BlockStatement> _enteredFunctionBlocks = [];
+    private Stack<BlockStatement> _enteredPropertyBlocks = [];
+    private Stack<BlockStatement> _enteredDoLoopBlocks = [];
+    private Stack<BlockStatement> _enteredForLoopBlocks = [];
+    public override ValuedExpression VisitExitStmt([NotNull] VBAParser.ExitStmtContext context)
+    {
+        if (context.EXIT_DO() is not null)
+        {
+            if (_enteredDoLoopBlocks.TryPop(out var binding))
+            {
+                _currentStatements.Add(new ExitStatement(_parentUri, binding, _currentLineLabel));
+            }
+            else
+            {
+                //_execution.AddDiagnostic(VBCompileErrorException.ExitDoNotWithinDoLoop());
+            }
+        }
+        else if (context.EXIT_FOR() is not null)
+        {
+            if (_enteredForLoopBlocks.TryPop(out var binding))
+            {
+                _currentStatements.Add(new ExitStatement(_parentUri, binding, _currentLineLabel));
+            }
+            else
+            {
+                //_execution.AddDiagnostics(VBCompileErrorException.ExitForNotWithinForNext());
+            }
+        }
+        else if (context.EXIT_SUB() is not null)
+        {
+            if (_enteredSubBlocks.TryPop(out var binding))
+            {
+                _currentStatements.Add(new ExitStatement(_parentUri, binding, _currentLineLabel));
+            }
+        }
+        else if (context.EXIT_FUNCTION() is not null)
+        {
+            if (_enteredFunctionBlocks.TryPop(out var binding))
+            {
+                _currentStatements.Add(new ExitStatement(_parentUri, binding, _currentLineLabel));
+            }
+            else
+            {
+                //_execution.AddDiagnostics(VBCompileErrorException.ExitFunctionNotAllowedInSubOrProperty());
+            }
+        }
+        else if (context.EXIT_PROPERTY() is not null)
+        {
+            if (_enteredPropertyBlocks.TryPop(out var binding))
+            {
+                _currentStatements.Add(new ExitStatement(_parentUri, binding, _currentLineLabel));
+            }
+            else
+            {
+                //_execution.AddDiagnostics(VBCompileErrorException.ExitPropertyNotAllowedInSubOrFunction);
+            }
+        }
+
+        return base.VisitExitStmt(context);
+    }
+
+    public override ValuedExpression VisitRaiseEventStmt([NotNull] VBAParser.RaiseEventStmtContext context)
+    {
+        var identifier = context.identifier().GetText();
+
+        return base.VisitRaiseEventStmt(context);
+    }
+
+    public override ValuedExpression VisitRedimStmt([NotNull] VBAParser.RedimStmtContext context)
+    {
+        if (context.redimDeclarationList()?.redimVariableDeclaration() is VBAParser.RedimVariableDeclarationContext[] variables)
+        {
+            foreach (var variable in variables)
+            {
+                var expression = variable.expression();
+
+                if (expression is VBAParser.LExprContext lExpressionContext)
+                {
+                    var lExpression = lExpressionContext.lExpression();
+                    if (lExpression is VBAParser.SimpleNameExprContext simpleName)
+                    {
+
+                        var name = simpleName.GetText();
+
+                        if (variable.asTypeClause() is VBAParser.AsTypeClauseContext asTypeClause
+                            && asTypeClause.type() is VBAParser.TypeContext typeContext)
+                        {
+                            // TODO get the VBType and subscripts
+                            if (typeContext.LPAREN() is not null && typeContext.RPAREN() is not null)
+                            {
+                                // dynamic array declaration: "As Something()"
+
+                            }
+                        }
+                    }
+                    else if (lExpression is VBAParser.IndexExprContext indexExpr
+                        && indexExpr.argumentList() is VBAParser.ArgumentListContext args)
+                    {
+                        // fixed-sized array declaration: "As Something(X To Y)"
+                        foreach (var arg in args.argument())
+                        {
+                            if (arg.positionalArgument() is VBAParser.PositionalArgumentContext posArg)
+                            {
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return base.VisitRedimStmt(context);
+    }
+    #endregion
+
     #region 5.6 Expressions
 
     #region 5.6.5 Literal expressions
@@ -195,7 +527,7 @@ public class ExpressionSymbolVisitor : VBAParserBaseVisitor<ValuedExpression>
             {
                 if (hexValue <= VBIntegerValue.MaxValue.Value || hexValue >= VBIntegerValue.MinValue.Value)
                 {
-                    return new HexLiteralExpression(_parentUri, new VBIntegerValue().WithValue(hexValue));
+                    return new HexLiteralExpression(_parentUri, new VBLongValue().WithValue(hexValue));
                 }
                 else
                 {
@@ -219,7 +551,7 @@ public class ExpressionSymbolVisitor : VBAParserBaseVisitor<ValuedExpression>
                 }
                 if (octValue <= VBIntegerValue.MaxValue.Value || octValue >= VBIntegerValue.MinValue.Value)
                 {
-                    return new OctalLiteralExpression(_parentUri, new VBIntegerValue().WithValue(octValue));
+                    return new OctalLiteralExpression(_parentUri, new VBLongValue().WithValue(octValue));
                 }
                 else
                 {

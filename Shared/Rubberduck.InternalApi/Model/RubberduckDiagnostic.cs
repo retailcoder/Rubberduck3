@@ -63,13 +63,18 @@ public enum RubberduckDiagnosticId
     UseMeaningfulIdentifierNames = 1001,
     HungarianNotation,
 
+    EmptyIfBlock,
+    EmptyCodeBlock,
+
     // execution pass diagnostics [00000]
     UnintendedConstantExpression = 11001,
+    UnintendedUnconditionalStatement,
     SuspiciousValueAssignment,
     TypeCastConversion,
     BitwiseOperator,
     PreferConcatOperatorForStringConcatenation,
     PreferErrRaiseOverErrorStatement,
+    EnumerationOverArray,
 }
 
 public static class RubberduckDiagnosticIdExtensions
@@ -104,6 +109,8 @@ public record class RubberduckDiagnostic : Diagnostic
         CreateDiagnostic(error.Location, DiagnosticSeverity.Error, error.DiagnosticCode, error.Message, error.StackTrace);
 
     /* [RD3]: RD3 Language Server diagnostics */
+    public static Diagnostic EnumerationOverArray(Symbol symbol) =>
+        CreateDiagnostic(symbol, DiagnosticSeverity.Information, RubberduckDiagnosticId.EnumerationOverArray, "Array enumeration would be more efficient using a For...Next loop");
     public static Diagnostic PreferConcatOperatorForStringConcatenation(Symbol symbol) =>
         CreateDiagnostic(symbol, DiagnosticSeverity.Hint, RubberduckDiagnosticId.PreferConcatOperatorForStringConcatenation, "Both operands are `String` values; consider using the `&` string concatenation operator instead.");
     public static Diagnostic PreferErrRaiseOverErrorStatement(Symbol symbol) =>
@@ -127,6 +134,13 @@ public record class RubberduckDiagnostic : Diagnostic
 
     public static Diagnostic UnintendedConstantExpression(Symbol symbol) =>
         CreateDiagnostic(symbol, DiagnosticSeverity.Hint, RubberduckDiagnosticId.UnintendedConstantExpression, "Possibly unintended constant expression; this operation does not affect the value.");
+
+    public static Diagnostic EmptyIfBlock(Symbol symbol) =>
+        CreateDiagnostic(symbol, DiagnosticSeverity.Information, RubberduckDiagnosticId.EmptyIfBlock, "Empty If block; consider reversing the conditional expression.");
+
+    public static Diagnostic EmptyCodeBlock(Symbol symbol) =>
+        CreateDiagnostic(symbol, DiagnosticSeverity.Hint, RubberduckDiagnosticId.EmptyCodeBlock, "Empty code block; implement a body or consider removing it.");
+
     public static Diagnostic BitwiseOperator(Symbol symbol) =>
         CreateDiagnostic(symbol, DiagnosticSeverity.Hint, RubberduckDiagnosticId.BitwiseOperator, "Bitwise operator; the result of this operation is resolved using bitwise arithmetics.");
 

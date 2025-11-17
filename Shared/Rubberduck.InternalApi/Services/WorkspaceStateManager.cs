@@ -120,7 +120,7 @@ public class WorkspaceStateManager : ServiceBase, IAppWorkspacesStateManager
             _store.AddOrUpdate(file.Uri, file);
             if (file.Symbol is TypedSymbol typedSymbol)
             {
-                ExecutionContext.AddToSymbolTable(typedSymbol);
+                ExecutionContext.AddSymbol(typedSymbol);
             }
             return true;
         }
