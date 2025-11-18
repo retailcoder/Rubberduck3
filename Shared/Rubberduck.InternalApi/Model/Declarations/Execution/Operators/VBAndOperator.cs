@@ -7,8 +7,8 @@ namespace Rubberduck.InternalApi.Model.Declarations.Operators;
 
 public record class VBAndOperator : VBBitwiseOperator
 {
-    public VBAndOperator(string token, WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
-        : base(token, parentUri, lhs, rhs)
+    public VBAndOperator(WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
+        : base(Tokens.LogicalAndOp, parentUri, lhs, rhs)
     {
     }
 

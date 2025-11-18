@@ -24,6 +24,8 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
 
     private readonly ConcurrentDictionary<Uri, LineLabelSymbol> _lineLabels = new();
 
+    private readonly HashSet<VBTypedValue> _openFileHandles;
+
     /// <summary>
     /// Last-in, first-out concurrent data structure mapping type names to possible <c>VBType</c> values to resolve class types.
     /// </summary>
@@ -38,6 +40,36 @@ public class VBExecutionContext : ServiceBase, IDiagnosticSource
 
     public int LanguageVersion { get; set; } = 7;
     public bool Is64BitHost { get; set; }
+
+    #region file statements
+    public void RequireFileHandle(VBTypedValue handle)
+    {
+        if (!_openFileHandles.Contains(handle))
+        {
+            AddDiagnostics(VBRuntimeErrorException.BadFileNameOrNumber(handle.Symbol!));
+        }
+    }
+
+    public void OpenFile(VBTypedValue handle)
+    {
+        if (!_openFileHandles.Add(handle))
+        {
+            AddDiagnostics(VBRuntimeErrorException.FileAlreadyOpen(handle.Symbol!));
+        }
+    }
+
+    public void CloseFile(VBTypedValue? handle = default)
+    {
+        if (handle is null)
+        {
+            _openFileHandles.Clear();
+        }
+        else
+        {
+            _openFileHandles.Remove(handle);
+        }
+    }
+    #endregion
 
     public void AddLineLabel(LineLabelSymbol lineLabel) => _lineLabels.TryAdd(lineLabel.ParentUri, lineLabel);
 

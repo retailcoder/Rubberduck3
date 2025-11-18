@@ -23,6 +23,8 @@ namespace Rubberduck.Tests;
 
 public abstract class ListenerBaseTest : ServiceBaseTest
 {
+    protected virtual WorkspaceFileUri GetTestModuleUri(string name) => new($"{name}.bas", new("file://root"));
+
     protected override IEnumerable<(Type, object)> ConfigureMocking()
     {
         var fileSystem = Substitute.For<IFileSystem>();
@@ -62,18 +64,19 @@ public abstract class ListenerBaseTest : ServiceBaseTest
 public class SymbolListenerTest : ListenerBaseTest
 {
     [TestMethod]
-    public void Test1()
+    public void ResultIsModuleSymbol()
     {
         // arrange
         var moduleName = "Module1";
         var procedureName = "DoSomething";
 
-        var uri = new WorkspaceFileUri($"{moduleName}.bas", new("file://root"));
+        var uri = GetTestModuleUri(moduleName);
         var code = @$"Option Explicit
 
 Public Sub {procedureName}(ByVal X As Long, ByVal Y As Long)
     Debug.Print (X + Y)
-End Sub";
+End Sub
+";
 
         var logger = Substitute.For<ILogger<MemberSymbolsListener>>();
         var listener = new MemberSymbolsListener(logger, uri);

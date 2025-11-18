@@ -36,3 +36,4 @@ public abstract record class VBTypedValue
 
     public abstract override string ToString();
 }
+
