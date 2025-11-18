@@ -44,16 +44,13 @@ public record class VBExecutionScope : IDiagnosticSource, IExecutable
 
     public VBTypeMember MemberInfo { get; init; }
 
-    public VBRuntimeErrorException? Error { get; init; }
-    public bool ActiveOnErrorResumeNext { get; init; }
-    public Symbol? ActiveOnErrorGoTo { get; init; }
-    public Symbol? ActiveGoSubReturnTo { get; init; }
+    public VBRuntimeErrorException? Error { get; set; }
+    public bool ActiveOnErrorResumeNext { get; set; }
+    public Symbol? ActiveOnErrorGoTo { get; set; }
+    public Symbol? ActiveGoSubReturnTo { get; set; }
     public bool ActiveErrorState => Error != null;
 
-    public IEnumerable<Diagnostic> Diagnostics { get; init; }
-
-    public VBExecutionScope WithDiagnostics(IEnumerable<Diagnostic> diagnostics) => this with { Diagnostics = Diagnostics.Concat(diagnostics).ToArray() };
-    public VBExecutionScope WithDiagnostic(Diagnostic diagnostic) => this with { Diagnostics = Diagnostics.Append(diagnostic).ToArray() };
+    public IEnumerable<Diagnostic> Diagnostics { get; init; } = [];
 
     public VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
     {
@@ -92,6 +89,4 @@ public record class VBExecutionScope : IDiagnosticSource, IExecutable
         }
         return null;
     }
-
-    public VBTypedValue? Evaluate(ref VBExecutionScope context, bool rethrow = false) => context.GetTypedValue(MemberInfo.Declaration!);
 }

@@ -2143,301 +2143,146 @@ public record class ReDimStatement : DimStatement
     }
 }
 
-public enum VbOpenFileMode
+public record class SetStatement : ExecutableStatement
 {
-    Append,
-    Binary,
-    Input,
-    Output,
-    Random
-}
-
-public enum VbFileAccess
-{
-    Read,
-    Write,
-    ReadWrite
-}
-
-public enum VbFileLock
-{
-    Shared,
-    LockRead,
-    LockWrite,
-    LockReadWrite
-}
-
-public record class OpenStatement : ExecutableStatement
-{
-    public OpenStatement(WorkspaceUri parentUri, ValuedExpression path, ValuedExpression fileNumber,
-        VbOpenFileMode? mode = default, VbFileAccess? access = default, VbFileLock? fileLock = default,
-        ValuedExpression? recordLength = default, LineLabelSymbol? parentLabel = default) : base(parentUri, parentLabel)
+    public SetStatement(WorkspaceUri parentUri, TypedSymbol target, ValuedExpression expression, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, parentLabel)
     {
-        PathName = path;
-        FileNumber = fileNumber;
-
-        FileMode = mode;
-        FileAccess = access;
-        FileLock = fileLock;
-
-        RecordLength = recordLength;
+        Target = target;
+        Expression = expression;
     }
 
-    public ValuedExpression PathName { get; init; }
-    public ValuedExpression FileNumber { get; init; }
-
-    public VbOpenFileMode? FileMode { get; init; }
-    public VbFileAccess? FileAccess { get; init; }
-    public VbFileLock? FileLock { get; init; }
-    public ValuedExpression? RecordLength { get; init; }
+    public TypedSymbol Target { get; init; }
+    public ValuedExpression Expression { get; init; }
 
     protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
     {
-        if (FileNumber.Execute(context, rethrow) is VBTypedValue handle)
+        if (Expression.Execute(context, rethrow) is VBObjectValue objectValue)
         {
-            context.OpenFile(handle);
+            if (objectValue == VBObjectValue.Nothing)
+            {
+                // diagnose?
+            }
+
+            context.SetSymbolValue(Target, objectValue);
         }
 
         return default;
     }
 }
 
-public record class CloseStatement : ExecutableStatement
+public record class LetStatement : ExecutableStatement
 {
-    public CloseStatement(WorkspaceUri parentUri, IEnumerable<ValuedExpression> fileNumbers, LineLabelSymbol? parentLabel = null)
+    public LetStatement(WorkspaceUri parentUri, TypedSymbol target, ValuedExpression expression, LineLabelSymbol? parentLabel = null)
         : base(parentUri, parentLabel)
     {
-        FileNumbers = fileNumbers;
+        Target = target;
+        Expression = expression;
     }
 
-    public IEnumerable<ValuedExpression> FileNumbers { get; init; } = [];
+    public TypedSymbol Target { get; init; }
+    public ValuedExpression Expression { get; init; }
 
     protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
     {
-        if (!FileNumbers.Any())
+        if (Expression.Execute(context, rethrow) is VBTypedValue value)
         {
-            context.CloseFile();
+            context.SetSymbolValue(Target, value);
         }
-        else
+
+        return default;
+    }
+}
+
+public record class EndStatement : ExecutableStatement
+{
+    public EndStatement(WorkspaceUri parentUri, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, parentLabel)
+    {
+    }
+
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        // diagnose?
+        return base.ExecuteInternal(context, rethrow);
+    }
+}
+
+public record class StopStatement : ExecutableStatement
+{
+    public StopStatement(WorkspaceUri parentUri, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, parentLabel)
+    {
+    }
+
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        // diagnose?
+        return base.ExecuteInternal(context, rethrow);
+    }
+}
+
+public record class OnErrorResumeNextStatement : ExecutableStatement
+{
+    public OnErrorResumeNextStatement(WorkspaceUri parentUri, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, parentLabel)
+    {
+    }
+
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        context.CurrentScope.ActiveOnErrorResumeNext = true;
+        return default;
+    }
+}
+
+public record class OnErrorGoToStatement : ExecutableStatement
+{
+    public OnErrorGoToStatement(WorkspaceUri parentUri, LineLabelSymbol target, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, parentLabel)
+    {
+        Target = target;
+    }
+
+    public LineLabelSymbol Target { get; init; }
+
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        if (context.CurrentScope.ActiveErrorState)
         {
-            foreach (var fileNumber in FileNumbers)
+            // TODO diagnose bad error handling
+        }
+
+        context.CurrentScope.ActiveOnErrorResumeNext = false;
+        context.CurrentScope.ActiveOnErrorGoTo = Target;
+        return default;
+    }
+}
+
+public record class ResumeStatement : ExecutableStatement
+{
+    public ResumeStatement(WorkspaceUri parentUri, LineLabelSymbol target, LineLabelSymbol? parentLabel = null)
+        : base(parentUri, parentLabel)
+    {
+        Target = target;
+    }
+
+    public LineLabelSymbol Target { get; init; }
+
+    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
+    {
+        if (!context.CurrentScope.ActiveErrorState)
+        {
+            var exception = VBRuntimeErrorException.ResumeWithoutError(Target);
+            context.AddDiagnostics(exception);
+            if (rethrow)
             {
-                if (fileNumber.Execute(context, rethrow) is VBTypedValue handle)
-                {
-                    context.CloseFile(handle);
-                }
+                throw exception;
             }
         }
 
+        //context.CurrentScope.JumpTo(Target);
         return default;
     }
 }
 
-public record class ResetStatement : ExecutableStatement
-{
-    public ResetStatement(WorkspaceUri parentUri, LineLabelSymbol? parentLabel = null)
-        : base(parentUri, parentLabel)
-    {
-    }
-}
-
-public record class SeekStatement : FileStatement
-{
-    public SeekStatement(WorkspaceUri parentUri,
-        ValuedExpression fileNumber,
-        ValuedExpression position,
-        LineLabelSymbol? parentLabel = default)
-        : base(parentUri, fileNumber, parentLabel)
-    {
-        Position = position;
-    }
-
-    public ValuedExpression Position { get; init; }
-}
-
-public record class LockStatement : FileStatement
-{
-    public LockStatement(WorkspaceUri parentUri,
-        ValuedExpression fileNumber,
-        ValuedExpression? startRecord = default,
-        ValuedExpression? endRecord = default,
-        LineLabelSymbol? parentLabel = default)
-        : base(parentUri, fileNumber, parentLabel)
-    {
-        StartRecordNumber = startRecord;
-        EndRecordNumber = endRecord;
-    }
-
-    public ValuedExpression? StartRecordNumber { get; init; }
-    public ValuedExpression? EndRecordNumber { get; init; }
-}
-
-public record class UnlockStatement : FileStatement
-{
-    public UnlockStatement(WorkspaceUri parentUri,
-        ValuedExpression fileNumber,
-        ValuedExpression? startRecord = default,
-        ValuedExpression? endRecord = default,
-        LineLabelSymbol? parentLabel = default)
-        : base(parentUri, fileNumber, parentLabel)
-    {
-        StartRecordNumber = startRecord;
-        EndRecordNumber = endRecord;
-    }
-
-    public ValuedExpression? StartRecordNumber { get; init; }
-    public ValuedExpression? EndRecordNumber { get; init; }
-}
-
-public record class LineInputStatement : FileStatement
-{
-    public LineInputStatement(WorkspaceUri parentUri,
-        ValuedExpression fileNumber,
-        TypedSymbol variable,
-        LineLabelSymbol? parentLabel = default)
-        : base(parentUri, fileNumber, parentLabel)
-    {
-        Variable = variable;
-    }
-
-    public TypedSymbol Variable { get; init; }
-}
-
-public record class WidthStatement : FileStatement
-{
-    public WidthStatement(WorkspaceUri parentUri, ValuedExpression fileNumber, ValuedExpression lineWidth, LineLabelSymbol? parentLabel = null)
-        : base(parentUri, fileNumber, parentLabel)
-    {
-        LineWidth = lineWidth;
-    }
-
-    public ValuedExpression LineWidth { get; init; }
-}
-
-public record class PrintStatement : FileStatement
-{
-    public PrintStatement(WorkspaceUri parentUri, ValuedExpression fileNumber, StringValuedExpression expression, LineLabelSymbol? parentLabel = null)
-        : base(parentUri, fileNumber, parentLabel)
-    {
-        Expression = expression;
-    }
-
-    public StringValuedExpression Expression { get; init; }
-}
-
-public record class WriteStatement : FileStatement
-{
-    public WriteStatement(WorkspaceUri parentUri, ValuedExpression fileNumber, StringValuedExpression expression, LineLabelSymbol? parentLabel = null)
-        : base(parentUri, fileNumber, parentLabel)
-    {
-        Expression = expression;
-    }
-
-    public StringValuedExpression Expression { get; init; }
-}
-
-public record class InputStatement : FileStatement
-{
-    public InputStatement(WorkspaceUri parentUri, ValuedExpression fileNumber, IEnumerable<TypedSymbol> variables, LineLabelSymbol? parentLabel = null)
-        : base(parentUri, fileNumber, parentLabel)
-    {
-        Variables = variables;
-    }
-
-    public IEnumerable<TypedSymbol> Variables { get; init; }
-
-    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
-    {
-        // base implementation requires the file handle
-        base.ExecuteInternal(context, rethrow);
-
-        foreach (var symbol in Variables)
-        {
-            context.SetSymbolValue(symbol, VBEmptyValue.Empty.AsVariant());
-        }
-
-        return default;
-    }
-}
-
-public record class PutStatement : FileStatement
-{
-    public PutStatement(WorkspaceUri parentUri, ValuedExpression fileNumber,
-        ValuedExpression dataExpression,
-        ValuedExpression? recordNumber = default,
-        LineLabelSymbol? parentLabel = default)
-        : base(parentUri, fileNumber, parentLabel)
-    {
-        DataExpression = dataExpression;
-        RecordNumber = recordNumber;
-    }
-
-    public ValuedExpression DataExpression { get; init; }
-    public ValuedExpression? RecordNumber { get; init; }
-
-    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
-    {
-        DataExpression.Execute(context, rethrow);
-        RecordNumber?.Execute(context, rethrow);
-        return default;
-    }
-}
-
-public record class GetStatement : FileStatement
-{
-    public GetStatement(WorkspaceUri parentUri, ValuedExpression fileNumber,
-        TypedSymbol variable,
-        ValuedExpression? recordNumber = default,
-        LineLabelSymbol? parentLabel = default)
-        : base(parentUri, fileNumber, parentLabel)
-    {
-        Variable = variable;
-        RecordNumber = recordNumber;
-    }
-
-    public TypedSymbol Variable { get; init; }
-    public ValuedExpression? RecordNumber { get; init; }
-
-    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
-    {
-        RecordNumber?.Execute(context, rethrow);
-        context.SetSymbolValue(Variable, VBEmptyValue.Empty.AsVariant());
-        return default;
-    }
-}
-
-public abstract record class FileStatement : ExecutableStatement
-{
-    public FileStatement(WorkspaceUri parentUri, ValuedExpression fileNumber, LineLabelSymbol? parentLabel = null)
-        : base(parentUri, parentLabel)
-    {
-        FileNumber = fileNumber;
-    }
-
-    public ValuedExpression FileNumber { get; init; }
-
-    protected override VBTypedValue? ExecuteInternal(VBExecutionContext context, bool rethrow = false)
-    {
-        if (FileNumber.Execute(context, rethrow) is VBTypedValue handle)
-        {
-            context.RequireFileHandle(handle);
-        }
-
-        return default;
-    }
-}
-
-public record class OutputListExpression : StringValuedExpression
-{
-    public OutputListExpression(WorkspaceUri parentUri, IEnumerable<ValuedExpression>? children = default)
-        : base(parentUri, children ?? [])
-    {
-
-    }
-
-    public override VBTypedValue? Execute(VBExecutionContext context, bool rethrow = false)
-    {
-        // TODO evaluate children, actually assemble an output string?
-        return new VBStringValue(this) { Value = "(output list)" };
-    }
-}
