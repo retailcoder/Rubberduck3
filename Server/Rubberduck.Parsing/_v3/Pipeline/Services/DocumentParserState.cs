@@ -1,6 +1,6 @@
 ﻿using Antlr4.Runtime.Tree;
 using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 
 namespace Rubberduck.Parsing._v3.Pipeline;

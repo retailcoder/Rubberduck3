@@ -1,6 +1,7 @@
 ﻿using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 using Rubberduck.VBEditor.Utility;
 using System.Diagnostics;
 using System.Runtime.InteropServices;

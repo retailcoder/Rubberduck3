@@ -1,17 +1,18 @@
-﻿using System.Diagnostics;
+﻿using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.Model;
+using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
+using Rubberduck.Unmanaged.TypeLibs.Abstract;
+using Rubberduck.Unmanaged.TypeLibs.Utility;
+using Rubberduck.VBEditor.Utility;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Runtime.Serialization;
-using Rubberduck.VBEditor.Utility;
+using CALLCONV = System.Runtime.InteropServices.ComTypes.CALLCONV;
 using FUNCDESC = System.Runtime.InteropServices.ComTypes.FUNCDESC;
 using TYPEATTR = System.Runtime.InteropServices.ComTypes.TYPEATTR;
 using VARDESC = System.Runtime.InteropServices.ComTypes.VARDESC;
-using CALLCONV = System.Runtime.InteropServices.ComTypes.CALLCONV;
-using Rubberduck.Unmanaged.TypeLibs.Abstract;
-using Rubberduck.Unmanaged.TypeLibs.Utility;
-using Rubberduck.InternalApi.Model;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
-using Rubberduck.InternalApi.Extensions;
 
 namespace Rubberduck.Parsing.Model.ComReflection;
 
@@ -60,7 +61,7 @@ public class ComModule : ComType, IComTypeWithMembers, IComTypeWithFields
                 Debug.Assert(length == 1);
 
                 DeclarationType type;
-                if(info is ITypeInfoWrapper wrapped && wrapped.HasVBEExtensions)
+                if (info is ITypeInfoWrapper wrapped && wrapped.HasVBEExtensions)
                 {
                     type = desc.IsValidVBAConstant() ? DeclarationType.Constant : DeclarationType.Variable;
                 }
@@ -97,9 +98,9 @@ public class ComModule : ComType, IComTypeWithMembers, IComTypeWithFields
             .Concat(Fields.Select(com => com.ToSymbol(uri.GetChildSymbolUri(com.Name)))
         );
 
-        return new StandardModuleSymbol(Name, uri, [])
+        return new StandardModuleSymbol(Name, uri, children)
         {
             Detail = Documentation.DocString,
-        }.WithChildren(children);
+        };
     }
 }

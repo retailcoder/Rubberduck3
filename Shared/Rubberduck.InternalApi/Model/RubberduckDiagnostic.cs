@@ -1,6 +1,6 @@
 ﻿using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using Rubberduck.InternalApi.Model.Declarations.Execution;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Execution;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using System;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;

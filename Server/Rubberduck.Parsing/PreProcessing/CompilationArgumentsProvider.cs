@@ -1,7 +1,7 @@
-﻿using Rubberduck.InternalApi.Extensions;
+﻿using Rubberduck.InternalApi.Execution.Values;
+using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Declarations.Execution;
-using Rubberduck.InternalApi.Model.Declarations.Execution.Values;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Symbols;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.Parsing.Abstract;
 using Rubberduck.Unmanaged.TypeLibs.Abstract;

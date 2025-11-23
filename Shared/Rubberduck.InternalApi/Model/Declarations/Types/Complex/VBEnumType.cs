@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Rubberduck.InternalApi.Model.Declarations.Execution.Values;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Execution.Values;
 using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
 using Rubberduck.InternalApi.Model.Declarations.Types.Members;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Types;
 

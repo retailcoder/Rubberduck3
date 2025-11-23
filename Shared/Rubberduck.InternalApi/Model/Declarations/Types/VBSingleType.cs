@@ -1,4 +1,4 @@
-﻿using Rubberduck.InternalApi.Model.Declarations.Execution.Values;
+﻿using Rubberduck.InternalApi.Execution.Values;
 using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
 using System.Linq;
 

@@ -1,5 +1,5 @@
 ﻿using System;
-using Rubberduck.InternalApi.Model.Declarations.Execution.Values;
+using Rubberduck.InternalApi.Execution.Values;
 using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Types;

@@ -1,8 +1,8 @@
-﻿using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Model.Declarations.Execution;
-using Rubberduck.InternalApi.Model.Declarations.Execution.Values;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+﻿using Rubberduck.InternalApi.Execution;
+using Rubberduck.InternalApi.Execution.Values;
+using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Types;
@@ -19,7 +19,7 @@ public abstract record class VBExecutableMember : VBTypeMember
 
     public bool? IsReachable { get; init; }
 
-    public virtual VBTypedValue? Execute(VBExecutionContext context) => ((IExecutable)Declaration!).Execute(context);
+    public virtual VBTypedValue? Execute(VBExecutionContext context) => ((IExecutable)Symbol!).Execute(context);
 }
 
 public record class VBProcedureMember : VBExecutableMember

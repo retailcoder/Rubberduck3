@@ -1,6 +1,6 @@
 ﻿using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 using System;
 using System.Linq;
@@ -12,13 +12,13 @@ public record class VBPropertySetMember : VBProcedureMember, IVBProperty
     public VBPropertySetMember(WorkspaceUri uri, string name, RubberduckSymbolKind kind, Accessibility accessibility, PropertySetSymbol declaration, PropertySetSymbol[]? definitions = null)
         : base(uri, name, kind, accessibility, declaration, definitions)
     {
-        ResolvedType = (Declaration as PropertySetSymbol)?.Children?.OfType<ParameterSymbol>().OrderBy(e => e.Range).LastOrDefault()?.Type;
+        ResolvedType = (Symbol as PropertySetSymbol)?.Children?.OfType<ParameterSymbol>().OrderBy(e => e.Range).LastOrDefault()?.Type;
     }
 
     public VBPropertySetMember(WorkspaceUri uri, string name, RubberduckSymbolKind kind, Accessibility accessibility, PropertySetSymbol? declaration = null, PropertySetSymbol[]? definitions = null, bool isUserDefined = false)
         : base(uri, name, kind, accessibility, declaration, definitions, isUserDefined)
     {
-        ResolvedType = (Declaration as PropertySetSymbol)?.Children?.OfType<ParameterSymbol>().OrderBy(e => e.Range).LastOrDefault()?.Type;
+        ResolvedType = (Symbol as PropertySetSymbol)?.Children?.OfType<ParameterSymbol>().OrderBy(e => e.Range).LastOrDefault()?.Type;
     }
 
     public VBType? ResolvedType { get; init; }

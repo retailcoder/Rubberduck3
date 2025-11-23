@@ -1,0 +1,35 @@
+﻿using Rubberduck.InternalApi.Execution;
+using Rubberduck.InternalApi.Execution.Operators.Abstract;
+using Rubberduck.InternalApi.Execution.Values;
+using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.Model;
+using Rubberduck.InternalApi.Model.Declarations.Types;
+using Rubberduck.InternalApi.Model.Symbols.Expressions;
+
+namespace Rubberduck.InternalApi.Execution.Operators;
+
+public record class VBCompareGreaterThanOperator : VBComparisonOperator
+{
+    public VBCompareGreaterThanOperator(WorkspaceUri parentUri, ValuedExpression lhs, ValuedExpression rhs)
+        : base(Tokens.CompareGreaterThanOp, parentUri, lhs, rhs)
+    {
+    }
+
+    protected override VBTypedValue ExecuteBinaryOperator(VBExecutionContext context, VBTypedValue lhsValue, VBTypedValue rhsValue)
+    {
+        if (lhsValue.TypeInfo is VBStringType)
+        {
+            return SymbolOperation.ExecuteCompareOpResult(context, this, lhsValue, rhsValue,
+                (lhs, rhs, comparison) => string.Compare(lhs, rhs, comparison) > 0);
+        }
+        else
+        {
+            if (lhsValue is VBNumericTypedValue lhsNumeric)
+            {
+                return SymbolOperation.ExecuteCompareOpResult(context, this, lhsNumeric, rhsValue,
+                    (lhs, rhs) => lhs.CompareTo(rhs) > 0);
+            }
+        }
+        throw VBRuntimeErrorException.TypeMismatch(Range, $"Types {lhsValue.TypeInfo.Name} and {rhsValue.TypeInfo.Name} are not comparable.");
+    }
+}

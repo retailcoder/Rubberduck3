@@ -1,11 +1,17 @@
 ﻿using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
+using Rubberduck.InternalApi.Execution;
+using Rubberduck.InternalApi.Execution.Values;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model;
-using Rubberduck.InternalApi.Model.Declarations.Execution;
 using Rubberduck.InternalApi.Model.Declarations.Execution.Values;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Declarations.Symbols.Expressions.Literals;
+using Rubberduck.InternalApi.Model.Declarations.Symbols.Statements.ControlFlow;
+using Rubberduck.InternalApi.Model.Symbols;
+using Rubberduck.InternalApi.Model.Symbols.Expressions;
+using Rubberduck.InternalApi.Model.Symbols.Statements;
 using Rubberduck.Parsing.Grammar;
 using System.Diagnostics;
 
@@ -46,13 +52,13 @@ public class ExpressionSymbolVisitor : VBAParserBaseVisitor<ValuedExpression>
         {
             var lineNumber = lineNumberContext.lineNumberLabel().GetText();
             var symbol = _currentLineLabel = new LineLabelSymbol(lineNumber, _parentUri);
-            _execution.AddLineLabel(symbol);
+            _execution.AddSymbol(symbol);
         }
         else if (context.identifierStatementLabel() is VBAParser.IdentifierStatementLabelContext labelContext)
         {
             var label = labelContext.legalLabelIdentifier().GetText();
             var symbol = _currentLineLabel = new LineLabelSymbol(label, _parentUri);
-            _execution.AddLineLabel(symbol);
+            _execution.AddSymbol(symbol);
         }
         else if (context.combinedLabels() is VBAParser.CombinedLabelsContext combinedContext)
         {
@@ -61,10 +67,10 @@ public class ExpressionSymbolVisitor : VBAParserBaseVisitor<ValuedExpression>
 
             var lineNumber = combinedContext.lineNumberLabel().GetText();
             var symbol = _currentLineLabel = new LineLabelSymbol(lineNumber, _parentUri);
-            _execution.AddLineLabel(symbol);
+            _execution.AddSymbol(symbol);
 
             var label = combinedContext.identifierStatementLabel().legalLabelIdentifier().GetText();
-            _execution.AddLineLabel(new LineLabelSymbol(label, _parentUri));
+            _execution.AddSymbol(new LineLabelSymbol(label, _parentUri));
         }
 
         return base.VisitStatementLabelDefinition(context);
@@ -103,8 +109,25 @@ public class ExpressionSymbolVisitor : VBAParserBaseVisitor<ValuedExpression>
 
         // VBE normally makes them explicit
         var isImplicit = context.GOTO() is null;
-        _currentStatements.Add(new GoToStatement(_parentUri, label, isImplicit));
 
+        _currentStatements.Add(new GoToStatement(_parentUri, label, isImplicit, _currentLineLabel));
+        return expression;
+    }
+
+    public override ValuedExpression VisitGoSubStmt([NotNull] VBAParser.GoSubStmtContext context)
+    {
+        var expression = VisitExpression(context.expression());
+        var labelName = expression.Name;
+
+        var label = _execution.FindLineLabel(_parentUri, labelName);
+        if (label is null)
+        {
+            // statement refers to an undefined label; issue compile error diagnostic
+            label = new LineLabelSymbol(labelName, _parentUri);
+            _execution.AddDiagnostic(RubberduckDiagnostic.CompileError(VBCompileErrorException.LabelNotDefined(label)));
+        }
+
+        _currentStatements.Add(new GoSubStatement(_parentUri, label, _currentLineLabel));
         return expression;
     }
 
@@ -541,7 +564,7 @@ public class ExpressionSymbolVisitor : VBAParserBaseVisitor<ValuedExpression>
             var dateText = dateLiteralToken.GetText().Trim('#');
             if (DateTime.TryParse(dateText, out var dateValue))
             {
-                return new InternalApi.Model.Declarations.Symbols.DateLiteralExpression(_parentUri, new VBDateValue().WithValue(dateValue));
+                return new DateLiteralExpression(_parentUri, new VBDateValue().WithValue(dateValue));
             }
             else
             {
@@ -750,8 +773,8 @@ public class ExpressionSymbolVisitor : VBAParserBaseVisitor<ValuedExpression>
             if (context.GetAncestor<VBAParser.TypeofexprContext>() is VBAParser.TypeofexprContext ||
                 context.GetAncestor<VBAParser.CtTypeofexprContext>() is VBAParser.CtTypeofexprContext)
             {
-                var vbType = _execution.ResolveType(identifierToken.GetText(), _parentUri);
-                return new TypeDescValuedExpression(_parentUri, vbType);
+                //var vbType = _execution.ResolveType(identifierToken.GetText(), _parentUri);
+                //return new TypeDescValuedExpression(_parentUri, vbType);
             }
         }
         else if (context.keyword() is VBAParser.KeywordContext keywordContext)

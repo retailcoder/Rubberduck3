@@ -1,4 +1,4 @@
-﻿using Rubberduck.InternalApi.Model.Declarations.Symbols;
+﻿using Rubberduck.InternalApi.Model.Symbols.Abstract;
 
 namespace Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
 

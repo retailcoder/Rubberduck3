@@ -8,7 +8,7 @@ using INVOKEKIND = System.Runtime.InteropServices.ComTypes.INVOKEKIND;
 using FUNCFLAGS = System.Runtime.InteropServices.ComTypes.FUNCFLAGS;
 using Rubberduck.InternalApi.Model;
 using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 
 namespace Rubberduck.Parsing.Model.ComReflection;
 

@@ -1,9 +1,13 @@
 ﻿using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Microsoft.Extensions.Logging;
+using Rubberduck.InternalApi.Execution;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Symbols;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
+using Rubberduck.InternalApi.Model.Symbols.Values;
 using Rubberduck.Parsing.Grammar;
 using System.Runtime.CompilerServices;
 
@@ -28,6 +32,15 @@ public class MemberSymbolsListener : VBAParserBaseListener, IVBListener<Symbol>
     private bool _isCreatable = false;
     private bool _isPredeclaredId = false;
     private bool _isExposed = false;
+
+    private bool _optionExplicit = false;
+    private bool _optionPrivateModule = false;
+    private bool _optionCompareBinary = false;
+    private bool _optionCompareText = false;
+    private bool _optionCompareDatabase = false;
+    private bool _optionBase0 = false;
+    private bool _optionBase1 = false;
+    private bool _optionStrict = false;
 
     /// <summary>
     /// Accumulates symbols to be added to the current context.
@@ -160,16 +173,75 @@ public class MemberSymbolsListener : VBAParserBaseListener, IVBListener<Symbol>
                 }
             }
 
-            moduleSymbol = CreateCurrentSymbol(children => new ClassModuleSymbol(EvaluateClassInstancingMode(), ModuleName, _workspaceFileUri, children, _isPredeclaredId, isUserDefined: true), context);
+            moduleSymbol = CreateCurrentSymbol(children => new ClassModuleSymbol(EvaluateClassInstancingMode(), ModuleName, _workspaceFileUri, children, _isPredeclaredId, isUserDefined: true)
+            {
+                OptionExplicit = _optionExplicit,
+                OptionStrict = _optionStrict,
+                OptionBase = _optionBase0 ? 0
+                            : _optionBase1 ? 1 : default,
+                OptionCompare = _optionCompareBinary ? VBOptionCompare.Binary
+                               : _optionCompareText ? VBOptionCompare.Text
+                               : _optionCompareDatabase ? VBOptionCompare.Database : default
+            }, context);
         }
         else
         {
             // otherwise, it's a standard module
-            moduleSymbol = CreateCurrentSymbol(children => new StandardModuleSymbol(ModuleName, _workspaceFileUri, children), context);
+            moduleSymbol = CreateCurrentSymbol(children => new StandardModuleSymbol(ModuleName, _workspaceFileUri, children)
+            {
+                OptionExplicit = _optionExplicit,
+                OptionStrict = _optionStrict,
+                OptionBase = _optionBase0 ? 0
+                            : _optionBase1 ? 1 : default,
+                OptionCompare = _optionCompareBinary ? VBOptionCompare.Binary
+                               : _optionCompareText ? VBOptionCompare.Text
+                               : _optionCompareDatabase ? VBOptionCompare.Database : default
+            }, context);
         }
 
         Result = moduleSymbol;
         LogStackState(isBefore: false);
+    }
+
+    public override void ExitModuleOption([NotNull] VBAParser.ModuleOptionContext context)
+    {
+        if (context is VBAParser.OptionExplicitStmtContext)
+        {
+            _optionExplicit = true;
+        }
+        else if (context is VBAParser.OptionPrivateModuleStmtContext)
+        {
+            _optionPrivateModule = true;
+        }
+        else if (context is VBAParser.OptionBaseStmtContext optionBase)
+        {
+            if (int.TryParse(optionBase.numberLiteral().GetText(), out var baseValue))
+            {
+                if (baseValue == 0)
+                {
+                    _optionBase0 = true;
+                }
+                else if (baseValue == 1)
+                {
+                    _optionBase1 = true;
+                }
+            }
+        }
+        else if (context is VBAParser.OptionCompareStmtContext optionCompare)
+        {
+            if (optionCompare.BINARY() is not null)
+            {
+                _optionCompareBinary = true;
+            }
+            else if (optionCompare.TEXT() is not null)
+            {
+                _optionCompareText = true;
+            }
+            else if (optionCompare.DATABASE() is not null)
+            {
+                _optionCompareDatabase = true;
+            }
+        }
     }
 
     public override void ExitModuleAttributes([NotNull] VBAParser.ModuleAttributesContext context)

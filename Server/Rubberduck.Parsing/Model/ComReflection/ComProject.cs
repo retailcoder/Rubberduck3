@@ -9,6 +9,7 @@ using TYPELIBATTR = System.Runtime.InteropServices.ComTypes.TYPELIBATTR;
 using TYPEKIND = System.Runtime.InteropServices.ComTypes.TYPEKIND;
 using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.Extensions;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 
 namespace Rubberduck.Parsing.Model.ComReflection;
 

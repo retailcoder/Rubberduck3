@@ -4,7 +4,7 @@ using System.Runtime.InteropServices.ComTypes;
 using System.Runtime.Serialization;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 using Rubberduck.VBEditor.Utility;
 using ELEMDESC = System.Runtime.InteropServices.ComTypes.ELEMDESC;
 using PARAMFLAG = System.Runtime.InteropServices.ComTypes.PARAMFLAG;

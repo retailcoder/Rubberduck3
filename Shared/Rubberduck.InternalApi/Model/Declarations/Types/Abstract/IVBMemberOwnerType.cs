@@ -1,7 +1,6 @@
 ﻿using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 using Rubberduck.InternalApi.ServerPlatform.LanguageServer;
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
@@ -13,7 +12,7 @@ public interface IVBMemberOwnerType
     VBMemberOwnerType WithMembers(IEnumerable<VBTypeMember> members);
 }
 
-public abstract record class VBTypeMember 
+public abstract record class VBTypeMember
 {
     /// <summary>
     /// Creates a new type member associated with a symbol.
@@ -31,9 +30,11 @@ public abstract record class VBTypeMember
         Name = name;
         Kind = kind;
         Accessibility = accessibility;
-        Declaration = declaration;
+        Symbol = declaration;
         Definitions = definitions ?? [];
         IsHidden = isHidden;
+
+        DocString = string.Empty;
     }
 
     public WorkspaceUri Uri { get; init; }
@@ -47,13 +48,6 @@ public abstract record class VBTypeMember
     public int UserMemId { get; init; }
     public int MemberFlags { get; init; }
 
-    public Symbol? Declaration { get; init; }
+    public Symbol? Symbol { get; init; }
     public Symbol[] Definitions { get; init; }
-    
-    public VBTypeMember WithUri(WorkspaceUri uri) => this with { Uri = uri };
-    public VBTypeMember WithName(string name) => this with { Name = name };
-    public VBTypeMember WithSymbolKind(RubberduckSymbolKind kind) => this with { Kind = Kind };
-    public VBTypeMember WithAccessibility(Accessibility accessibility) => this with { Accessibility = accessibility };
-    public VBTypeMember WithDeclaration(Symbol declaration) => this with {  Declaration = declaration };
-    public VBTypeMember WithDefinitions(Symbol[] definitions) => this with { Definitions = definitions };
 }

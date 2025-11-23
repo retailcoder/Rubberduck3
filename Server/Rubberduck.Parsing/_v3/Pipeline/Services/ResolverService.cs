@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
 using Rubberduck.InternalApi.Model.Declarations.Types;
 using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.InternalApi.Settings;
 

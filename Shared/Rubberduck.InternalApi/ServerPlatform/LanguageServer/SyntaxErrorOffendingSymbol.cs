@@ -1,5 +1,5 @@
 ﻿using Rubberduck.InternalApi.Extensions;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Symbols.Abstract;
 
 namespace Rubberduck.InternalApi.ServerPlatform.LanguageServer;
 

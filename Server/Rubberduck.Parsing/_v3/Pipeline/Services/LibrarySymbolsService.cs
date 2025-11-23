@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Rubberduck.InternalApi.Model.Declarations.Symbols;
+using Rubberduck.InternalApi.Model.Symbols.Declarations;
 using Rubberduck.InternalApi.Model.Workspace;
 using Rubberduck.InternalApi.Services;
 using Rubberduck.InternalApi.Settings;

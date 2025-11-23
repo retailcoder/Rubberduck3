@@ -1,8 +1,8 @@
 ﻿using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
+using Rubberduck.InternalApi.Execution;
 using Rubberduck.InternalApi.Extensions;
 using Rubberduck.InternalApi.Model;
-using Rubberduck.InternalApi.Model.Declarations.Execution;
 using Rubberduck.InternalApi.Model.Declarations.Types;
 using Rubberduck.InternalApi.Model.Declarations.Types.Abstract;
 using Rubberduck.Parsing.Grammar;
